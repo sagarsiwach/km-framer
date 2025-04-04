@@ -3,164 +3,152 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { addPropertyControls, ControlType } from "framer";
 import tokens from "https://framer.com/m/designTokens-42aq.js";
-import { NavItem } from "https://framer.com/m/NavItem-eXXk.js";
 
 export function DesktopDropdown({
   isOpen,
   type, // "motorbikes", "scooters", "more"
-  items,
+  items = [], // Default empty array
   onItemClick,
+  onMouseEnter, // Added for hover handling
+  onMouseLeave, // Added for hover handling
   ...props
 }) {
-  // Different layouts based on dropdown type
+  // Animation variants for the dropdown container (height/opacity)
+  const dropdownVariants = {
+    hidden: {
+      opacity: 0,
+      height: 0,
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut",
+        // Ensure children finish animating *before* container closes height
+        when: "afterChildren",
+        staggerChildren: 0.03, // Stagger children fade out
+        staggerDirection: -1, // Reverse stagger on exit
+      },
+    },
+    visible: {
+      opacity: 1,
+      height: 392, // Fixed height for all dropdowns
+      transition: {
+        duration: 0.4,
+        ease: "easeOut",
+        // Ensure container animates *before* children appear
+        when: "beforeChildren",
+        staggerChildren: 0.05, // Stagger children fade in
+      },
+    },
+  };
+
+  // Animation variants for individual items (fade/slide up) - Used by container stagger
+  const itemVariants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.3,
+        ease: "easeOut",
+      },
+    },
+    // Exit animation is handled by the container's staggerDirection: -1
+  };
+
   const getDropdownContent = () => {
     switch (type) {
       case "motorbikes":
       case "scooters":
+        const models = items.filter((item) => item.type === "model");
+        const links = items.filter((item) => item.type === "link");
+
         return (
-          <div
+          <motion.div
+            // No variants needed here directly, container handles stagger
             style={{
               display: "flex",
               justifyContent: "flex-start",
-              alignItems: "flex-end",
+              alignItems: "stretch", // Stretch columns vertically
               gap: 10,
               maxWidth: 1600,
               margin: "0 auto",
               width: "100%",
-              padding: "40px 0",
+              padding: "0 0 40px 0", // Padding at bottom only
+              height: "100%", // Ensure it fills the animated height
             }}
           >
             {/* Vehicle Models Section */}
-            <div
+            <div // No motion needed if container staggers items directly
               style={{
                 display: "flex",
-                flex: "1 1 0",
+                flex: "1 1 auto", // Allow shrinking/growing, base auto
                 justifyContent: "flex-start",
-                alignItems: "center",
+                alignItems: "stretch", // Items fill height
                 gap: 10,
+                height: "100%",
               }}
             >
-              {items
-                .filter((item) => item.type === "model")
-                .map((item, index) => (
+              {models.map((item, index) => (
+                <motion.div
+                  key={`${type}-model-${index}`}
+                  variants={itemVariants} // Animate individual item based on container stagger
+                  style={{
+                    flex: "1 1 0", // Equal flexible width
+                    minWidth: 280, // Minimum width
+                    display: "flex", // Use flex for column layout
+                    flexDirection: "column",
+                    justifyContent: "flex-end", // Align content to bottom
+                    height: "100%",
+                  }}
+                >
+                  {/* Image Container */}
                   <div
-                    key={index}
                     style={{
-                      flex: "1 1 0",
-                      display: "inline-flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
-                      alignItems: "flex-start",
+                      width: "100%",
+                      height: 240, // Fixed height for image area
+                      position: "relative",
+                      overflow: "hidden",
+                      marginBottom: 0,
                     }}
                   >
-                    <div
-                      style={{
-                        alignSelf: "stretch",
-                        height: 240,
-                        position: "relative",
-                        background: tokens.colors.white,
-                        overflow: "hidden",
-                        outline: `1px ${tokens.colors.neutral[200]} solid`,
-                        outlineOffset: "-1px",
-                      }}
-                    >
-                      {item.image && (
-                        <img
-                          src={item.image}
-                          alt={item.label}
-                          style={{
-                            width: 370,
-                            height: 208,
-                            left: 30,
-                            top: 0,
-                            position: "absolute",
-                            objectFit: "cover",
-                          }}
-                        />
-                      )}
-                    </div>
-                    <div
-                      style={{
-                        alignSelf: "stretch",
-                        paddingLeft: 10,
-                        paddingRight: 10,
-                        paddingTop: 20,
-                        paddingBottom: 20,
-                        background: tokens.colors.white,
-                        display: "inline-flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                      onClick={() => onItemClick(item)}
-                    >
-                      <div
+                    {item.image && (
+                      <img
+                        src={item.image}
+                        alt={item.label}
                         style={{
-                          color: tokens.colors.neutral[700],
-                          fontSize: 30,
-                          fontFamily: "'Geist', sans-serif",
-                          fontWeight: 600,
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
                         }}
-                      >
-                        {item.label}
-                      </div>
-                      <div
-                        style={{
-                          width: 32,
-                          height: 32,
-                          position: "relative",
-                          overflow: "hidden",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 24,
-                            height: 20,
-                            left: 4,
-                            top: 6,
-                            position: "absolute",
-                            background: tokens.colors.neutral[700],
-                          }}
-                        />
-                      </div>
-                    </div>
+                      />
+                    )}
                   </div>
-                ))}
-            </div>
-
-            {/* Links Section */}
-            <div
-              style={{
-                width: 320,
-                display: "inline-flex",
-                flexDirection: "column",
-                justifyContent: "flex-start",
-                alignItems: "flex-start",
-              }}
-            >
-              {items
-                .filter((item) => item.type === "link")
-                .map((item, index) => (
-                  <div
-                    key={index}
-                    onClick={() => onItemClick(item)}
+                  {/* Text/Link Container */}
+                  <motion.div
+                    whileHover={{
+                      backgroundColor: tokens.colors.neutral[100],
+                    }}
                     style={{
-                      alignSelf: "stretch",
-                      paddingLeft: 10,
-                      paddingRight: 10,
-                      paddingTop: 15,
-                      paddingBottom: 15,
-                      display: "inline-flex",
+                      width: "100%",
+                      padding: "20px 10px",
+                      background: tokens.colors.white,
+                      display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
                       cursor: "pointer",
+                      boxSizing: "border-box",
                     }}
+                    onClick={() => onItemClick(item)}
                   >
                     <div
                       style={{
-                        color: tokens.colors.neutral[500],
-                        fontSize: 24,
+                        color: tokens.colors.neutral[700],
+                        fontSize: 30,
                         fontFamily: "'Geist', sans-serif",
-                        fontWeight: 400,
+                        fontWeight: 600,
+                        letterSpacing: "-0.04em",
                       }}
                     >
                       {item.label}
@@ -171,68 +159,151 @@ export function DesktopDropdown({
                         height: 32,
                         position: "relative",
                         overflow: "hidden",
+                        flexShrink: 0,
                       }}
                     >
-                      <div
+                      <svg
+                        width="24"
+                        height="20"
+                        viewBox="0 0 24 20"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
                         style={{
-                          width: 20,
-                          height: 20,
-                          left: 6,
-                          top: 6,
                           position: "absolute",
-                          background: tokens.colors.neutral[700],
+                          left: 4,
+                          top: 6,
                         }}
-                      />
+                      >
+                        <path
+                          d="M13.5 1.5L12.4125 2.54375L18.1125 8.25H3V9.75H18.1125L12.4125 15.4313L13.5 16.5L21 9L13.5 1.5Z"
+                          fill={tokens.colors.neutral[700]}
+                        />
+                      </svg>
                     </div>
-                  </div>
-                ))}
+                  </motion.div>
+                </motion.div>
+              ))}
             </div>
-          </div>
+
+            {/* Links Section */}
+            <div // No motion needed if container staggers items directly
+              style={{
+                width: 320,
+                flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "flex-end",
+                alignItems: "flex-start",
+                height: "100%",
+                paddingBottom: 0,
+              }}
+            >
+              {links.map((item, index) => (
+                <motion.div
+                  key={`${type}-link-${index}`}
+                  variants={itemVariants} // Animate individual item based on container stagger
+                  whileHover={{
+                    backgroundColor: tokens.colors.neutral[100],
+                  }}
+                  onClick={() => onItemClick(item)}
+                  style={{
+                    alignSelf: "stretch",
+                    padding: "15px 10px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    cursor: "pointer",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: tokens.colors.neutral[500],
+                      fontSize: 24,
+                      fontFamily: "'Geist', sans-serif",
+                      fontWeight: 400,
+                      letterSpacing: "-0.04em",
+                    }}
+                  >
+                    {item.label}
+                  </div>
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      position: "relative",
+                      overflow: "hidden",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      style={{
+                        position: "absolute",
+                        left: 6,
+                        top: 6,
+                      }}
+                    >
+                      <path
+                        d="M6.25 3.75V5H14.1188L3.75 15.3688L4.63125 16.25L15 5.88125V13.75H16.25V3.75H6.25Z"
+                        fill={tokens.colors.neutral[700]}
+                      />
+                    </svg>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
         );
 
       case "more":
+        const groups = [0, 1]; // Assuming max 2 groups
         return (
-          <div
+          <motion.div
+            // No variants needed here directly, container handles stagger
             style={{
               display: "flex",
               justifyContent: "flex-start",
-              alignItems: "flex-end",
+              alignItems: "stretch",
               gap: 40,
               maxWidth: 1600,
               margin: "0 auto",
               width: "100%",
-              padding: "40px 0",
+              padding: "0 0 40px 0",
+              height: "100%",
             }}
           >
-            {/* Grouped links */}
-            {[0, 1].map((groupIndex) => (
-              <div
-                key={groupIndex}
+            {groups.map((groupIndex) => (
+              <div // No motion needed if container staggers items directly
+                key={`more-group-${groupIndex}`}
                 style={{
                   flex: "1 1 0",
                   maxWidth: 360,
                   minWidth: 280,
-                  display: "inline-flex",
+                  display: "flex",
                   flexDirection: "column",
-                  justifyContent: "flex-start",
+                  justifyContent: "flex-end",
                   alignItems: "flex-start",
+                  height: "100%",
                 }}
               >
                 {items
                   .filter((item) => item.group === groupIndex)
                   .map((item, index) => (
-                    <div
-                      key={index}
+                    <motion.div
+                      key={`more-item-${groupIndex}-${index}`}
+                      variants={itemVariants} // Animate individual item based on container stagger
+                      whileHover={{
+                        backgroundColor: tokens.colors.neutral[100],
+                      }}
                       onClick={() => onItemClick(item)}
                       style={{
                         alignSelf: "stretch",
-                        padding: 10,
-                        borderBottom:
-                          index ===
-                          items.filter((i) => i.group === groupIndex).length - 1
-                            ? `1px ${tokens.colors.neutral[500]} solid`
-                            : "none",
-                        display: "inline-flex",
+                        padding: "15px 10px",
+                        display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
                         cursor: "pointer",
@@ -244,6 +315,7 @@ export function DesktopDropdown({
                           fontSize: 30,
                           fontFamily: "'Geist', sans-serif",
                           fontWeight: 600,
+                          letterSpacing: "-0.04em",
                         }}
                       >
                         {item.label}
@@ -254,24 +326,61 @@ export function DesktopDropdown({
                           height: 32,
                           position: "relative",
                           overflow: "hidden",
+                          flexShrink: 0,
                         }}
                       >
-                        <div
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
                           style={{
-                            width: 20,
-                            height: 20,
+                            position: "absolute",
                             left: 6,
                             top: 6,
-                            position: "absolute",
-                            background: tokens.colors.neutral[700],
                           }}
-                        />
+                        >
+                          <path
+                            d="M6.25 3.75V5H14.1188L3.75 15.3688L4.63125 16.25L15 5.88125V13.75H16.25V3.75H6.25Z"
+                            fill={tokens.colors.neutral[700]}
+                          />
+                        </svg>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
               </div>
             ))}
-          </div>
+            {/* Add placeholder divs if needed */}
+            {items.filter((item) => item.type === "link" && item.group === 1)
+              .length === 0 && ( // If group 1 is empty
+              <div
+                style={{
+                  flex: "1 1 0",
+                  maxWidth: 360,
+                  minWidth: 280,
+                }}
+              ></div>
+            )}
+            {items.filter((item) => item.type === "link").length === 0 && ( // If all empty
+              <>
+                <div
+                  style={{
+                    flex: "1 1 0",
+                    maxWidth: 360,
+                    minWidth: 280,
+                  }}
+                ></div>
+                <div
+                  style={{
+                    flex: "1 1 0",
+                    maxWidth: 360,
+                    minWidth: 280,
+                  }}
+                ></div>
+              </>
+            )}
+          </motion.div>
         );
 
       default:
@@ -283,25 +392,24 @@ export function DesktopDropdown({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{
-            opacity: 1,
-            height: type === "more" ? 420 : 392,
-          }}
-          exit={{ opacity: 0, height: 0 }}
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
+          variants={dropdownVariants} // Apply variants here
           style={{
             width: "100%",
             position: "absolute",
             left: 0,
-            top: 80, // Height of the navbar
+            top: 80,
             background: tokens.colors.white,
             overflow: "hidden",
             paddingLeft: 64,
             paddingRight: 64,
             zIndex: 90,
-            boxShadow:
-              "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+            boxShadow: "none",
           }}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
           {...props}
         >
           {getDropdownContent()}
@@ -333,7 +441,7 @@ addPropertyControls(DesktopDropdown, {
         label: {
           type: ControlType.String,
           title: "Label",
-          defaultValue: "Item",
+          defaultValue: "Item Label",
         },
         type: {
           type: ControlType.Enum,
@@ -343,49 +451,27 @@ addPropertyControls(DesktopDropdown, {
         },
         image: {
           type: ControlType.Image,
-          title: "Image",
+          title: "Image (Model Only)",
           hidden: (props) => props.type !== "model",
         },
         group: {
           type: ControlType.Number,
-          title: "Group (for More)",
+          title: "Group (More Only)",
           defaultValue: 0,
           min: 0,
           max: 1,
           step: 1,
-          hidden: (props) => props.type !== "link",
-        },
+          hidden: (props, parent) =>
+            parent.type !== "more" || props.type !== "link",
+        }, // Show only for 'more' links
         url: {
-          type: ControlType.String,
+          type: ControlType.Link,
           title: "URL",
           defaultValue: "#",
         },
       },
     },
-    defaultValue: [
-      {
-        label: "KM5000",
-        type: "model",
-        image: "https://placehold.co/370x208",
-        url: "#",
-      },
-      {
-        label: "KM4000",
-        type: "model",
-        image: "https://placehold.co/370x208",
-        url: "#",
-      },
-      {
-        label: "KM3000",
-        type: "model",
-        image: "https://placehold.co/370x208",
-        url: "#",
-      },
-      { label: "Test Rides", type: "link", url: "#" },
-      { label: "Book Now", type: "link", url: "#" },
-      { label: "Locate a Store", type: "link", url: "#" },
-      { label: "Compare Models", type: "link", url: "#" },
-    ],
+    defaultValue: [],
   },
 });
 
