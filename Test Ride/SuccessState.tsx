@@ -3,37 +3,17 @@ import React from "react"
 import { motion } from "framer-motion"
 import tokens from "https://framer.com/m/designTokens-42aq.js"
 
-// Helper function to filter out non-standard React props
-const filterDOMProps = (props) => {
-    const {
-        willChangeTransform,
-        layoutId,
-        layoutIdKey,
-        forceRender,
-        transition,
-        minHeight,
-        maxHeight,
-        minWidth,
-        maxWidth,
-        style,
-        ...validProps
-    } = props
+// --- Constants ---
+const BORDER_RADIUS = "8px"
 
-    if (style) {
-        validProps.style = style
-    }
-
-    return validProps
-}
-
-export function SuccessState({ onReset, ...props }) {
-    // Filter out non-standard props
-    const safeProps = filterDOMProps(props)
-
+export function SuccessState({ onReset }) {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            key="success-state"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
             style={{
                 display: "flex",
                 flexDirection: "column",
@@ -41,76 +21,90 @@ export function SuccessState({ onReset, ...props }) {
                 justifyContent: "center",
                 textAlign: "center",
                 padding: "40px 20px",
+                height: "100%",
+                boxSizing: "border-box",
             }}
-            {...safeProps}
         >
             <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring" }}
+                transition={{
+                    delay: 0.1,
+                    type: "spring",
+                    stiffness: 180,
+                    damping: 15,
+                }}
                 style={{
-                    width: "80px",
-                    height: "80px",
+                    width: "72px",
+                    height: "72px",
                     borderRadius: "50%",
-                    background: tokens.colors.green[100],
+                    background: "rgba(120, 167, 90, 0.2)",
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
-                    marginBottom: "20px",
+                    marginBottom: "24px",
                 }}
             >
                 <svg
-                    width="40"
-                    height="40"
+                    width="36"
+                    height="36"
                     viewBox="0 0 24 24"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                 >
-                    <path
-                        d="M9 16.2L4.8 12L3.4 13.4L9 19L21 7L19.6 5.6L9 16.2Z"
-                        fill={tokens.colors.green[600]}
+                    <motion.path
+                        d="M5 13l4 4L19 7"
+                        stroke="#78A75A"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: 1, opacity: 1 }}
+                        transition={{
+                            delay: 0.3,
+                            duration: 0.4,
+                            ease: "easeOut",
+                        }}
                     />
                 </svg>
             </motion.div>
-
             <h2
                 style={{
-                    fontSize: "24px",
+                    fontSize: "22px",
                     fontWeight: 600,
-                    color: tokens.colors.neutral[900],
-                    margin: "0 0 10px 0",
+                    color: tokens.colors?.neutral?.[900] || "#333",
+                    margin: "0 0 12px 0",
                 }}
             >
                 Test Ride Booked!
             </h2>
-
             <p
                 style={{
-                    fontSize: "16px",
-                    color: tokens.colors.neutral[700],
-                    margin: "0 0 30px 0",
-                    lineHeight: 1.5,
+                    fontSize: "15px",
+                    color: tokens.colors?.neutral?.[700] || "#555",
+                    margin: "0 0 32px 0",
+                    lineHeight: 1.6,
+                    maxWidth: "380px",
                 }}
             >
-                Thank you for booking a test ride. Our team will get in touch
-                with you shortly to confirm your appointment.
+                Thank you! Our team will contact you shortly to confirm your
+                appointment details.
             </p>
-
             <motion.button
                 type="button"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.03, filter: "brightness(110%)" }}
+                whileTap={{ scale: 0.97 }}
                 onClick={onReset}
                 style={{
                     padding: "12px 24px",
-                    background: tokens.colors.green[600],
-                    color: tokens.colors.white,
+                    background: "#78A75A",
+                    color: "#fff",
                     border: "none",
-                    borderRadius: "6px",
+                    borderRadius: BORDER_RADIUS,
                     fontSize: "16px",
                     fontWeight: 600,
                     cursor: "pointer",
-                    fontFamily: "'Geist', sans-serif",
+                    fontFamily: "inherit",
                 }}
             >
                 Book Another Ride

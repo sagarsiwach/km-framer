@@ -1,121 +1,101 @@
-// FormFields.tsx
+// FormFields.tsx - Fixed version
 import React from "react"
 import { motion } from "framer-motion"
 import tokens from "https://framer.com/m/designTokens-42aq.js"
 
-// Helper function to filter out non-standard React props
-const filterDOMProps = (props) => {
-    const {
-        // List all Framer-specific props that shouldn't be passed to DOM
-        willChangeTransform,
-        layoutId,
-        layoutIdKey,
-        forceRender,
-        forcePath,
-        enableViewportScaling,
-        transition,
-        style,
-        // Add any other props that cause issues
-        ...validProps
-    } = props
+// --- Style Constants ---
+const INPUT_HEIGHT = "56px"
+const BORDER_RADIUS = "8px"
 
-    // Keep style but ensure it's an object
-    if (style) {
-        validProps.style = style
-    }
+const labelStyle = {
+    display: "block",
+    fontSize: "12px",
+    fontWeight: 600,
+    color: tokens.colors?.neutral?.[700] || "#333",
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    marginBottom: "8px",
+}
 
-    return validProps
+const inputBaseStyle = {
+    width: "100%",
+    height: INPUT_HEIGHT,
+    border: `1px solid ${tokens.colors?.neutral?.[400] || "#ccc"}`,
+    borderRadius: BORDER_RADIUS,
+    padding: "0 16px",
+    fontSize: "16px",
+    color: tokens.colors?.neutral?.[900] || "#333",
+    background: tokens.colors?.white || "#fff",
+    outline: "none",
+    boxSizing: "border-box",
+    transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+    appearance: "none",
+}
+
+const errorMessageStyle = {
+    color: tokens.colors?.red?.[500] || "#FF3B30",
+    fontSize: "12px",
+    margin: "4px 0 0 0",
+    minHeight: "16px",
 }
 
 export function InputField({
     label,
     name,
+    error,
+    inputRef,
     type = "text",
     placeholder,
     value,
     onChange,
     onFocus,
     onBlur,
-    error,
-    focusedField,
-    inputRef,
-    ...props
+    autoComplete,
+    // Don't pass isFocused to the DOM
+    isFocused,
+    // Importantly, remove any children props
+    children, // Extract this so it doesn't get passed to input
+    ...otherProps
 }) {
-    // Filter out non-standard props
-    const safeProps = filterDOMProps(props)
-
-    // Extract style from props to handle separately
-    const { style: propStyle, ...otherSafeProps } = safeProps
-
-    // Create base input style
-    const inputStyle = {
-        width: "100%",
-        height: "64px",
-        border: `0.5px solid ${
-            error
-                ? tokens.colors.red[500]
-                : focusedField === name
-                  ? tokens.colors.blue[500]
-                  : tokens.colors.neutral[700]
-        }`,
-        borderRadius: "10px",
-        padding: "0 20px",
-        fontSize: "20px",
-        color: tokens.colors.neutral[700],
-        background: tokens.colors.neutral[50],
-        outline: "none",
-        boxSizing: "border-box",
-        boxShadow:
-            focusedField === name
-                ? `0px 0px 0px 3px ${tokens.colors.blue[200]}`
-                : "none",
-        transition: "box-shadow 0.2s, border 0.2s",
-        // Merge with prop style if provided
-        ...(propStyle || {}),
+    // Create dynamic styles based on state but don't pass as props
+    const dynamicStyle = {
+        ...inputBaseStyle,
+        borderColor: error
+            ? tokens.colors?.red?.[500] || "#FF3B30"
+            : isFocused
+              ? tokens.colors?.blue?.[500] || "#0077FF"
+              : tokens.colors?.neutral?.[400] || "#ccc",
+        boxShadow: error
+            ? `0px 0px 0px 3px ${tokens.colors?.red?.[100] || "rgba(255, 59, 48, 0.25)"}`
+            : isFocused
+              ? `0px 0px 0px 3px ${tokens.colors?.blue?.[100] || "rgba(0, 119, 255, 0.25)"}`
+              : "none",
     }
 
     return (
-        <div>
-            <label
-                htmlFor={name}
-                style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    color: tokens.colors.neutral[700],
-                    textTransform: "uppercase",
-                    letterSpacing: "0.72px",
-                    marginBottom: "10px",
-                }}
-            >
+        <div style={{ width: "100%" }}>
+            <label htmlFor={name} style={labelStyle}>
                 {label}
             </label>
-
             <input
                 ref={inputRef}
+                style={dynamicStyle}
                 id={name}
-                type={type}
                 name={name}
+                type={type}
                 placeholder={placeholder}
                 value={value}
                 onChange={onChange}
                 onFocus={onFocus}
                 onBlur={onBlur}
-                style={inputStyle}
-                {...otherSafeProps}
+                autoComplete={autoComplete}
+                aria-invalid={!!error}
+                aria-describedby={error ? `${name}-error` : undefined}
+                {...otherProps}
             />
-
-            {error && (
-                <p
-                    style={{
-                        color: tokens.colors.red[500],
-                        fontSize: "12px",
-                        margin: "5px 0 0 0",
-                    }}
-                >
-                    {error}
-                </p>
-            )}
+            <p id={`${name}-error`} style={errorMessageStyle}>
+                {error || ""}
+            </p>
         </div>
     )
 }
@@ -128,51 +108,35 @@ export function PhoneField({
     onFocus,
     onBlur,
     error,
-    focusedField,
     inputRef,
-    ...props
+    // Don't pass isFocused to the DOM
+    isFocused,
+    // Importantly, remove any children props
+    children, // Extract this so it doesn't get passed to input
+    ...otherProps
 }) {
-    // Filter out non-standard props
-    const safeProps = filterDOMProps(props)
+    const containerStyle = {
+        display: "flex",
+        height: INPUT_HEIGHT,
+        borderRadius: BORDER_RADIUS,
+        overflow: "hidden",
+        border: `1px solid ${error ? tokens.colors?.red?.[500] || "#FF3B30" : isFocused ? tokens.colors?.blue?.[500] || "#0077FF" : tokens.colors?.neutral?.[400] || "#ccc"}`,
+        background: tokens.colors?.white || "#fff",
+        boxShadow: error
+            ? `0px 0px 0px 3px ${tokens.colors?.red?.[100] || "rgba(255, 59, 48, 0.25)"}`
+            : isFocused
+              ? `0px 0px 0px 3px ${tokens.colors?.blue?.[100] || "rgba(0, 119, 255, 0.25)"}`
+              : "none",
+        transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+        boxSizing: "border-box",
+    }
 
     return (
-        <div>
-            <label
-                htmlFor={name}
-                style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    color: tokens.colors.neutral[700],
-                    textTransform: "uppercase",
-                    letterSpacing: "0.72px",
-                    marginBottom: "10px",
-                }}
-            >
+        <div style={{ width: "100%" }}>
+            <label htmlFor={name} style={labelStyle}>
                 {label}
             </label>
-
-            <div
-                style={{
-                    display: "flex",
-                    height: "64px",
-                    borderRadius: "10px",
-                    overflow: "hidden",
-                    border: `0.5px solid ${
-                        error
-                            ? tokens.colors.red[500]
-                            : focusedField === name
-                              ? tokens.colors.blue[500]
-                              : tokens.colors.neutral[700]
-                    }`,
-                    background: tokens.colors.neutral[50],
-                    boxShadow:
-                        focusedField === name
-                            ? `0px 0px 0px 3px ${tokens.colors.blue[200]}`
-                            : "none",
-                    transition: "box-shadow 0.2s, border 0.2s",
-                }}
-            >
+            <div style={containerStyle}>
                 <div
                     style={{
                         width: "64px",
@@ -180,131 +144,139 @@ export function PhoneField({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        background: tokens.colors.neutral[200],
+                        background: tokens.colors?.neutral?.[100] || "#f0f0f0",
                         fontWeight: 600,
-                        fontSize: "20px",
-                        color: tokens.colors.neutral[700],
+                        fontSize: "16px",
+                        color: tokens.colors?.neutral?.[600] || "#555",
+                        flexShrink: 0,
+                        borderRight: `1px solid ${tokens.colors?.neutral?.[400] || "#ccc"}`,
                     }}
                 >
                     +91
                 </div>
-
                 <input
                     ref={inputRef}
                     id={name}
-                    type="tel"
                     name={name}
-                    placeholder="10-digit phone number"
+                    type="tel"
+                    placeholder="10-digit number"
                     value={value}
                     onChange={onChange}
                     onFocus={onFocus}
                     onBlur={onBlur}
-                    maxLength="10"
+                    maxLength={10}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="tel-national"
                     style={{
-                        flex: 1,
-                        height: "100%",
+                        ...inputBaseStyle,
                         border: "none",
-                        outline: "none",
-                        padding: "0 20px",
-                        fontSize: "20px",
-                        color: tokens.colors.neutral[700],
-                        background: tokens.colors.neutral[50],
-                        letterSpacing: "0.8px",
+                        borderRadius: "0",
+                        boxShadow: "none",
+                        height: "100%",
+                        flexGrow: 1,
+                        minWidth: 0,
                     }}
-                    {...safeProps}
+                    aria-invalid={!!error}
+                    aria-describedby={error ? `${name}-error` : undefined}
+                    {...otherProps}
                 />
             </div>
-
-            {error && (
-                <p
-                    style={{
-                        color: tokens.colors.red[500],
-                        fontSize: "12px",
-                        margin: "5px 0 0 0",
-                    }}
-                >
-                    {error}
-                </p>
-            )}
+            <p id={`${name}-error`} style={errorMessageStyle}>
+                {error || ""}
+            </p>
         </div>
     )
 }
 
 export function SubmitButton({
     label = "Register Now",
-    onClick,
     isSubmitting,
-    buttonColor = tokens.colors.neutral[700],
-    buttonTextColor = tokens.colors.white,
-    ...props
+    buttonColor,
+    buttonTextColor,
 }) {
-    // For motion components, we still need to filter props
-    // but motion handles most DOM compatibility internally
-    const safeProps = filterDOMProps(props)
+    const bgColor = buttonColor || tokens.colors?.neutral?.[800] || "#333"
+    const textColor = buttonTextColor || tokens.colors?.white || "#fff"
 
     return (
         <motion.button
-            type="button"
-            onClick={onClick}
+            type="submit"
             disabled={isSubmitting}
-            whileHover={isSubmitting ? {} : { scale: 1.01 }}
-            whileTap={isSubmitting ? {} : { scale: 0.98 }}
             style={{
                 width: "100%",
-                height: "56px",
+                height: INPUT_HEIGHT,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
+                justifyContent: "center",
                 padding: "0 20px",
-                background: buttonColor,
-                color: buttonTextColor,
+                background: bgColor,
+                color: textColor,
                 border: "none",
-                borderRadius: "0",
-                fontSize: "20px",
+                borderRadius: BORDER_RADIUS,
+                fontSize: "18px",
                 fontWeight: 600,
-                fontFamily: "'Geist', sans-serif",
-                cursor: isSubmitting ? "default" : "pointer",
-                marginBottom: "20px",
+                fontFamily: "inherit",
+                cursor: isSubmitting ? "wait" : "pointer",
                 position: "relative",
                 overflow: "hidden",
+                opacity: isSubmitting ? 0.7 : 1,
+                boxSizing: "border-box",
             }}
-            {...safeProps}
+            whileHover={
+                !isSubmitting ? { scale: 1.02, filter: "brightness(110%)" } : {}
+            }
+            whileTap={
+                !isSubmitting ? { scale: 0.98, filter: "brightness(90%)" } : {}
+            }
         >
             {isSubmitting ? (
-                <>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                    }}
+                >
                     <span>Processing...</span>
                     <motion.div
+                        style={{
+                            width: "18px",
+                            height: "18px",
+                            border: `2px solid ${textColor}`,
+                            borderTopColor: "transparent",
+                            borderRadius: "50%",
+                        }}
                         animate={{ rotate: 360 }}
                         transition={{
                             repeat: Infinity,
                             duration: 1,
                             ease: "linear",
                         }}
-                        style={{
-                            width: "20px",
-                            height: "20px",
-                            borderRadius: "50%",
-                            border: `2px solid ${buttonTextColor}`,
-                            borderTopColor: "transparent",
-                        }}
                     />
-                </>
+                </div>
             ) : (
-                <>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        width: "100%",
+                    }}
+                >
                     <span>{label}</span>
                     <svg
-                        width="24"
-                        height="24"
+                        width="20"
+                        height="20"
                         viewBox="0 0 24 24"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
                     >
                         <path
-                            d="M17.92 11.62C17.8724 11.4973 17.801 11.3851 17.71 11.29L12.71 6.29C12.6168 6.19676 12.5061 6.1228 12.3842 6.07234C12.2624 6.02188 12.1319 5.99591 12 5.99591C11.7337 5.99591 11.4783 6.1017 11.29 6.29C11.1968 6.38324 11.1228 6.49393 11.0723 6.61575C11.0219 6.73758 10.9959 6.86814 10.9959 7C10.9959 7.2663 11.1017 7.5217 11.29 7.71L14.59 11H7C6.73478 11 6.48043 11.1054 6.29289 11.2929C6.10536 11.4804 6 11.7348 6 12C6 12.2652 6.10536 12.5196 6.29289 12.7071C6.48043 12.8946 6.73478 13 7 13H14.59L11.29 16.29C11.1963 16.383 11.1219 16.4936 11.0711 16.6154C11.0203 16.7373 10.9942 16.868 10.9942 17C10.9942 17.132 11.0203 17.2627 11.0711 17.3846C11.1219 17.5064 11.1963 17.617 11.29 17.71C11.383 17.8037 11.4936 17.8781 11.6154 17.9289C11.7373 17.9797 11.868 18.0058 12 18.0058C12.132 18.0058 12.2627 17.9797 12.3846 17.9289C12.5064 17.8781 12.617 17.8037 12.71 17.71L17.71 12.71C17.801 12.6149 17.8724 12.5028 17.92 12.38C18.02 12.1365 18.02 11.8635 17.92 11.62Z"
-                            fill={buttonTextColor}
+                            d="M13.1717 12.0007L8.22168 7.05072L9.63589 5.63651L16.0001 12.0007L9.63589 18.3649L8.22168 16.9507L13.1717 12.0007Z"
+                            fill={textColor}
                         />
                     </svg>
-                </>
+                </div>
             )}
         </motion.button>
     )
@@ -314,15 +286,17 @@ export function PrivacyPolicyText({ isMobile }) {
     return (
         <p
             style={{
-                fontSize: isMobile ? "12px" : "14px",
-                color: tokens.colors.neutral[700],
-                margin: 0,
+                fontSize: "12px",
+                color: tokens.colors?.neutral?.[600] || "#555",
+                margin: "16px 0 0 0",
                 lineHeight: 1.5,
+                textAlign: "center",
             }}
         >
-            By clicking on "Register Now" you are agreeing to our and consent to
-            Kabira Mobility and our authorized dealers contacting you via phone,
-            SMS, or email regarding your test ride request and related services.
+            By clicking on "Register Now" you agree to our Privacy Policy and
+            are allowing us (Kabira Mobility) and our service partners to get in
+            touch with you by e-mail, SMS or phone call, only for the test ride
+            related information.
         </p>
     )
 }
