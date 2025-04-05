@@ -3,17 +3,11 @@ import React from "react"
 import { motion } from "framer-motion"
 import tokens from "https://framer.com/m/designTokens-42aq.js"
 
-// --- Constants ---
-const BORDER_RADIUS = "8px"
-
 export function SuccessState({ onReset }) {
     return (
         <motion.div
-            key="success-state"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             style={{
                 display: "flex",
                 flexDirection: "column",
@@ -21,90 +15,75 @@ export function SuccessState({ onReset }) {
                 justifyContent: "center",
                 textAlign: "center",
                 padding: "40px 20px",
-                height: "100%",
-                boxSizing: "border-box",
             }}
         >
             <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{
-                    delay: 0.1,
-                    type: "spring",
-                    stiffness: 180,
-                    damping: 15,
-                }}
+                transition={{ delay: 0.2, type: "spring" }}
                 style={{
-                    width: "72px",
-                    height: "72px",
+                    width: "80px",
+                    height: "80px",
                     borderRadius: "50%",
-                    background: "rgba(120, 167, 90, 0.2)",
+                    background: tokens.colors.green[100],
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
-                    marginBottom: "24px",
+                    marginBottom: "20px",
                 }}
             >
                 <svg
-                    width="36"
-                    height="36"
+                    width="40"
+                    height="40"
                     viewBox="0 0 24 24"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                 >
-                    <motion.path
-                        d="M5 13l4 4L19 7"
-                        stroke="#78A75A"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        initial={{ pathLength: 0, opacity: 0 }}
-                        animate={{ pathLength: 1, opacity: 1 }}
-                        transition={{
-                            delay: 0.3,
-                            duration: 0.4,
-                            ease: "easeOut",
-                        }}
+                    <path
+                        d="M9 16.2L4.8 12L3.4 13.4L9 19L21 7L19.6 5.6L9 16.2Z"
+                        fill={tokens.colors.green[600]}
                     />
                 </svg>
             </motion.div>
+
             <h2
                 style={{
-                    fontSize: "22px",
+                    fontSize: "24px",
                     fontWeight: 600,
-                    color: tokens.colors?.neutral?.[900] || "#333",
-                    margin: "0 0 12px 0",
+                    color: tokens.colors.neutral[900],
+                    margin: "0 0 10px 0",
                 }}
             >
                 Test Ride Booked!
             </h2>
+
             <p
                 style={{
-                    fontSize: "15px",
-                    color: tokens.colors?.neutral?.[700] || "#555",
-                    margin: "0 0 32px 0",
-                    lineHeight: 1.6,
-                    maxWidth: "380px",
+                    fontSize: "16px",
+                    color: tokens.colors.neutral[700],
+                    margin: "0 0 30px 0",
+                    lineHeight: 1.5,
                 }}
             >
-                Thank you! Our team will contact you shortly to confirm your
-                appointment details.
+                Thank you for booking a test ride. Our team will get in touch
+                with you shortly to confirm your appointment.
             </p>
+
             <motion.button
                 type="button"
-                whileHover={{ scale: 1.03, filter: "brightness(110%)" }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={onReset}
                 style={{
                     padding: "12px 24px",
-                    background: "#78A75A",
-                    color: "#fff",
+                    background: tokens.colors.green[600],
+                    color: tokens.colors.white,
                     border: "none",
-                    borderRadius: BORDER_RADIUS,
+                    borderRadius: "6px",
                     fontSize: "16px",
                     fontWeight: 600,
                     cursor: "pointer",
-                    fontFamily: "inherit",
+                    fontFamily: "'Geist', sans-serif",
                 }}
             >
                 Book Another Ride

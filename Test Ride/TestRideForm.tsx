@@ -1,25 +1,20 @@
 // TestRideForm.tsx
-import React, { useState, useEffect, useRef, useCallback } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { addPropertyControls, ControlType } from "framer"
-import { motion } from "framer-motion"
 import tokens from "https://framer.com/m/designTokens-42aq.js"
 
-// Import component modules
+// Import our component modules with the provided URLs
 import {
     InputField,
     PhoneField,
-    PrivacyPolicyText,
     SubmitButton,
+    PrivacyPolicyText,
 } from "https://framer.com/m/FormFields-3AX8.js"
 import {
     LocationField,
-    LocationStatusIcon,
+    getLocationIcon,
 } from "https://framer.com/m/LocationSearch-nwb4.js"
 import { SuccessState } from "https://framer.com/m/SuccessState-Y7Nd.js"
-
-// --- Constants ---
-const FALLBACK_MAPBOX_API_KEY =
-    "pk.eyJ1Ijoic2FnYXJzaXdhY2giLCJhIjoiY205MzY4dmxjMGdndjJrc2NrZnZpM2FkbSJ9.ZeZW7bToRYitGJQKaCvGlA"
 
 /**
  * @framerSupportedLayoutWidth any
@@ -28,423 +23,407 @@ const FALLBACK_MAPBOX_API_KEY =
 export function TestRideForm({
     title = "Book a Test Ride",
     subtitle = "Get a personalised Feel and Experience of your Bike at your Nearest Kabira Mobility, Showroom.",
-    backgroundImage,
-    apiEndpoint = "",
+    backgroundImage = "https://framer.com/m/assets/D0NsXFHhf2xIJEp47nKBRqKA.jpg",
+    apiEndpoint = "https://api.kabiramobility.com/test-ride/register",
     mapboxApiKey = "",
     enableLocationServices = true,
     showSubtitle = true,
-    buttonColor,
-    buttonTextColor,
-    formBackgroundColor = tokens.colors?.white || "#FFFFFF",
-    imageBackgroundColor = tokens.colors?.neutral?.[100] || "#F0F0F0",
+    buttonColor = tokens.colors.neutral[700],
+    buttonTextColor = tokens.colors.white,
+    formBackgroundColor = tokens.colors.white,
     onSubmitSuccess,
     onSubmitError,
-    style,
-    ...rest
+    ...props
 }) {
-    // Filter non-DOM props
-    const {
-        willChangeTransform,
-        layoutId,
-        layoutIdKey,
-        forceRender,
-        ...validRestProps
-    } = rest
-
-    // --- State ---
+    // Form state
     const [formData, setFormData] = useState({
         location: "",
         fullName: "",
         phoneNumber: "",
     })
+
+    // Input focus state
     const [focusedField, setFocusedField] = useState(null)
+
+    // Validation state
     const [errors, setErrors] = useState({})
-    const [locationStatus, setLocationStatus] = useState("idle")
+
+    // Location search state
+    const [locationStatus, setLocationStatus] = useState("idle") // idle, searching, success, error
     const [locationResults, setLocationResults] = useState([])
     const [showLocationResults, setShowLocationResults] = useState(false)
-    const [submitStatus, setSubmitStatus] = useState("idle")
+
+    // Form submission state
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [submitStatus, setSubmitStatus] = useState(null) // null, success, error
+
+    // References
+    const fullNameInputRef = useRef(null)
+    const locationInputRef = useRef(null)
+    const phoneInputRef = useRef(null)
+
+    // Check if we're running in mobile viewport
     const [isMobile, setIsMobile] = useState(false)
 
-    // --- Refs ---
-    const locationInputRef = useRef(null)
-    const fullNameInputRef = useRef(null)
-    const phoneInputRef = useRef(null)
-    const formRef = useRef(null)
-
-    // --- Derived values ---
-    const effectiveMapboxApiKey = mapboxApiKey || FALLBACK_MAPBOX_API_KEY
-    const effectiveApiEndpoint = apiEndpoint || "YOUR_WEBHOOK_OR_API_URL_HERE"
-
-    // --- Effects ---
     useEffect(() => {
-        if (typeof window === "undefined") return
-        const checkMobile = () => setIsMobile(window.innerWidth < 768)
-        checkMobile()
-        window.addEventListener("resize", checkMobile)
-        return () => window.removeEventListener("resize", checkMobile)
+        // Check if window is available (client-side)
+        if (typeof window !== "undefined") {
+            const checkMobile = () => {
+                setIsMobile(window.innerWidth < 768)
+            }
+
+            checkMobile()
+            window.addEventListener("resize", checkMobile)
+
+            return () => {
+                window.removeEventListener("resize", checkMobile)
+            }
+        }
     }, [])
 
-    // --- Callbacks ---
-    const handleFocus = useCallback(
-        (fieldName) => {
-            setFocusedField(fieldName)
-            if (fieldName === "location") {
-                if (formData.location && locationResults.length > 0) {
-                    setShowLocationResults(true)
-                }
-            } else {
-                setShowLocationResults(false)
-            }
-        },
-        [formData.location, locationResults.length]
-    )
+    // Handle form field changes
+    const handleChange = (e) => {
+        const { name, value } = e.target
+        setFormData({
+            ...formData,
+            [name]: value,
+        })
 
-    const handleBlur = useCallback(() => {
-        setTimeout(() => {
-            setFocusedField(null)
-        }, 150)
-    }, [])
+        // Clear error for this field if it exists
+        if (errors[name]) {
+            setErrors({
+                ...errors,
+                [name]: null,
+            })
+        }
+    }
 
-    const handleChange = useCallback(
-        (e) => {
-            const { name, value } = e.target
+    // Location search function
+    const searchLocation = async (query) => {
+        if (!query || query.length < 3) {
+            setLocationResults([])
+            setShowLocationResults(false)
+            return
+        }
 
-            if (name === "phoneNumber") {
-                const digitsOnly = value.replace(/\D/g, "")
-                setFormData((prev) => ({ ...prev, [name]: digitsOnly }))
-            } else {
-                setFormData((prev) => ({ ...prev, [name]: value }))
-            }
+        setLocationStatus("searching")
+        setShowLocationResults(true)
 
-            if (errors[name]) {
-                setErrors((prev) => ({ ...prev, [name]: null }))
-            }
-        },
-        [errors]
-    )
-
-    const searchLocation = useCallback(
-        async (query) => {
-            if (!effectiveMapboxApiKey) return
-            if (!query || query.trim().length < 3) {
-                setLocationResults([])
-                setShowLocationResults(false)
-                return
-            }
-
-            setLocationStatus("searching")
-            setShowLocationResults(true)
-
-            try {
-                const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query.trim())}.json?access_token=${effectiveMapboxApiKey}&country=in&types=place,postcode,locality,neighborhood,district&limit=5`
-                const response = await fetch(url)
-
-                if (!response.ok)
-                    throw new Error(`Mapbox API Error: ${response.statusText}`)
+        try {
+            // Use Mapbox Geocoding API if API key is provided
+            if (mapboxApiKey) {
+                const response = await fetch(
+                    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+                        query
+                    )}.json?access_token=${mapboxApiKey}&country=in&types=postcode,place,locality,neighborhood`
+                )
 
                 const data = await response.json()
-                if (data.features && data.features.length > 0) {
+
+                if (data.features) {
                     setLocationResults(
-                        data.features.map((f, index) => ({
-                            id: f.id || `location-${index}`,
-                            name: f.place_name,
+                        data.features.map((feature) => ({
+                            id: feature.id,
+                            name: feature.place_name,
+                            coordinates: feature.geometry.coordinates,
                         }))
                     )
                     setLocationStatus("success")
-                } else {
-                    setLocationResults([])
-                    setLocationStatus("success")
                 }
-            } catch (error) {
-                console.error("Location search error:", error)
-                setLocationStatus("error")
-                setLocationResults([])
-                setShowLocationResults(false)
+            } else {
+                // Mock search results if no API key
+                setTimeout(() => {
+                    setLocationResults([
+                        {
+                            id: 1,
+                            name: "Mumbai, Maharashtra",
+                            coordinates: [72.8777, 19.076],
+                        },
+                        {
+                            id: 2,
+                            name: "Delhi, India",
+                            coordinates: [77.1025, 28.7041],
+                        },
+                        {
+                            id: 3,
+                            name: "Bangalore, Karnataka",
+                            coordinates: [77.5946, 12.9716],
+                        },
+                        {
+                            id: 4,
+                            name: "Pune, Maharashtra",
+                            coordinates: [73.8567, 18.5204],
+                        },
+                        {
+                            id: 5,
+                            name: "Chennai, Tamil Nadu",
+                            coordinates: [80.2707, 13.0827],
+                        },
+                    ])
+                    setLocationStatus("success")
+                }, 500)
             }
-        },
-        [effectiveMapboxApiKey]
-    )
+        } catch (error) {
+            console.error("Error searching location:", error)
+            setLocationStatus("error")
+        }
+    }
 
-    const getCurrentLocation = useCallback(() => {
-        if (!enableLocationServices || !effectiveMapboxApiKey) return
-        if (typeof navigator === "undefined" || !navigator.geolocation) return
+    // Get current location function
+    const getCurrentLocation = () => {
+        if (!enableLocationServices || !navigator.geolocation) {
+            return
+        }
 
         setLocationStatus("searching")
-        setShowLocationResults(false)
 
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords
-                try {
-                    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${effectiveMapboxApiKey}&types=place,locality,neighborhood,address&limit=1`
-                    const response = await fetch(url)
 
-                    if (!response.ok)
-                        throw new Error(
-                            `Mapbox Reverse Geocoding Error: ${response.statusText}`
+                try {
+                    // Reverse geocoding with Mapbox
+                    if (mapboxApiKey) {
+                        const response = await fetch(
+                            `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${mapboxApiKey}&types=postcode,place,locality`
                         )
 
-                    const data = await response.json()
-                    if (data.features && data.features.length > 0) {
-                        setFormData((prev) => ({
-                            ...prev,
-                            location: data.features[0].place_name,
-                        }))
-                        setLocationStatus("success")
-                        setErrors((prev) => ({ ...prev, location: null }))
+                        const data = await response.json()
+
+                        if (data.features && data.features.length > 0) {
+                            setFormData({
+                                ...formData,
+                                location: data.features[0].place_name,
+                            })
+                            setLocationStatus("success")
+                        }
                     } else {
-                        throw new Error("No address found.")
+                        // Mock data if no API key
+                        setFormData({
+                            ...formData,
+                            location: "Current Location (Bengaluru, India)",
+                        })
+                        setLocationStatus("success")
                     }
                 } catch (error) {
-                    console.error("Reverse geocoding error:", error)
+                    console.error("Error with reverse geocoding:", error)
                     setLocationStatus("error")
                 }
             },
             (error) => {
                 console.error("Geolocation error:", error)
                 setLocationStatus("error")
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            }
         )
-    }, [effectiveMapboxApiKey, enableLocationServices])
+    }
 
-    const handleSelectLocation = useCallback((result) => {
-        setFormData((prev) => ({ ...prev, location: result.name }))
-        setLocationResults([])
-        setShowLocationResults(false)
-        setErrors((prev) => ({ ...prev, location: null }))
-        locationInputRef.current?.focus()
-    }, [])
-
-    const validateForm = useCallback(() => {
+    // Validate form
+    const validateForm = () => {
         const newErrors = {}
 
-        if (!formData.location || formData.location.trim().length < 3) {
-            newErrors.location = "Valid location required"
+        if (!formData.location) {
+            newErrors.location = "Please enter your location"
         }
 
-        if (!formData.fullName || formData.fullName.trim().length < 2) {
-            newErrors.fullName = "Full name required"
+        if (!formData.fullName) {
+            newErrors.fullName = "Please enter your full name"
+        } else if (formData.fullName.length < 3) {
+            newErrors.fullName = "Name must be at least 3 characters"
         }
 
         if (!formData.phoneNumber) {
-            newErrors.phoneNumber = "Phone required"
+            newErrors.phoneNumber = "Please enter your phone number"
         } else if (!/^\d{10}$/.test(formData.phoneNumber)) {
-            newErrors.phoneNumber = "Valid 10-digit number"
+            newErrors.phoneNumber = "Please enter a valid 10-digit phone number"
         }
 
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
-    }, [formData])
+    }
 
-    const handleSubmit = useCallback(
-        (e) => {
-            e.preventDefault()
-            setShowLocationResults(false)
+    // Handle form submission
+    const handleSubmit = async (e) => {
+        if (e) e.preventDefault()
 
-            if (!validateForm()) {
-                const firstErrorKey = Object.keys(errors).find(
-                    (key) => errors[key]
-                )
+        if (!validateForm()) {
+            return
+        }
 
-                if (firstErrorKey === "location")
-                    locationInputRef.current?.focus()
-                else if (firstErrorKey === "fullName")
-                    fullNameInputRef.current?.focus()
-                else if (firstErrorKey === "phoneNumber")
-                    phoneInputRef.current?.focus()
+        setIsSubmitting(true)
 
-                return
-            }
-
+        try {
+            // Simulate API call if no endpoint is provided for testing
             if (
-                !effectiveApiEndpoint ||
-                !effectiveApiEndpoint.startsWith("http")
+                apiEndpoint ===
+                "https://api.kabiramobility.com/test-ride/register"
             ) {
-                alert("API endpoint not configured.")
-                return
-            }
+                // Simulate network delay
+                await new Promise((resolve) => setTimeout(resolve, 1500))
 
-            setSubmitStatus("submitting")
-
-            const payload = {
-                name: formData.fullName.trim(),
-                phone: formData.phoneNumber,
-                location: formData.location.trim(),
-                source: "BookingForm_Framer",
-                timestamp: new Date().toISOString(),
-            }
-
-            try {
-                console.log("Submitting:", payload)
-                fetch(effectiveApiEndpoint, {
+                // Simulate success
+                setSubmitStatus("success")
+                if (onSubmitSuccess) {
+                    onSubmitSuccess(formData)
+                }
+            } else {
+                // Real API call
+                const response = await fetch(apiEndpoint, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: formData.fullName,
+                        phone: formData.phoneNumber,
+                        location: formData.location,
+                    }),
                 })
-                    .then((res) => {
-                        if (res.ok) {
-                            setSubmitStatus("success")
-                            if (onSubmitSuccess) onSubmitSuccess(formData)
-                            return res.text()
-                        } else {
-                            return res.text().then((errText) => {
-                                throw new Error(
-                                    `API Error ${res.status}: ${errText || res.statusText}`
-                                )
-                            })
-                        }
-                    })
-                    .then((text) => {
-                        console.log("Success:", text)
-                    })
-                    .catch((err) => {
-                        setSubmitStatus("error")
-                        if (onSubmitError) onSubmitError(err)
-                        alert(`Submit failed: ${err.message}`)
-                        console.error("API Error:", err)
-                    })
-            } catch (err) {
-                setSubmitStatus("error")
-                if (onSubmitError) onSubmitError(err)
-                alert("Network error.")
-                console.error("Submit error:", err)
+
+                if (response.ok) {
+                    setSubmitStatus("success")
+                    if (onSubmitSuccess) {
+                        onSubmitSuccess(formData)
+                    }
+                } else {
+                    setSubmitStatus("error")
+                    if (onSubmitError) {
+                        onSubmitError(await response.json())
+                    }
+                }
             }
-        },
-        [
-            validateForm,
-            formData,
-            effectiveApiEndpoint,
-            onSubmitSuccess,
-            onSubmitError,
-        ]
-    )
+        } catch (error) {
+            console.error("Error submitting form:", error)
+            setSubmitStatus("error")
+            if (onSubmitError) {
+                onSubmitError(error)
+            }
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
 
-    const handleReset = useCallback(() => {
-        setFormData({ location: "", fullName: "", phoneNumber: "" })
+    // Reset form after successful submission
+    const handleReset = () => {
+        setSubmitStatus(null)
+        setFormData({
+            location: "",
+            fullName: "",
+            phoneNumber: "",
+        })
         setErrors({})
-        setSubmitStatus("idle")
-        setLocationStatus("idle")
-        setLocationResults([])
-        setShowLocationResults(false)
-        setFocusedField(null)
-    }, [])
+    }
 
-    // --- UI Rendering ---
-    const imageUrl = backgroundImage
-        ? typeof backgroundImage === "object" && backgroundImage.src
-            ? backgroundImage.src
-            : typeof backgroundImage === "string"
-              ? backgroundImage
-              : null
-        : null
-
-    const renderFormContent = () => (
-        <motion.div
-            key="form-content"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ display: "flex", flexDirection: "column", height: "100%" }}
-        >
-            {/* Header */}
-            <div style={{ marginBottom: isMobile ? "24px" : "32px" }}>
-                <h1
+    // Render the form content
+    const renderForm = () => (
+        <>
+            <div>
+                {/* Form Header */}
+                <div
                     style={{
-                        fontSize: isMobile ? "26px" : "30px",
-                        fontWeight: 700,
-                        color: tokens.colors?.neutral?.[900] || "#111",
-                        margin: "0 0 8px 0",
-                        lineHeight: 1.2,
+                        marginBottom: isMobile ? "20px" : "40px",
+                        paddingBottom: isMobile ? "20px" : "0",
+                        borderBottom: isMobile
+                            ? `1px solid ${tokens.colors.neutral[300]}`
+                            : "none",
                     }}
                 >
-                    {title}
-                </h1>
-                {showSubtitle && subtitle && (
-                    <p
+                    <h1
                         style={{
-                            fontSize: "15px",
-                            color: tokens.colors?.neutral?.[700] || "#555",
-                            margin: 0,
-                            lineHeight: 1.5,
+                            fontSize: isMobile ? "30px" : "36px",
+                            fontWeight: 600,
+                            color: tokens.colors.neutral[900],
+                            margin: "0 0 10px 0",
                         }}
                     >
-                        {subtitle}
-                    </p>
-                )}
+                        {title}
+                    </h1>
+
+                    {showSubtitle && (
+                        <p
+                            style={{
+                                fontSize: isMobile ? "14px" : "16px",
+                                color: tokens.colors.neutral[700],
+                                margin: 0,
+                                lineHeight: 1.5,
+                            }}
+                        >
+                            {subtitle}
+                        </p>
+                    )}
+                </div>
+
+                {/* Form Fields */}
+                <form onSubmit={handleSubmit}>
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "15px",
+                            marginBottom: "30px",
+                        }}
+                    >
+                        {/* Location Field */}
+                        <LocationField
+                            value={formData.location}
+                            onChange={handleChange}
+                            onFocus={() => setFocusedField("location")}
+                            onBlur={() => setFocusedField(null)}
+                            error={errors.location}
+                            focusedField={focusedField}
+                            inputRef={locationInputRef}
+                            locationStatus={locationStatus}
+                            locationResults={locationResults}
+                            showLocationResults={showLocationResults}
+                            getCurrentLocation={getCurrentLocation}
+                            enableLocationServices={enableLocationServices}
+                            setLocationResults={setLocationResults}
+                            setShowLocationResults={setShowLocationResults}
+                            searchLocation={searchLocation}
+                        />
+
+                        {/* Full Name Field */}
+                        <InputField
+                            label="Full Name"
+                            name="fullName"
+                            placeholder="Enter your full name"
+                            value={formData.fullName}
+                            onChange={handleChange}
+                            onFocus={() => setFocusedField("fullName")}
+                            onBlur={() => setFocusedField(null)}
+                            error={errors.fullName}
+                            focusedField={focusedField}
+                            inputRef={fullNameInputRef}
+                        />
+
+                        {/* Phone Number Field */}
+                        <PhoneField
+                            label="Phone Number"
+                            name="phoneNumber"
+                            value={formData.phoneNumber}
+                            onChange={handleChange}
+                            onFocus={() => setFocusedField("phoneNumber")}
+                            onBlur={() => setFocusedField(null)}
+                            error={errors.phoneNumber}
+                            focusedField={focusedField}
+                            inputRef={phoneInputRef}
+                        />
+                    </div>
+                </form>
             </div>
 
-            {/* Form */}
-            <form
-                ref={formRef}
-                onSubmit={handleSubmit}
-                noValidate
-                style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    flexGrow: 1,
-                    gap: "16px",
-                }}
-            >
-                <LocationField
-                    label="Location"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    onFocus={() => handleFocus("location")}
-                    onBlur={handleBlur}
-                    error={errors.location}
-                    isFocused={focusedField === "location"}
-                    inputRef={locationInputRef}
-                    locationStatus={locationStatus}
-                    locationResults={locationResults}
-                    showLocationResults={showLocationResults}
-                    getCurrentLocation={getCurrentLocation}
-                    enableLocationServices={enableLocationServices}
-                    searchLocation={searchLocation}
-                    handleSelectLocation={handleSelectLocation}
+            {/* Submit Button and Disclaimer */}
+            <div>
+                <SubmitButton
+                    label="Register Now"
+                    onClick={handleSubmit}
+                    isSubmitting={isSubmitting}
+                    buttonColor={buttonColor}
+                    buttonTextColor={buttonTextColor}
                 />
 
-                <InputField
-                    label="Full Name"
-                    name="fullName"
-                    type="text"
-                    placeholder="E.g. John Doe"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    onFocus={() => handleFocus("fullName")}
-                    onBlur={handleBlur}
-                    error={errors.fullName}
-                    isFocused={focusedField === "fullName"}
-                    inputRef={fullNameInputRef}
-                    autoComplete="name"
-                />
-
-                <PhoneField
-                    label="Phone Number"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleChange}
-                    onFocus={() => handleFocus("phoneNumber")}
-                    onBlur={handleBlur}
-                    error={errors.phoneNumber}
-                    isFocused={focusedField === "phoneNumber"}
-                    inputRef={phoneInputRef}
-                />
-
-                {/* Submission Area */}
-                <div style={{ marginTop: "auto", paddingTop: "16px" }}>
-                    <SubmitButton
-                        label="Register Now"
-                        isSubmitting={submitStatus === "submitting"}
-                        buttonColor={buttonColor}
-                        buttonTextColor={buttonTextColor}
-                    />
-                    <PrivacyPolicyText isMobile={isMobile} />
-                </div>
-            </form>
-        </motion.div>
+                <PrivacyPolicyText isMobile={isMobile} />
+            </div>
+        </>
     )
 
     return (
@@ -454,80 +433,52 @@ export function TestRideForm({
                 flexDirection: isMobile ? "column" : "row",
                 width: "100%",
                 height: "100%",
-                fontFamily: "'Inter', 'Geist', sans-serif",
+                background: tokens.colors.neutral[200],
+                fontFamily: "'Geist', sans-serif",
                 WebkitFontSmoothing: "antialiased",
                 MozOsxFontSmoothing: "grayscale",
-                overflow: "hidden",
-                background: isMobile
-                    ? formBackgroundColor
-                    : tokens.colors?.neutral?.[100] || "#F0F0F0",
-                borderRadius: "12px",
-                boxShadow: "0 6px 20px rgba(0, 0, 0, 0.08)",
-                ...style,
+                ...props.style,
             }}
-            {...validRestProps}
         >
-            {/* Image Section */}
-            {!isMobile && (
-                <div
+            {/* Hero Image Section */}
+            <div
+                style={{
+                    flex: isMobile ? "none" : 1,
+                    width: isMobile ? "100%" : undefined,
+                    height: isMobile ? "366px" : "100%",
+                    position: "relative",
+                    overflow: "hidden",
+                    background: formBackgroundColor,
+                }}
+            >
+                <img
+                    src={backgroundImage}
+                    alt="Kabira Mobility Motorcycle"
                     style={{
-                        flex: 1,
-                        minWidth: 0,
+                        width: "100%",
                         height: "100%",
-                        position: "relative",
-                        overflow: "hidden",
-                        background: imageBackgroundColor,
+                        objectFit: "cover",
+                        objectPosition: "center",
                     }}
-                >
-                    {imageUrl ? (
-                        <motion.img
-                            src={imageUrl}
-                            alt={title || "Booking image"}
-                            style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                                display: "block",
-                            }}
-                            initial={{ scale: 1.1, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ duration: 0.6, ease: "easeOut" }}
-                        />
-                    ) : (
-                        <div
-                            style={{
-                                width: "100%",
-                                height: "100%",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: tokens.colors?.neutral?.[500] || "#aaa",
-                            }}
-                        >
-                            No Image
-                        </div>
-                    )}
-                </div>
-            )}
+                />
+            </div>
 
             {/* Form Section */}
             <div
                 style={{
-                    width: isMobile ? "100%" : "460px",
-                    flexShrink: 0,
-                    height: isMobile ? "auto" : "100%",
-                    padding: isMobile ? "32px 24px" : "48px 40px",
+                    flex: isMobile ? "none" : "0 0 480px",
+                    width: isMobile ? "100%" : undefined,
+                    padding: isMobile ? "0 20px" : "40px",
                     display: "flex",
                     flexDirection: "column",
-                    background: formBackgroundColor,
-                    boxSizing: "border-box",
-                    overflowY: "auto",
+                    justifyContent: "space-between",
+                    background: tokens.colors.neutral[50],
                 }}
             >
                 {submitStatus === "success" ? (
-                    <SuccessState key="success" onReset={handleReset} />
+                    <SuccessState onReset={handleReset} />
                 ) : (
-                    renderFormContent()
+                    renderForm()
                 )}
             </div>
         </div>
@@ -544,8 +495,8 @@ addPropertyControls(TestRideForm, {
     subtitle: {
         type: ControlType.String,
         title: "Subtitle",
-        defaultValue: "Experience the bike firsthand...",
-        displayTextArea: true,
+        defaultValue:
+            "Get a personalised Feel and Experience of your Bike at your Nearest Kabira Mobility, Showroom.",
     },
     showSubtitle: {
         type: ControlType.Boolean,
@@ -554,51 +505,40 @@ addPropertyControls(TestRideForm, {
     },
     backgroundImage: {
         type: ControlType.ResponsiveImage,
-        title: "Image (Desktop)",
+        title: "Background Image",
     },
     apiEndpoint: {
         type: ControlType.String,
-        title: "API Endpoint URL",
-        placeholder: "https://your-webhook-url.com/...",
-        description: "URL to send form data.",
+        title: "API Endpoint",
+        defaultValue: "https://api.kabiramobility.com/test-ride/register",
     },
     mapboxApiKey: {
         type: ControlType.String,
         title: "Mapbox API Key",
-        placeholder: "pk.eyJ...",
-        description: "Overrides the hardcoded key if provided.",
+        defaultValue: "",
     },
     enableLocationServices: {
         type: ControlType.Boolean,
-        title: "Enable Location Button",
+        title: "Enable Location Services",
         defaultValue: true,
     },
     buttonColor: {
         type: ControlType.Color,
         title: "Button Color",
-        defaultValue: "#333333",
+        defaultValue: tokens.colors.neutral[700],
     },
     buttonTextColor: {
         type: ControlType.Color,
         title: "Button Text Color",
-        defaultValue: "#FFFFFF",
+        defaultValue: tokens.colors.white,
     },
     formBackgroundColor: {
         type: ControlType.Color,
-        title: "Form Background",
-        defaultValue: "#FFFFFF",
-    },
-    imageBackgroundColor: {
-        type: ControlType.Color,
-        title: "Image Area Background",
-        defaultValue: "#F0F0F0",
-    },
-    onSubmitSuccess: {
-        type: ControlType.EventHandler,
-        title: "On Success",
-    },
-    onSubmitError: {
-        type: ControlType.EventHandler,
-        title: "On Error",
+        title: "Form Background Color",
+        defaultValue: tokens.colors.white,
     },
 })
+
+export default TestRideForm
+
+// check
