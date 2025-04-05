@@ -3,6 +3,30 @@ import React from "react"
 import { motion } from "framer-motion"
 import tokens from "https://framer.com/m/designTokens-42aq.js"
 
+// Helper function to filter out non-standard React props
+const filterDOMProps = (props) => {
+    const {
+        // List all Framer-specific props that shouldn't be passed to DOM
+        willChangeTransform,
+        layoutId,
+        layoutIdKey,
+        forceRender,
+        forcePath,
+        enableViewportScaling,
+        transition,
+        style,
+        // Add any other props that cause issues
+        ...validProps
+    } = props
+
+    // Keep style but ensure it's an object
+    if (style) {
+        validProps.style = style
+    }
+
+    return validProps
+}
+
 export function InputField({
     label,
     name,
@@ -17,9 +41,43 @@ export function InputField({
     inputRef,
     ...props
 }) {
+    // Filter out non-standard props
+    const safeProps = filterDOMProps(props)
+
+    // Extract style from props to handle separately
+    const { style: propStyle, ...otherSafeProps } = safeProps
+
+    // Create base input style
+    const inputStyle = {
+        width: "100%",
+        height: "64px",
+        border: `0.5px solid ${
+            error
+                ? tokens.colors.red[500]
+                : focusedField === name
+                  ? tokens.colors.blue[500]
+                  : tokens.colors.neutral[700]
+        }`,
+        borderRadius: "10px",
+        padding: "0 20px",
+        fontSize: "20px",
+        color: tokens.colors.neutral[700],
+        background: tokens.colors.neutral[50],
+        outline: "none",
+        boxSizing: "border-box",
+        boxShadow:
+            focusedField === name
+                ? `0px 0px 0px 3px ${tokens.colors.blue[200]}`
+                : "none",
+        transition: "box-shadow 0.2s, border 0.2s",
+        // Merge with prop style if provided
+        ...(propStyle || {}),
+    }
+
     return (
         <div>
             <label
+                htmlFor={name}
                 style={{
                     display: "block",
                     fontSize: "12px",
@@ -35,6 +93,7 @@ export function InputField({
 
             <input
                 ref={inputRef}
+                id={name}
                 type={type}
                 name={name}
                 placeholder={placeholder}
@@ -42,31 +101,8 @@ export function InputField({
                 onChange={onChange}
                 onFocus={onFocus}
                 onBlur={onBlur}
-                style={{
-                    width: "100%",
-                    height: "64px",
-                    border: `0.5px solid ${
-                        error
-                            ? tokens.colors.red[500]
-                            : focusedField === name
-                              ? tokens.colors.blue[500]
-                              : tokens.colors.neutral[700]
-                    }`,
-                    borderRadius: "10px",
-                    padding: "0 20px",
-                    fontSize: "20px",
-                    color: tokens.colors.neutral[700],
-                    background: tokens.colors.neutral[50],
-                    outline: "none",
-                    boxSizing: "border-box",
-                    boxShadow:
-                        focusedField === name
-                            ? `0px 0px 0px 3px ${tokens.colors.blue[200]}`
-                            : "none",
-                    transition: "box-shadow 0.2s, border 0.2s",
-                    ...props.style,
-                }}
-                {...props}
+                style={inputStyle}
+                {...otherSafeProps}
             />
 
             {error && (
@@ -96,9 +132,13 @@ export function PhoneField({
     inputRef,
     ...props
 }) {
+    // Filter out non-standard props
+    const safeProps = filterDOMProps(props)
+
     return (
         <div>
             <label
+                htmlFor={name}
                 style={{
                     display: "block",
                     fontSize: "12px",
@@ -151,6 +191,7 @@ export function PhoneField({
 
                 <input
                     ref={inputRef}
+                    id={name}
                     type="tel"
                     name={name}
                     placeholder="10-digit phone number"
@@ -170,7 +211,7 @@ export function PhoneField({
                         background: tokens.colors.neutral[50],
                         letterSpacing: "0.8px",
                     }}
-                    {...props}
+                    {...safeProps}
                 />
             </div>
 
@@ -197,13 +238,17 @@ export function SubmitButton({
     buttonTextColor = tokens.colors.white,
     ...props
 }) {
+    // For motion components, we still need to filter props
+    // but motion handles most DOM compatibility internally
+    const safeProps = filterDOMProps(props)
+
     return (
         <motion.button
             type="button"
             onClick={onClick}
             disabled={isSubmitting}
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={isSubmitting ? {} : { scale: 1.01 }}
+            whileTap={isSubmitting ? {} : { scale: 0.98 }}
             style={{
                 width: "100%",
                 height: "56px",
@@ -223,7 +268,7 @@ export function SubmitButton({
                 position: "relative",
                 overflow: "hidden",
             }}
-            {...props}
+            {...safeProps}
         >
             {isSubmitting ? (
                 <>
@@ -275,21 +320,9 @@ export function PrivacyPolicyText({ isMobile }) {
                 lineHeight: 1.5,
             }}
         >
-            By clicking on "Register Now" you are agreeing to our{" "}
-
-                href="#privacy-policy"
-                style={{
-                    color: tokens.colors.neutral[700],
-                    textDecoration: "underline",
-                    cursor: "pointer",
-                }}
-            >
-                Privacy Policy
-            </a>
-            {" "}
-            and consent to Kabira Mobility and our authorized dealers
-            contacting you via phone, SMS, or email regarding your test ride
-            request and related services.
+            By clicking on "Register Now" you are agreeing to our and consent to
+            Kabira Mobility and our authorized dealers contacting you via phone,
+            SMS, or email regarding your test ride request and related services.
         </p>
     )
 }
