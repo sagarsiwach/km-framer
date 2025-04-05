@@ -1,8 +1,9 @@
 // FormFields.tsx
 import React from "react"
 import { motion } from "framer-motion"
-import tokens from "https://framer.com/m/designTokens-42aq.js"
+import tokens from "https://framer.com/m/designTokens-42aq.js" // Adjust path if needed
 
+// --- InputField ---
 export function InputField({
     label,
     name,
@@ -13,6 +14,7 @@ export function InputField({
     onFocus,
     onBlur,
     error,
+    showError = false,
     focusedField,
     inputRef,
     ...props
@@ -26,55 +28,65 @@ export function InputField({
                     fontWeight: 600,
                     color: tokens.colors.neutral[700],
                     textTransform: "uppercase",
-                    letterSpacing: "0.72px",
+                    letterSpacing: "0.06em",
                     marginBottom: "10px",
+                    fontFamily: "'Geist', sans-serif",
                 }}
             >
                 {label}
             </label>
-
-            <input
-                ref={inputRef}
-                type={type}
-                name={name}
-                placeholder={placeholder}
-                value={value}
-                onChange={onChange}
-                onFocus={onFocus}
-                onBlur={onBlur}
+            <div
                 style={{
+                    position: "relative",
                     width: "100%",
                     height: "64px",
-                    border: `0.5px solid ${
-                        error
-                            ? tokens.colors.red[500]
-                            : focusedField === name
-                              ? tokens.colors.blue[500]
-                              : tokens.colors.neutral[700]
-                    }`,
                     borderRadius: "10px",
-                    padding: "0 20px",
-                    fontSize: "20px",
-                    color: tokens.colors.neutral[700],
-                    background: tokens.colors.neutral[50],
-                    outline: "none",
-                    boxSizing: "border-box",
+                    backgroundColor: tokens.colors.neutral[50],
+                    border: `0.5px solid ${error && showError ? tokens.colors.red[500] : focusedField === name ? tokens.colors.blue[500] : tokens.colors.neutral[700]}`,
                     boxShadow:
                         focusedField === name
-                            ? `0px 0px 0px 3px ${tokens.colors.blue[200]}`
+                            ? `0px 0px 0px 4px ${tokens.colors.blue[200]}`
                             : "none",
                     transition: "box-shadow 0.2s, border 0.2s",
-                    ...props.style,
+                    display: "flex",
+                    alignItems: "center",
                 }}
-                {...props}
-            />
-
-            {error && (
+            >
+                <input
+                    ref={inputRef}
+                    type={type}
+                    name={name}
+                    id={name}
+                    placeholder={placeholder}
+                    value={value}
+                    onChange={onChange}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    style={{
+                        width: "100%",
+                        height: "100%",
+                        border: "none",
+                        outline: "none",
+                        padding: "0 20px",
+                        fontSize: "16px",
+                        letterSpacing: "-0.02em",
+                        fontFamily: "'Geist', sans-serif",
+                        fontWeight: value ? 500 : 400,
+                        color: value
+                            ? tokens.colors.neutral[700]
+                            : tokens.colors.neutral[400],
+                        backgroundColor: "transparent",
+                    }}
+                    {...props}
+                />
+            </div>
+            {error && showError && (
                 <p
                     style={{
                         color: tokens.colors.red[500],
                         fontSize: "12px",
                         margin: "5px 0 0 0",
+                        fontFamily: "'Geist', sans-serif",
                     }}
                 >
                     {error}
@@ -84,6 +96,7 @@ export function InputField({
     )
 }
 
+// --- PhoneField (Updated Styles for +91) ---
 export function PhoneField({
     label,
     name,
@@ -92,6 +105,7 @@ export function PhoneField({
     onFocus,
     onBlur,
     error,
+    showError = false,
     focusedField,
     inputRef,
     ...props
@@ -105,81 +119,88 @@ export function PhoneField({
                     fontWeight: 600,
                     color: tokens.colors.neutral[700],
                     textTransform: "uppercase",
-                    letterSpacing: "0.72px",
+                    letterSpacing: "0.06em",
                     marginBottom: "10px",
+                    fontFamily: "'Geist', sans-serif",
                 }}
             >
                 {label}
             </label>
-
+            {/* Main container with border/shadow */}
             <div
                 style={{
                     display: "flex",
                     height: "64px",
                     borderRadius: "10px",
                     overflow: "hidden",
-                    border: `0.5px solid ${
-                        error
-                            ? tokens.colors.red[500]
-                            : focusedField === name
-                              ? tokens.colors.blue[500]
-                              : tokens.colors.neutral[700]
-                    }`,
+                    border: `0.5px solid ${error && showError ? tokens.colors.red[500] : focusedField === name ? tokens.colors.blue[500] : tokens.colors.neutral[700]}`,
                     background: tokens.colors.neutral[50],
                     boxShadow:
                         focusedField === name
-                            ? `0px 0px 0px 3px ${tokens.colors.blue[200]}`
+                            ? `0px 0px 0px 4px ${tokens.colors.blue[200]}`
                             : "none",
                     transition: "box-shadow 0.2s, border 0.2s",
                 }}
             >
+                {/* Prefix Container */}
                 <div
                     style={{
-                        width: "64px",
+                        padding: "0 16px", // Use padding
                         height: "100%",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         background: tokens.colors.neutral[200],
-                        fontWeight: 600,
-                        fontSize: "20px",
+                        fontWeight: 500,
+                        fontSize: "16px",
+                        letterSpacing: "-0.02em",
+                        fontFamily: "'Geist', sans-serif",
                         color: tokens.colors.neutral[700],
+                        flexShrink: 0, // *** PREVENT SHRINKING ***
                     }}
                 >
                     +91
                 </div>
-
+                {/* Input Field */}
                 <input
                     ref={inputRef}
                     type="tel"
                     name={name}
+                    id={name}
                     placeholder="10-digit phone number"
                     value={value}
                     onChange={onChange}
                     onFocus={onFocus}
                     onBlur={onBlur}
                     maxLength="10"
+                    inputMode="numeric"
                     style={{
-                        flex: 1,
+                        flexGrow: 1,
+                        width: "auto",
                         height: "100%",
                         border: "none",
                         outline: "none",
-                        padding: "0 20px",
-                        fontSize: "20px",
-                        color: tokens.colors.neutral[700],
-                        background: tokens.colors.neutral[50],
-                        letterSpacing: "0.8px",
+                        padding: "0 16px", // Adjust padding
+                        fontSize: "16px",
+                        letterSpacing: "-0.02em",
+                        fontFamily: "'Geist', sans-serif",
+                        fontWeight: value ? 500 : 400,
+                        color: value
+                            ? tokens.colors.neutral[700]
+                            : tokens.colors.neutral[400],
+                        background: "transparent",
+                        minWidth: "100px", // Min width
                     }}
                     {...props}
                 />
             </div>
-
-            {error && (
+            {error && showError && (
                 <p
                     style={{
                         color: tokens.colors.red[500],
                         fontSize: "12px",
                         margin: "5px 0 0 0",
+                        fontFamily: "'Geist', sans-serif",
                     }}
                 >
                     {error}
@@ -189,6 +210,7 @@ export function PhoneField({
     )
 }
 
+// --- SubmitButton ---
 export function SubmitButton({
     label = "Register Now",
     onClick,
@@ -202,8 +224,8 @@ export function SubmitButton({
             type="button"
             onClick={onClick}
             disabled={isSubmitting}
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: isSubmitting ? 1 : 1.01 }} // Disable hover effect when submitting
+            whileTap={{ scale: isSubmitting ? 1 : 0.98 }} // Disable tap effect when submitting
             style={{
                 width: "100%",
                 height: "56px",
@@ -214,14 +236,25 @@ export function SubmitButton({
                 background: buttonColor,
                 color: buttonTextColor,
                 border: "none",
-                borderRadius: "0",
-                fontSize: "20px",
+                fontSize: "16px",
                 fontWeight: 600,
+                letterSpacing: "-0.02em",
                 fontFamily: "'Geist', sans-serif",
                 cursor: isSubmitting ? "default" : "pointer",
                 marginBottom: "20px",
                 position: "relative",
                 overflow: "hidden",
+                outline: "none",
+                opacity: isSubmitting ? 0.7 : 1, // Dim button when submitting
+                transition:
+                    "opacity 0.2s ease-in-out, background-color 0.2s ease-in-out", // Smooth transition
+            }}
+            onFocus={(e) => {
+                if (!isSubmitting)
+                    e.target.style.boxShadow = `0px 0px 0px 4px ${tokens.colors.blue[200]}`
+            }}
+            onBlur={(e) => {
+                e.target.style.boxShadow = "none"
             }}
             {...props}
         >
@@ -241,12 +274,14 @@ export function SubmitButton({
                             borderRadius: "50%",
                             border: `2px solid ${buttonTextColor}`,
                             borderTopColor: "transparent",
+                            opacity: 0.8,
                         }}
                     />
                 </>
             ) : (
                 <>
                     <span>{label}</span>
+                    {/* Arrow Icon */}
                     <svg
                         width="24"
                         height="24"
@@ -265,17 +300,34 @@ export function SubmitButton({
     )
 }
 
+// --- PrivacyPolicyText ---
 export function PrivacyPolicyText({ isMobile }) {
     return (
         <p
             style={{
-                fontSize: isMobile ? "12px" : "14px",
+                fontSize: isMobile ? "12px" : "clamp(12px, 1.8vh, 14px)", // Responsive font size
                 color: tokens.colors.neutral[700],
                 margin: 0,
                 lineHeight: 1.5,
+                letterSpacing: "-0.02em",
+                fontFamily: "'Geist', sans-serif",
             }}
         >
             By clicking on "Register Now" you are agreeing to our{" "}
+            <a
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                    color: tokens.colors.neutral[700],
+                    textDecoration: "underline",
+                }}
+            >
+                Privacy Policy
+            </a>{" "}
+            and are allowing us (Kabira Mobility) and our service partners to
+            get in touch with you by e-mail, WhatsApp or phone call, only for
+            the test ride related information.
         </p>
     )
 }
