@@ -1,6 +1,6 @@
 import { addPropertyControls, ControlType } from "framer";
 import { useState, useEffect } from "react";
-import tokens from "https://framer.com/m/Designtokens-itkJ.js";
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
 
 /**
  * @framerSupportedLayoutWidth auto

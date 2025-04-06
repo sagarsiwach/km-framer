@@ -1,6 +1,11 @@
 import { addPropertyControls, ControlType } from "framer";
 import { useState, useEffect } from "react";
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import InputField from "https://framer.com/m/InputField-d7w7.js";
+import VehicleCards from "https://framer.com/m/VehicleCards-mBlt.js";
+import Button from "https://framer.com/m/Button-SLtw.js";
+import VariantCard from "https://framer.com/m/VariantCard-5sVx.js";
+import ColorSelector from "https://framer.com/m/ColorSelector-jPny.js";
 
 /**
  * @framerSupportedLayoutWidth any
@@ -13,11 +18,15 @@ export default function VehicleConfiguration(props) {
     backgroundColor = tokens.colors.neutral[50],
     borderColor = tokens.colors.neutral[200],
 
+    // API endpoint for data
+    dataEndpoint = "",
+
     // Initial values
     location = "",
-    selectedVehicle = "",
-    selectedVariant = "",
-    selectedColor = "",
+    selectedVehicleId = "",
+    selectedVariantId = "",
+    selectedColorId = "",
+    selectedComponents = [],
 
     // Event handlers
     onNextStep,
@@ -25,6 +34,8 @@ export default function VehicleConfiguration(props) {
     onVehicleSelect,
     onVariantSelect,
     onColorSelect,
+    onComponentSelect,
+    onFormDataChange,
 
     // Form validation
     errors = {},
@@ -34,20 +45,79 @@ export default function VehicleConfiguration(props) {
     ...rest
   } = props;
 
-  // Local state for form inputs
+  // Local state
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [locationValue, setLocationValue] = useState(location);
-  const [vehicleValue, setVehicleValue] = useState(selectedVehicle);
-  const [variantValue, setVariantValue] = useState(selectedVariant);
-  const [colorValue, setColorValue] = useState(selectedColor);
+  const [vehicleValue, setVehicleValue] = useState(selectedVehicleId);
+  const [variantValue, setVariantValue] = useState(selectedVariantId);
+  const [colorValue, setColorValue] = useState(selectedColorId);
+  const [componentValues, setComponentValues] = useState(selectedComponents);
 
-  // Sample data
-  const vehicles = [
+  // Fallback vehicle data for when no endpoint is provided
+  const [vehicles, setVehicles] = useState([
     {
       id: "km3000",
       name: "KM3000",
       price: "₹1.9 Lakhs",
       image:
         "https://framerusercontent.com/images/kGiQohfz1kTljpgxcUnUxGNSE.png",
+      variants: [
+        {
+          id: "standard",
+          title: "Standard Variant",
+          subtitle: "5.1h kWh Battery Pack",
+          description: "250km Range (IDC)",
+          priceAddition: 0,
+          includedText: "Included",
+        },
+        {
+          id: "long-range",
+          title: "Long Range Variant",
+          subtitle: "5.1h kWh Battery Pack",
+          description: "325km Range (IDC)",
+          priceAddition: 15500,
+          includedText: "",
+        },
+      ],
+      colors: [
+        { id: "red", name: "Glossy Red", value: "#9B1C1C" },
+        { id: "black", name: "Matte Black", value: "#1F2937" },
+      ],
+      optionalComponents: [
+        {
+          id: "helmet",
+          title: "Helmet",
+          subtitle: "Protection",
+          required: true,
+          priceAddition: 0,
+          includedText: "Mandatory",
+        },
+        {
+          id: "saree-guard",
+          title: "Saree Guard",
+          subtitle: "Protection",
+          required: false,
+          priceAddition: 700,
+          includedText: "",
+        },
+        {
+          id: "smart-connectivity",
+          title: "Smart Connectivity Package",
+          subtitle: "GPS and App Integration",
+          required: false,
+          priceAddition: 7000,
+          includedText: "",
+        },
+        {
+          id: "off-road",
+          title: "Off-Road Package",
+          subtitle: "Fat Wheels + Mud Guards",
+          required: false,
+          priceAddition: 11999,
+          includedText: "",
+        },
+      ],
     },
     {
       id: "km4000",
@@ -55,6 +125,47 @@ export default function VehicleConfiguration(props) {
       price: "₹2.6 Lakhs",
       image:
         "https://framerusercontent.com/images/kGiQohfz1kTljpgxcUnUxGNSE.png",
+      variants: [
+        {
+          id: "standard",
+          title: "Standard Variant",
+          subtitle: "6.2h kWh Battery Pack",
+          description: "300km Range (IDC)",
+          priceAddition: 0,
+          includedText: "Included",
+        },
+        {
+          id: "long-range",
+          title: "Long Range Variant",
+          subtitle: "6.2h kWh Battery Pack",
+          description: "380km Range (IDC)",
+          priceAddition: 18500,
+          includedText: "",
+        },
+      ],
+      colors: [
+        { id: "red", name: "Glossy Red", value: "#9B1C1C" },
+        { id: "black", name: "Matte Black", value: "#1F2937" },
+        { id: "blue", name: "Ocean Blue", value: "#1E3A8A" },
+      ],
+      optionalComponents: [
+        {
+          id: "helmet",
+          title: "Helmet",
+          subtitle: "Protection",
+          required: true,
+          priceAddition: 0,
+          includedText: "Mandatory",
+        },
+        {
+          id: "saree-guard",
+          title: "Saree Guard",
+          subtitle: "Protection",
+          required: false,
+          priceAddition: 700,
+          includedText: "",
+        },
+      ],
     },
     {
       id: "km5000",
@@ -62,6 +173,30 @@ export default function VehicleConfiguration(props) {
       price: "₹3.2 Lakhs",
       image:
         "https://framerusercontent.com/images/kGiQohfz1kTljpgxcUnUxGNSE.png",
+      variants: [
+        {
+          id: "standard",
+          title: "Standard Variant",
+          subtitle: "7.0h kWh Battery Pack",
+          description: "350km Range (IDC)",
+          priceAddition: 0,
+          includedText: "Included",
+        },
+      ],
+      colors: [
+        { id: "black", name: "Matte Black", value: "#1F2937" },
+        { id: "silver", name: "Silver Chrome", value: "#A3A3A3" },
+      ],
+      optionalComponents: [
+        {
+          id: "helmet",
+          title: "Helmet",
+          subtitle: "Protection",
+          required: true,
+          priceAddition: 0,
+          includedText: "Mandatory",
+        },
+      ],
     },
     {
       id: "intercity350",
@@ -69,6 +204,30 @@ export default function VehicleConfiguration(props) {
       price: "₹3.1 Lakhs",
       image:
         "https://framerusercontent.com/images/kGiQohfz1kTljpgxcUnUxGNSE.png",
+      variants: [
+        {
+          id: "standard",
+          title: "Standard Variant",
+          subtitle: "6.8h kWh Battery Pack",
+          description: "320km Range (IDC)",
+          priceAddition: 0,
+          includedText: "Included",
+        },
+      ],
+      colors: [
+        { id: "black", name: "Matte Black", value: "#1F2937" },
+        { id: "gray", name: "Slate Gray", value: "#4B5563" },
+      ],
+      optionalComponents: [
+        {
+          id: "helmet",
+          title: "Helmet",
+          subtitle: "Protection",
+          required: true,
+          priceAddition: 0,
+          includedText: "Mandatory",
+        },
+      ],
     },
     {
       id: "hermes75",
@@ -76,40 +235,93 @@ export default function VehicleConfiguration(props) {
       price: "₹1.6 Lakhs",
       image:
         "https://framerusercontent.com/images/kGiQohfz1kTljpgxcUnUxGNSE.png",
+      variants: [
+        {
+          id: "standard",
+          title: "Standard Variant",
+          subtitle: "4.2h kWh Battery Pack",
+          description: "180km Range (IDC)",
+          priceAddition: 0,
+          includedText: "Included",
+        },
+      ],
+      colors: [
+        { id: "white", name: "Pearl White", value: "#FFFFFF" },
+        { id: "black", name: "Matte Black", value: "#1F2937" },
+        { id: "red", name: "Glossy Red", value: "#9B1C1C" },
+      ],
+      optionalComponents: [
+        {
+          id: "helmet",
+          title: "Helmet",
+          subtitle: "Protection",
+          required: true,
+          priceAddition: 0,
+          includedText: "Mandatory",
+        },
+      ],
     },
-  ];
+  ]);
 
-  const variants = [
-    {
-      id: "standard",
-      title: "Standard Variant",
-      subtitle: "5.1h kWh Battery Pack",
-      description: "250km Range (IDC)",
-      price: "",
-      includedText: "Included",
-    },
-    {
-      id: "long-range",
-      title: "Long Range Variant",
-      subtitle: "5.1h kWh Battery Pack",
-      description: "325km Range (IDC)",
-      price: "₹15,500",
-      includedText: "",
-    },
-  ];
+  // Get the currently selected vehicle object
+  const selectedVehicle = vehicles.find((v) => v.id === vehicleValue) || null;
 
-  const colors = [
-    { id: "red", name: "Glossy Red", value: "#9B1C1C" },
-    { id: "black", name: "Matte Black", value: "#1F2937" },
-  ];
-
-  // Update local state when props change
+  // Fetch data on mount if endpoint provided
   useEffect(() => {
-    setLocationValue(location);
-    setVehicleValue(selectedVehicle);
-    setVariantValue(selectedVariant);
-    setColorValue(selectedColor);
-  }, [location, selectedVehicle, selectedVariant, selectedColor]);
+    if (!dataEndpoint) return;
+
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(dataEndpoint);
+
+        if (!response.ok) {
+          throw new Error(`Network response was not ok: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data && data.vehicles) {
+          setVehicles(data.vehicles);
+        }
+      } catch (err) {
+        console.error("Error fetching vehicle data:", err);
+        setError("Failed to load vehicle data. Using default data instead.");
+        // Continue with default data
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [dataEndpoint]);
+
+  // Set default selection when vehicles load or change
+  useEffect(() => {
+    // If no vehicle is selected but we have vehicles, select the first one
+    if (!vehicleValue && vehicles.length > 0) {
+      setVehicleValue(vehicles[0].id);
+
+      // Also notify parent component
+      if (onVehicleSelect) {
+        onVehicleSelect(vehicles[0].id);
+      }
+    }
+  }, [vehicles, vehicleValue]);
+
+  // Update form data on any field change
+  useEffect(() => {
+    if (onFormDataChange) {
+      onFormDataChange({
+        location: locationValue,
+        vehicle: vehicleValue,
+        variant: variantValue,
+        color: colorValue,
+        components: componentValues,
+      });
+    }
+  }, [locationValue, vehicleValue, variantValue, colorValue, componentValues]);
 
   // Handle location input change
   const handleLocationChange = (value) => {
@@ -120,6 +332,12 @@ export default function VehicleConfiguration(props) {
   // Handle vehicle selection
   const handleVehicleSelect = (id) => {
     setVehicleValue(id);
+
+    // Reset dependent selections when vehicle changes
+    setVariantValue("");
+    setColorValue("");
+    setComponentValues([]);
+
     if (onVehicleSelect) onVehicleSelect(id);
   };
 
@@ -135,8 +353,33 @@ export default function VehicleConfiguration(props) {
     if (onColorSelect) onColorSelect(id);
   };
 
+  // Handle component selection
+  const handleComponentSelect = (id, isSelected) => {
+    // Get the component item
+    const componentItem = selectedVehicle?.optionalComponents.find(
+      (item) => item.id === id,
+    );
+
+    // If required, don't allow deselection
+    if (componentItem && componentItem.required && !isSelected) {
+      return;
+    }
+
+    let newComponents;
+
+    if (isSelected) {
+      newComponents = [...componentValues, id];
+    } else {
+      newComponents = componentValues.filter((cId) => cId !== id);
+    }
+
+    setComponentValues(newComponents);
+    if (onComponentSelect) onComponentSelect(newComponents);
+  };
+
   // Handle next button click
   const handleNext = () => {
+    // Additional validation could be done here
     if (onNextStep) onNextStep();
   };
 
@@ -168,232 +411,163 @@ export default function VehicleConfiguration(props) {
   const isNextEnabled =
     locationValue && vehicleValue && variantValue && colorValue;
 
-  // Input field styles
-  const inputFieldStyle = {
-    padding: tokens.spacing[4],
-    borderRadius: tokens.borderRadius.DEFAULT,
-    border: `1px solid ${borderColor}`,
-    width: "100%",
-    boxSizing: "border-box",
-    fontSize: tokens.fontSize.base,
-  };
+  // Ensure required components are selected
+  useEffect(() => {
+    if (selectedVehicle && selectedVehicle.optionalComponents) {
+      const requiredComponents = selectedVehicle.optionalComponents
+        .filter((comp) => comp.required)
+        .map((comp) => comp.id);
 
-  // Card styles for vehicles
-  const vehicleCardStyle = (isSelected) => ({
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: tokens.spacing[5],
-    borderRadius: tokens.borderRadius.lg,
-    border: `1px solid ${isSelected ? primaryColor : borderColor}`,
-    backgroundColor: "white",
-    cursor: "pointer",
-    marginBottom: tokens.spacing[4],
-    boxShadow: isSelected ? `0 0 0 1px ${primaryColor}` : "none",
-  });
+      // Add any missing required components
+      if (requiredComponents.length > 0) {
+        const newComponents = [...componentValues];
+        let changed = false;
 
-  // Card styles for variants
-  const variantCardStyle = (isSelected) => ({
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: tokens.spacing[5],
-    borderRadius: tokens.borderRadius.lg,
-    border: `1px solid ${isSelected ? primaryColor : borderColor}`,
-    backgroundColor: "white",
-    cursor: "pointer",
-    marginBottom: tokens.spacing[4],
-    boxShadow: isSelected ? `0 0 0 1px ${primaryColor}` : "none",
-  });
+        requiredComponents.forEach((compId) => {
+          if (!componentValues.includes(compId)) {
+            newComponents.push(compId);
+            changed = true;
+          }
+        });
 
-  // Button style
-  const buttonStyle = {
-    backgroundColor: primaryColor,
-    color: "white",
-    padding: `${tokens.spacing[4]} ${tokens.spacing[6]}`,
-    borderRadius: tokens.borderRadius.DEFAULT,
-    border: "none",
-    cursor: isNextEnabled ? "pointer" : "not-allowed",
-    opacity: isNextEnabled ? 1 : 0.7,
-    width: "100%",
-    fontSize: tokens.fontSize.base,
-    fontWeight: tokens.fontWeight.medium,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  };
+        if (changed) {
+          setComponentValues(newComponents);
+        }
+      }
+    }
+  }, [selectedVehicle, componentValues]);
 
-  // Color selector styles
-  const colorContainerStyle = {
-    display: "flex",
-    gap: tokens.spacing[4],
-  };
-
-  const colorItemStyle = (color, isSelected) => ({
-    width: 50,
-    height: 50,
-    borderRadius: "50%",
-    backgroundColor: color,
-    cursor: "pointer",
-    border: isSelected
-      ? `2px solid ${primaryColor}`
-      : `1px solid ${borderColor}`,
-    boxShadow: isSelected ? `0 0 0 2px ${tokens.colors.blue[200]}` : "none",
-  });
+  // Display error notice if there was a loading error
+  const ErrorNotice = () => (
+    <div
+      style={{
+        padding: tokens.spacing[4],
+        marginBottom: tokens.spacing[4],
+        backgroundColor: tokens.colors.red[50],
+        color: tokens.colors.red[700],
+        borderRadius: tokens.borderRadius.DEFAULT,
+        fontSize: tokens.fontSize.sm,
+      }}
+    >
+      {error}
+    </div>
+  );
 
   return (
     <div style={containerStyle} {...rest}>
+      {/* Error notice if needed */}
+      {error && <ErrorNotice />}
+
       {/* Location Section */}
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>Location</div>
-        <input
-          type="text"
+        <InputField
+          label=""
           placeholder="Area / Pincode"
           value={locationValue}
-          onChange={(e) => handleLocationChange(e.target.value)}
-          style={inputFieldStyle}
+          onChange={handleLocationChange}
+          error={errors.location || ""}
+          required={true}
+          borderColor={borderColor}
+          focusBorderColor={primaryColor}
+          errorBorderColor={tokens.colors.red[600]}
         />
-        {errors.location && (
-          <div
-            style={{
-              color: tokens.colors.red[600],
-              fontSize: tokens.fontSize.xs,
-              marginTop: tokens.spacing[1],
-            }}
-          >
-            {errors.location}
-          </div>
-        )}
       </div>
 
       {/* Vehicle Selection Section */}
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>Choose your Vehicle</div>
         {vehicles.map((vehicle) => (
-          <div
+          <VehicleCards
             key={vehicle.id}
-            style={vehicleCardStyle(vehicle.id === vehicleValue)}
+            vehicleName={vehicle.name}
+            vehicleImage={vehicle.image}
+            price={vehicle.price}
+            isSelected={vehicle.id === vehicleValue}
             onClick={() => handleVehicleSelect(vehicle.id)}
-          >
-            <img
-              src={vehicle.image}
-              alt={vehicle.name}
-              style={{
-                width: 80,
-                height: 50,
-                objectFit: "contain",
-              }}
-            />
-            <div style={{ textAlign: "right" }}>
-              <div
-                style={{
-                  fontSize: tokens.fontSize.lg,
-                  fontWeight: tokens.fontWeight.bold,
-                  marginBottom: tokens.spacing[1],
-                }}
-              >
-                {vehicle.name}
-              </div>
-              <div
-                style={{
-                  fontSize: tokens.fontSize.sm,
-                  color: tokens.colors.neutral[500],
-                }}
-              >
-                {vehicle.price}
-              </div>
-            </div>
-          </div>
+            borderColor={borderColor}
+            selectedBorderColor={primaryColor}
+          />
         ))}
       </div>
 
-      {/* Variant Selection Section */}
-      <div style={sectionStyle}>
-        <div style={sectionTitleStyle}>Choose Variant</div>
-        {variants.map((variant) => (
-          <div
-            key={variant.id}
-            style={variantCardStyle(variant.id === variantValue)}
-            onClick={() => handleVariantSelect(variant.id)}
-          >
-            <div>
-              <div
-                style={{
-                  fontSize: tokens.fontSize.base,
-                  fontWeight: tokens.fontWeight.semibold,
-                  marginBottom: tokens.spacing[1],
-                }}
-              >
-                {variant.title}
-              </div>
-              <div
-                style={{
-                  fontSize: tokens.fontSize.sm,
-                  color: tokens.colors.neutral[500],
-                  marginBottom: tokens.spacing[1],
-                }}
-              >
-                {variant.subtitle}
-              </div>
-              <div
-                style={{
-                  fontSize: tokens.fontSize.sm,
-                  color: tokens.colors.neutral[500],
-                }}
-              >
-                {variant.description}
-              </div>
-            </div>
-            <div
-              style={{
-                fontWeight: tokens.fontWeight.semibold,
-                fontSize: tokens.fontSize.sm,
-              }}
-            >
-              {variant.price ? `+ ${variant.price}` : variant.includedText}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Color Selection Section */}
-      <div style={sectionStyle}>
-        <div style={sectionTitleStyle}>Choose Color</div>
-        <div style={colorContainerStyle}>
-          {colors.map((color) => (
-            <div
-              key={color.id}
-              style={colorItemStyle(color.value, color.id === colorValue)}
-              onClick={() => handleColorSelect(color.id)}
-              title={color.name}
+      {/* Variant Selection Section - only show if a vehicle is selected */}
+      {selectedVehicle && (
+        <div style={sectionStyle}>
+          <div style={sectionTitleStyle}>Choose Variant</div>
+          {selectedVehicle.variants.map((variant) => (
+            <VariantCard
+              key={variant.id}
+              title={variant.title}
+              subtitle={variant.subtitle}
+              description={variant.description}
+              price={
+                variant.priceAddition > 0
+                  ? `₹${variant.priceAddition.toLocaleString("en-IN")}`
+                  : ""
+              }
+              includedText={variant.includedText}
+              isSelected={variant.id === variantValue}
+              onClick={() => handleVariantSelect(variant.id)}
+              borderColor={borderColor}
+              selectedBorderColor={primaryColor}
             />
           ))}
         </div>
-      </div>
+      )}
 
-      {/* Optional Component Section */}
-      <div style={sectionStyle}>
-        <div style={sectionTitleStyle}>Optional Component</div>
-        <div
-          style={{
-            fontSize: tokens.fontSize.sm,
-            color: tokens.colors.neutral[500],
-          }}
-        >
-          (Optional components will be added here)
+      {/* Color Selection Section - only show if a vehicle is selected */}
+      {selectedVehicle && (
+        <div style={sectionStyle}>
+          <div style={sectionTitleStyle}>Choose Color</div>
+          <ColorSelector
+            colors={selectedVehicle.colors}
+            selectedColorId={colorValue}
+            onChange={handleColorSelect}
+          />
         </div>
-      </div>
+      )}
+
+      {/* Optional Components Section - only show if a vehicle is selected */}
+      {selectedVehicle && selectedVehicle.optionalComponents && (
+        <div style={sectionStyle}>
+          <div style={sectionTitleStyle}>Optional Component</div>
+          {selectedVehicle.optionalComponents.map((component) => (
+            <VariantCard
+              key={component.id}
+              title={component.title}
+              subtitle={component.subtitle}
+              price={
+                component.priceAddition > 0
+                  ? `₹${component.priceAddition.toLocaleString("en-IN")}`
+                  : ""
+              }
+              includedText={component.required ? "Mandatory" : ""}
+              isSelected={componentValues.includes(component.id)}
+              onClick={() => {
+                handleComponentSelect(
+                  component.id,
+                  !componentValues.includes(component.id),
+                );
+              }}
+              borderColor={borderColor}
+              selectedBorderColor={primaryColor}
+              style={{ opacity: component.required ? 0.8 : 1 }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Next Button */}
       <div style={buttonContainerStyle}>
-        <button
-          style={buttonStyle}
+        <Button
+          text="Select Insurance"
+          rightIcon={true}
           onClick={handleNext}
           disabled={!isNextEnabled}
-        >
-          <span>Select Insurance</span>
-          <span>→</span>
-        </button>
+          primaryColor={primaryColor}
+          variant="primary"
+        />
       </div>
     </div>
   );
@@ -415,24 +589,40 @@ addPropertyControls(VehicleConfiguration, {
     title: "Border Color",
     defaultValue: tokens.colors.neutral[200],
   },
+  dataEndpoint: {
+    type: ControlType.String,
+    title: "Data Endpoint",
+    defaultValue: "",
+  },
   location: {
     type: ControlType.String,
     title: "Location",
     defaultValue: "",
   },
-  selectedVehicle: {
+  selectedVehicleId: {
     type: ControlType.String,
     title: "Selected Vehicle",
     defaultValue: "",
   },
-  selectedVariant: {
+  selectedVariantId: {
     type: ControlType.String,
     title: "Selected Variant",
     defaultValue: "",
   },
-  selectedColor: {
+  selectedColorId: {
     type: ControlType.String,
     title: "Selected Color",
     defaultValue: "",
+  },
+  selectedComponents: {
+    type: ControlType.Array,
+    title: "Selected Components",
+    control: { type: ControlType.String },
+    defaultValue: [],
+  },
+  errors: {
+    type: ControlType.Object,
+    title: "Errors",
+    defaultValue: {},
   },
 });
