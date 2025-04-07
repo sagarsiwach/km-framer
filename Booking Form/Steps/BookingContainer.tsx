@@ -1,3 +1,6 @@
+// BookingContainer.tsx
+// Updated to coordinate API data between components
+
 import { addPropertyControls, ControlType } from "framer";
 import { useState, useEffect } from "react";
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
@@ -23,8 +26,7 @@ export default function BookingContainer(props) {
     borderColor = tokens.colors.neutral[200],
 
     // API endpoints
-    vehicleDataEndpoint = "",
-    insuranceDataEndpoint = "",
+    apiBaseUrl = "https://automation.unipack.asia/webhook/kabiramobility/booking/api/vehicle-data/",
 
     // Customization
     logoColor = "#404040",
@@ -42,10 +44,14 @@ export default function BookingContainer(props) {
   // State management
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [showPaymentOverlay, setShowPaymentOverlay] = useState(false);
+  const [vehicleData, setVehicleData] = useState([]);
+  const [pricingData, setPricingData] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState(null);
   const [formData, setFormData] = useState({
     // Vehicle Configuration data
     location: "",
-    selectedVehicle: "km3000", // Default for testing
+    selectedVehicle: "",
     selectedVariant: "",
     selectedColor: "",
     optionalComponents: [],
@@ -70,12 +76,81 @@ export default function BookingContainer(props) {
     state: "",
     pincode: "",
 
-    // Vehicle summary data (static for now)
-    totalPrice: 202236,
-    vehicleName: "KM3000",
-    vehicleCode: "B18-0001",
+    // Vehicle summary data
+    totalPrice: 0,
+    vehicleName: "",
+    vehicleCode: "",
   });
   const [errors, setErrors] = useState({});
+
+  // Fetch initial vehicle data
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      setLoading(true);
+      setApiError(null);
+
+      try {
+        // Fetch vehicle data
+        const vehicleResponse = await fetch(`${apiBaseUrl}?type=all`);
+        if (!vehicleResponse.ok) {
+          throw new Error(
+            `Network response was not ok: ${vehicleResponse.status}`,
+          );
+        }
+        const vehicleResult = await vehicleResponse.json();
+
+        // Fetch pricing data
+        const pricingResponse = await fetch(`${apiBaseUrl}?type=pricing`);
+        if (!pricingResponse.ok) {
+          throw new Error(
+            `Network response was not ok: ${pricingResponse.status}`,
+          );
+        }
+        const pricingResult = await pricingResponse.json();
+
+        // Update state if successful
+        if (vehicleResult.success && vehicleResult.data) {
+          setVehicleData(vehicleResult.data);
+
+          // Initialize default selected vehicle if available
+          if (vehicleResult.data.length > 0) {
+            updateFormData("vehicleConfig", {
+              selectedVehicle: vehicleResult.data[0].id,
+              vehicleName: vehicleResult.data[0].name,
+              vehicleCode: vehicleResult.data[0].id,
+            });
+          }
+        }
+
+        if (pricingResult.success && pricingResult.data) {
+          setPricingData(pricingResult.data);
+
+          // Initialize price if available for the first vehicle
+          if (vehicleResult.data.length > 0 && pricingResult.data.summary) {
+            const firstVehicleId = vehicleResult.data[0].id;
+            const vehiclePricing = pricingResult.data.summary.find(
+              (p) => p.modelCode === firstVehicleId,
+            );
+
+            if (vehiclePricing) {
+              updateFormData("pricing", {
+                totalPrice: vehiclePricing.minPrice || 0,
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching initial data:", err);
+        setApiError(
+          "Failed to load vehicle data. Please try refreshing the page.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, [apiBaseUrl]);
 
   // Handle step transitions
   const handleNextStep = () => {
@@ -103,7 +178,7 @@ export default function BookingContainer(props) {
 
   const handleStartOver = () => {
     setCurrentStep(1);
-    // Optionally reset form data here
+    // Don't reset form data to preserve user's selections
   };
 
   // Handle form field updates
@@ -124,14 +199,34 @@ export default function BookingContainer(props) {
     setErrors(clearedErrors);
   };
 
+  // Get vehicle name from ID
+  const getVehicleName = (vehicleId) => {
+    const vehicle = vehicleData.find((v) => v.id === vehicleId);
+    return vehicle ? vehicle.name : "";
+  };
+
+  // Get vehicle price from ID
+  const getVehiclePrice = (vehicleId) => {
+    if (!pricingData || !pricingData.summary) return 0;
+
+    const pricing = pricingData.summary.find((p) => p.modelCode === vehicleId);
+    return pricing ? pricing.minPrice : 0;
+  };
+
   // Methods for each step
   const handleVehicleConfigurationUpdate = (data) => {
+    const vehicleName = getVehicleName(data.vehicle);
+    const totalPrice = getVehiclePrice(data.vehicle);
+
     updateFormData("vehicleConfig", {
       location: data.location,
       selectedVehicle: data.vehicle,
       selectedVariant: data.variant,
       selectedColor: data.color,
       optionalComponents: data.components || [],
+      vehicleName,
+      vehicleCode: data.vehicle,
+      totalPrice,
     });
   };
 
@@ -160,6 +255,11 @@ export default function BookingContainer(props) {
   const handlePaymentSuccess = () => {
     setShowPaymentOverlay(false);
     setCurrentStep(7); // Success state
+
+    // In a real app, you would submit the order to your backend here
+    if (onFormSubmit) {
+      onFormSubmit(formData);
+    }
   };
 
   const handlePaymentFailure = () => {
@@ -293,6 +393,68 @@ export default function BookingContainer(props) {
     zIndex: 2,
   };
 
+  const errorMessageStyle = {
+    padding: tokens.spacing[4],
+    marginBottom: tokens.spacing[4],
+    backgroundColor: tokens.colors.red[50],
+    color: tokens.colors.red[700],
+    borderRadius: tokens.borderRadius.DEFAULT,
+    fontSize: tokens.fontSize.sm,
+  };
+
+  // Show loading or error state
+  if (loading && currentStep === 1) {
+    return (
+      <div style={containerStyle} {...rest}>
+        <div
+          style={{
+            ...formContainerStyle,
+            flex: 1,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <div>Loading vehicle information...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (apiError && currentStep === 1) {
+    return (
+      <div style={containerStyle} {...rest}>
+        <div style={{ ...formContainerStyle, flex: 1 }}>
+          <div style={errorMessageStyle}>
+            {apiError}
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                marginTop: tokens.spacing[4],
+                padding: `${tokens.spacing[2]} ${tokens.spacing[4]}`,
+                backgroundColor: primaryColor,
+                color: "white",
+                border: "none",
+                borderRadius: tokens.borderRadius.DEFAULT,
+                cursor: "pointer",
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Get actual product image for the selected vehicle
+  const getProductImage = () => {
+    if (!formData.selectedVehicle) return productImage;
+
+    const vehicle = vehicleData.find((v) => v.id === formData.selectedVehicle);
+    return vehicle && vehicle.image ? vehicle.image : productImage;
+  };
+
   // Render the appropriate step content
   const renderStepContent = () => {
     switch (currentStep) {
@@ -310,7 +472,7 @@ export default function BookingContainer(props) {
             primaryColor={primaryColor}
             borderColor={borderColor}
             backgroundColor={backgroundColor}
-            dataEndpoint={vehicleDataEndpoint}
+            dataEndpoint={`${apiBaseUrl}?type=all`}
           />
         );
       case 2:
@@ -326,7 +488,7 @@ export default function BookingContainer(props) {
             primaryColor={primaryColor}
             borderColor={borderColor}
             backgroundColor={backgroundColor}
-            dataEndpoint={insuranceDataEndpoint}
+            dataEndpoint={`${apiBaseUrl}?type=insurance`}
           />
         );
       case 3:
@@ -335,12 +497,16 @@ export default function BookingContainer(props) {
             selectedPaymentMethod={formData.paymentMethod}
             loanTenure={formData.loanTenure}
             downPaymentAmount={formData.downPaymentAmount}
+            selectedVehicleId={formData.selectedVehicle}
+            selectedVariantId={formData.selectedVariant}
+            selectedLocation={formData.location}
             onFormDataChange={handleFinancingOptionsUpdate}
             onPreviousStep={handlePreviousStep}
             onNextStep={handleNextStep}
             primaryColor={primaryColor}
             borderColor={borderColor}
             backgroundColor={backgroundColor}
+            dataEndpoint={`${apiBaseUrl}?type=pricing`}
           />
         );
       case 4:
@@ -382,7 +548,7 @@ export default function BookingContainer(props) {
       case 7:
         return (
           <SuccessState
-            bookingId="KM-9876543"
+            bookingId={`KM-${Math.floor(Math.random() * 9000000) + 1000000}`}
             customerName={formData.fullName || "Customer"}
             vehicleName={formData.vehicleName}
             estimatedDelivery="15 May, 2025"
@@ -408,6 +574,11 @@ export default function BookingContainer(props) {
     }
   };
 
+  // Format price for display
+  const formatPrice = (price) => {
+    return price ? `₹${price.toLocaleString("en-IN")}` : "";
+  };
+
   // Display vehicle summary for the selected vehicle (if any)
   const renderVehicleSummary = () => {
     // Don't show summary in success/failure screens
@@ -416,8 +587,6 @@ export default function BookingContainer(props) {
     // Only show summary if a vehicle is selected
     if (!formData.selectedVehicle) return null;
 
-    // This would be dynamically determined based on selected vehicle and options
-    // For now using placeholder data
     return (
       <div
         style={{
@@ -485,7 +654,7 @@ export default function BookingContainer(props) {
                 fontWeight: tokens.fontWeight.bold,
               }}
             >
-              ₹{formData.totalPrice.toLocaleString("en-IN")}
+              {formatPrice(formData.totalPrice)}
             </div>
             <div
               style={{
@@ -518,7 +687,7 @@ export default function BookingContainer(props) {
         </div>
         <div style={watermarkStyle}>0</div>
         <img
-          src={productImage}
+          src={getProductImage()}
           alt="Kabira Mobility Bike"
           style={{
             width: "100%",
@@ -546,7 +715,7 @@ export default function BookingContainer(props) {
       {/* Payment overlay (shown conditionally) */}
       {showPaymentOverlay && (
         <PaymentOverlay
-          totalAmount={`₹${formData.totalPrice.toLocaleString("en-IN")}`}
+          totalAmount={formatPrice(formData.totalPrice)}
           onPaymentSuccess={handlePaymentSuccess}
           onPaymentFailure={handlePaymentFailure}
           onCancel={handlePaymentCancel}
@@ -581,6 +750,13 @@ addPropertyControls(BookingContainer, {
     title: "Border Color",
     defaultValue: tokens.colors.neutral[200],
   },
+  apiBaseUrl: {
+    type: ControlType.String,
+    title: "API Base URL",
+    defaultValue:
+      "https://automation.unipack.asia/webhook/kabiramobility/booking/api/vehicle-data",
+    description: "Base URL for all API endpoints",
+  },
   logoColor: {
     type: ControlType.Color,
     title: "Logo Color",
@@ -593,16 +769,6 @@ addPropertyControls(BookingContainer, {
   },
   productImage: {
     type: ControlType.Image,
-    title: "Product Image",
-  },
-  vehicleDataEndpoint: {
-    type: ControlType.String,
-    title: "Vehicle Data Endpoint",
-    defaultValue: "",
-  },
-  insuranceDataEndpoint: {
-    type: ControlType.String,
-    title: "Insurance Data Endpoint",
-    defaultValue: "",
+    title: "Default Product Image",
   },
 });

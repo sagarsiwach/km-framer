@@ -1,3 +1,6 @@
+// FinancingOptions.tsx
+// Updated to use actual pricing data
+
 import { addPropertyControls, ControlType } from "framer";
 import { useState, useEffect } from "react";
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
@@ -15,6 +18,14 @@ export default function FinancingOptions(props) {
     primaryColor = tokens.colors.blue[600],
     backgroundColor = tokens.colors.neutral[50],
     borderColor = tokens.colors.neutral[200],
+
+    // API endpoint for data
+    dataEndpoint = "https://your-n8n-endpoint.com/vehicle-data?type=pricing",
+
+    // Vehicle data
+    selectedVehicleId = "",
+    selectedVariantId = "",
+    selectedLocation = "",
 
     // Initial values
     selectedPaymentMethod = "",
@@ -66,6 +77,82 @@ export default function FinancingOptions(props) {
   const [tenure, setTenure] = useState(loanTenure);
   const [downPayment, setDownPayment] = useState(downPaymentAmount);
   const [emiAmount, setEmiAmount] = useState(499);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [pricingData, setPricingData] = useState(null);
+  const [vehiclePrice, setVehiclePrice] = useState(190236);
+  const [insurancePrice, setInsurancePrice] = useState(12000);
+  const [totalPrice, setTotalPrice] = useState(202236);
+
+  // Fetch pricing data based on selected vehicle and location
+  useEffect(() => {
+    if (!selectedVehicleId) return;
+
+    const fetchPricingData = async () => {
+      setLoading(true);
+      setError(null);
+
+      let url = dataEndpoint;
+
+      // Add pincode if available
+      if (selectedLocation && selectedLocation.match(/^\d{6}$/)) {
+        url = `${url}&pincode=${selectedLocation}`;
+      }
+
+      try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`Network response was not ok: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result && result.success && result.data) {
+          setPricingData(result.data);
+
+          // Find the price for the selected vehicle
+          let price = 0;
+
+          if (selectedLocation && selectedLocation.match(/^\d{6}$/)) {
+            // If we have pincode-specific pricing
+            const vehiclePricing = result.data.find(
+              (item) => item.modelCode === selectedVehicleId,
+            );
+
+            if (vehiclePricing) {
+              price = vehiclePricing.price || 0;
+            }
+          } else {
+            // Use summary pricing
+            const summaryPricing = result.data.summary?.find(
+              (item) => item.modelCode === selectedVehicleId,
+            );
+
+            if (summaryPricing) {
+              price = summaryPricing.minPrice || 0;
+            }
+          }
+
+          // Update price state
+          if (price > 0) {
+            setVehiclePrice(price);
+            setTotalPrice(price + insurancePrice);
+
+            // Calculate EMI
+            calculateEmi(price, tenure);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching pricing data:", err);
+        setError("Failed to load pricing data. Using default values.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPricingData();
+  }, [dataEndpoint, selectedVehicleId, selectedLocation]);
 
   // Update form data on any field change
   useEffect(() => {
@@ -78,6 +165,15 @@ export default function FinancingOptions(props) {
     }
   }, [paymentMethod, tenure, downPayment]);
 
+  // Calculate EMI amount
+  const calculateEmi = (price, tenureMonths) => {
+    // Simple EMI calculation
+    // In reality, this would use a more complex formula with interest rates
+    const effectivePrice = price - downPayment;
+    const emi = Math.round(effectivePrice / tenureMonths);
+    setEmiAmount(emi);
+  };
+
   // Handle payment method selection
   const handlePaymentMethodSelect = (id) => {
     setPaymentMethod(id);
@@ -87,15 +183,21 @@ export default function FinancingOptions(props) {
   // Handle loan tenure change
   const handleTenureChange = (months) => {
     setTenure(months);
-    // Demo calculation - in production would use a more complex formula
-    setEmiAmount(Math.round(190236 / months));
+    calculateEmi(vehiclePrice, months);
     if (onLoanTenureChange) onLoanTenureChange(months);
   };
 
   // Handle down payment change
   const handleDownPaymentChange = (value) => {
-    setDownPayment(parseInt(value) || 0);
-    if (onDownPaymentChange) onDownPaymentChange(parseInt(value) || 0);
+    const paymentValue = parseInt(value) || 0;
+    setDownPayment(paymentValue);
+    calculateEmi(vehiclePrice, tenure);
+    if (onDownPaymentChange) onDownPaymentChange(paymentValue);
+  };
+
+  // Format price for display
+  const formatPrice = (price) => {
+    return `₹${price.toLocaleString("en-IN")}`;
   };
 
   // Styling
@@ -156,6 +258,22 @@ export default function FinancingOptions(props) {
 
   return (
     <div style={containerStyle} {...rest}>
+      {/* Error display if needed */}
+      {error && (
+        <div
+          style={{
+            padding: tokens.spacing[3],
+            marginBottom: tokens.spacing[4],
+            backgroundColor: tokens.colors.red[50],
+            color: tokens.colors.red[700],
+            borderRadius: tokens.borderRadius.DEFAULT,
+            fontSize: tokens.fontSize.sm,
+          }}
+        >
+          {error}
+        </div>
+      )}
+
       {/* Price Summary */}
       <div style={priceBoxStyle}>
         <div style={flexBetweenStyle}>
@@ -174,7 +292,7 @@ export default function FinancingOptions(props) {
                 fontWeight: tokens.fontWeight.bold,
               }}
             >
-              ₹1,90,236
+              {formatPrice(vehiclePrice)}
             </div>
           </div>
           <div>
@@ -186,7 +304,9 @@ export default function FinancingOptions(props) {
             >
               Insurance
             </div>
-            <div style={{ fontSize: tokens.fontSize.base }}>₹12,000</div>
+            <div style={{ fontSize: tokens.fontSize.base }}>
+              {formatPrice(insurancePrice)}
+            </div>
           </div>
           <div>
             <div
@@ -197,7 +317,9 @@ export default function FinancingOptions(props) {
             >
               Total
             </div>
-            <div style={{ fontSize: tokens.fontSize.base }}>₹2,02,236</div>
+            <div style={{ fontSize: tokens.fontSize.base }}>
+              {formatPrice(totalPrice)}
+            </div>
           </div>
         </div>
       </div>
@@ -338,11 +460,32 @@ addPropertyControls(FinancingOptions, {
     title: "Border Color",
     defaultValue: tokens.colors.neutral[200],
   },
+  dataEndpoint: {
+    type: ControlType.String,
+    title: "Pricing API Endpoint",
+    defaultValue: "https://your-n8n-endpoint.com/vehicle-data?type=pricing",
+  },
+  selectedVehicleId: {
+    type: ControlType.String,
+    title: "Selected Vehicle ID",
+    defaultValue: "",
+  },
+  selectedVariantId: {
+    type: ControlType.String,
+    title: "Selected Variant ID",
+    defaultValue: "",
+  },
+  selectedLocation: {
+    type: ControlType.String,
+    title: "Selected Location",
+    defaultValue: "",
+  },
   selectedPaymentMethod: {
     type: ControlType.String,
     title: "Payment Method",
     defaultValue: "full-payment",
   },
+  // Continue from previous FinancingOptions addPropertyControls
   loanTenure: {
     type: ControlType.Number,
     title: "Loan Tenure (months)",

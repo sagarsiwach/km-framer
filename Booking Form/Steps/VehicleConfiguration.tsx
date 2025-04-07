@@ -1,3 +1,6 @@
+// VehicleConfiguration.tsx
+// Updated to fetch real data from the API
+
 import { addPropertyControls, ControlType } from "framer";
 import { useState, useEffect } from "react";
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
@@ -19,7 +22,7 @@ export default function VehicleConfiguration(props) {
     borderColor = tokens.colors.neutral[200],
 
     // API endpoint for data
-    dataEndpoint = "",
+    dataEndpoint = "https://automation.unipack.asia/webhook/kabiramobility/booking/api/vehicle-data/?type=all",
 
     // Initial values
     location = "",
@@ -53,248 +56,64 @@ export default function VehicleConfiguration(props) {
   const [variantValue, setVariantValue] = useState(selectedVariantId);
   const [colorValue, setColorValue] = useState(selectedColorId);
   const [componentValues, setComponentValues] = useState(selectedComponents);
-
-  // Fallback vehicle data for when no endpoint is provided
-  const [vehicles, setVehicles] = useState([
-    {
-      id: "km3000",
-      name: "KM3000",
-      price: "₹1.9 Lakhs",
-      image:
-        "https://framerusercontent.com/images/kGiQohfz1kTljpgxcUnUxGNSE.png",
-      variants: [
-        {
-          id: "standard",
-          title: "Standard Variant",
-          subtitle: "5.1h kWh Battery Pack",
-          description: "250km Range (IDC)",
-          priceAddition: 0,
-          includedText: "Included",
-        },
-        {
-          id: "long-range",
-          title: "Long Range Variant",
-          subtitle: "5.1h kWh Battery Pack",
-          description: "325km Range (IDC)",
-          priceAddition: 15500,
-          includedText: "",
-        },
-      ],
-      colors: [
-        { id: "red", name: "Glossy Red", value: "#9B1C1C" },
-        { id: "black", name: "Matte Black", value: "#1F2937" },
-      ],
-      optionalComponents: [
-        {
-          id: "helmet",
-          title: "Helmet",
-          subtitle: "Protection",
-          required: true,
-          priceAddition: 0,
-          includedText: "Mandatory",
-        },
-        {
-          id: "saree-guard",
-          title: "Saree Guard",
-          subtitle: "Protection",
-          required: false,
-          priceAddition: 700,
-          includedText: "",
-        },
-        {
-          id: "smart-connectivity",
-          title: "Smart Connectivity Package",
-          subtitle: "GPS and App Integration",
-          required: false,
-          priceAddition: 7000,
-          includedText: "",
-        },
-        {
-          id: "off-road",
-          title: "Off-Road Package",
-          subtitle: "Fat Wheels + Mud Guards",
-          required: false,
-          priceAddition: 11999,
-          includedText: "",
-        },
-      ],
-    },
-    {
-      id: "km4000",
-      name: "KM4000",
-      price: "₹2.6 Lakhs",
-      image:
-        "https://framerusercontent.com/images/kGiQohfz1kTljpgxcUnUxGNSE.png",
-      variants: [
-        {
-          id: "standard",
-          title: "Standard Variant",
-          subtitle: "6.2h kWh Battery Pack",
-          description: "300km Range (IDC)",
-          priceAddition: 0,
-          includedText: "Included",
-        },
-        {
-          id: "long-range",
-          title: "Long Range Variant",
-          subtitle: "6.2h kWh Battery Pack",
-          description: "380km Range (IDC)",
-          priceAddition: 18500,
-          includedText: "",
-        },
-      ],
-      colors: [
-        { id: "red", name: "Glossy Red", value: "#9B1C1C" },
-        { id: "black", name: "Matte Black", value: "#1F2937" },
-        { id: "blue", name: "Ocean Blue", value: "#1E3A8A" },
-      ],
-      optionalComponents: [
-        {
-          id: "helmet",
-          title: "Helmet",
-          subtitle: "Protection",
-          required: true,
-          priceAddition: 0,
-          includedText: "Mandatory",
-        },
-        {
-          id: "saree-guard",
-          title: "Saree Guard",
-          subtitle: "Protection",
-          required: false,
-          priceAddition: 700,
-          includedText: "",
-        },
-      ],
-    },
-    {
-      id: "km5000",
-      name: "KM5000",
-      price: "₹3.2 Lakhs",
-      image:
-        "https://framerusercontent.com/images/kGiQohfz1kTljpgxcUnUxGNSE.png",
-      variants: [
-        {
-          id: "standard",
-          title: "Standard Variant",
-          subtitle: "7.0h kWh Battery Pack",
-          description: "350km Range (IDC)",
-          priceAddition: 0,
-          includedText: "Included",
-        },
-      ],
-      colors: [
-        { id: "black", name: "Matte Black", value: "#1F2937" },
-        { id: "silver", name: "Silver Chrome", value: "#A3A3A3" },
-      ],
-      optionalComponents: [
-        {
-          id: "helmet",
-          title: "Helmet",
-          subtitle: "Protection",
-          required: true,
-          priceAddition: 0,
-          includedText: "Mandatory",
-        },
-      ],
-    },
-    {
-      id: "intercity350",
-      name: "Intercity 350",
-      price: "₹3.1 Lakhs",
-      image:
-        "https://framerusercontent.com/images/kGiQohfz1kTljpgxcUnUxGNSE.png",
-      variants: [
-        {
-          id: "standard",
-          title: "Standard Variant",
-          subtitle: "6.8h kWh Battery Pack",
-          description: "320km Range (IDC)",
-          priceAddition: 0,
-          includedText: "Included",
-        },
-      ],
-      colors: [
-        { id: "black", name: "Matte Black", value: "#1F2937" },
-        { id: "gray", name: "Slate Gray", value: "#4B5563" },
-      ],
-      optionalComponents: [
-        {
-          id: "helmet",
-          title: "Helmet",
-          subtitle: "Protection",
-          required: true,
-          priceAddition: 0,
-          includedText: "Mandatory",
-        },
-      ],
-    },
-    {
-      id: "hermes75",
-      name: "Hermes 75",
-      price: "₹1.6 Lakhs",
-      image:
-        "https://framerusercontent.com/images/kGiQohfz1kTljpgxcUnUxGNSE.png",
-      variants: [
-        {
-          id: "standard",
-          title: "Standard Variant",
-          subtitle: "4.2h kWh Battery Pack",
-          description: "180km Range (IDC)",
-          priceAddition: 0,
-          includedText: "Included",
-        },
-      ],
-      colors: [
-        { id: "white", name: "Pearl White", value: "#FFFFFF" },
-        { id: "black", name: "Matte Black", value: "#1F2937" },
-        { id: "red", name: "Glossy Red", value: "#9B1C1C" },
-      ],
-      optionalComponents: [
-        {
-          id: "helmet",
-          title: "Helmet",
-          subtitle: "Protection",
-          required: true,
-          priceAddition: 0,
-          includedText: "Mandatory",
-        },
-      ],
-    },
-  ]);
+  const [vehicles, setVehicles] = useState([]);
+  const [pricingData, setPricingData] = useState({});
 
   // Get the currently selected vehicle object
   const selectedVehicle = vehicles.find((v) => v.id === vehicleValue) || null;
 
-  // Fetch data on mount if endpoint provided
+  // Fetch vehicle data on mount
   useEffect(() => {
-    if (!dataEndpoint) return;
-
-    const fetchData = async () => {
+    const fetchVehicleData = async () => {
       setLoading(true);
       setError(null);
 
       try {
+        // Fetch vehicle data
         const response = await fetch(dataEndpoint);
 
         if (!response.ok) {
           throw new Error(`Network response was not ok: ${response.status}`);
         }
 
-        const data = await response.json();
-        if (data && data.vehicles) {
-          setVehicles(data.vehicles);
+        const result = await response.json();
+
+        if (result && result.success && result.data) {
+          setVehicles(result.data);
+        } else {
+          throw new Error("Invalid data format received from API");
         }
       } catch (err) {
         console.error("Error fetching vehicle data:", err);
-        setError("Failed to load vehicle data. Using default data instead.");
-        // Continue with default data
+        setError("Failed to load vehicle data. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    // Fetch pricing data separately
+    const fetchPricingData = async () => {
+      try {
+        const response = await fetch(
+          `${dataEndpoint.split("?")[0]}?type=pricing`,
+        );
+
+        if (!response.ok) {
+          throw new Error(`Network response was not ok: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result && result.success && result.data) {
+          setPricingData(result.data);
+        }
+      } catch (err) {
+        console.error("Error fetching pricing data:", err);
+      }
+    };
+
+    fetchVehicleData();
+    fetchPricingData();
   }, [dataEndpoint]);
 
   // Set default selection when vehicles load or change
@@ -308,7 +127,23 @@ export default function VehicleConfiguration(props) {
         onVehicleSelect(vehicles[0].id);
       }
     }
-  }, [vehicles, vehicleValue]);
+
+    // If we have a vehicle selected but no variant, select the first variant
+    if (
+      vehicleValue &&
+      !variantValue &&
+      selectedVehicle?.variants?.length > 0
+    ) {
+      setVariantValue(selectedVehicle.variants[0].id);
+      if (onVariantSelect) onVariantSelect(selectedVehicle.variants[0].id);
+    }
+
+    // If we have a vehicle selected but no color, select the first color
+    if (vehicleValue && !colorValue && selectedVehicle?.colors?.length > 0) {
+      setColorValue(selectedVehicle.colors[0].id);
+      if (onColorSelect) onColorSelect(selectedVehicle.colors[0].id);
+    }
+  }, [vehicles, vehicleValue, selectedVehicle]);
 
   // Update form data on any field change
   useEffect(() => {
@@ -377,6 +212,18 @@ export default function VehicleConfiguration(props) {
     if (onComponentSelect) onComponentSelect(newComponents);
   };
 
+  // Get price for a vehicle
+  const getVehiclePrice = (vehicleId) => {
+    if (!pricingData || !pricingData.summary) return null;
+
+    // Extract model code from vehicle ID (assuming formats like B10, B20)
+    const modelCode = vehicleId;
+
+    // Find matching price
+    const pricing = pricingData.summary.find((p) => p.modelCode === modelCode);
+    return pricing ? pricing.formattedPrice : null;
+  };
+
   // Handle next button click
   const handleNext = () => {
     // Additional validation could be done here
@@ -437,27 +284,53 @@ export default function VehicleConfiguration(props) {
     }
   }, [selectedVehicle, componentValues]);
 
-  // Display error notice if there was a loading error
-  const ErrorNotice = () => (
-    <div
-      style={{
-        padding: tokens.spacing[4],
-        marginBottom: tokens.spacing[4],
-        backgroundColor: tokens.colors.red[50],
-        color: tokens.colors.red[700],
-        borderRadius: tokens.borderRadius.DEFAULT,
-        fontSize: tokens.fontSize.sm,
-      }}
-    >
-      {error}
-    </div>
-  );
+  // Loading state display
+  if (loading) {
+    return (
+      <div style={containerStyle}>
+        <div style={{ textAlign: "center", padding: tokens.spacing[8] }}>
+          Loading vehicle information...
+        </div>
+      </div>
+    );
+  }
+
+  // Error state display
+  if (error) {
+    return (
+      <div style={containerStyle}>
+        <div
+          style={{
+            padding: tokens.spacing[4],
+            marginBottom: tokens.spacing[4],
+            backgroundColor: tokens.colors.red[50],
+            color: tokens.colors.red[700],
+            borderRadius: tokens.borderRadius.DEFAULT,
+            fontSize: tokens.fontSize.sm,
+          }}
+        >
+          {error}
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              marginTop: tokens.spacing[4],
+              padding: `${tokens.spacing[2]} ${tokens.spacing[4]}`,
+              backgroundColor: primaryColor,
+              color: "white",
+              border: "none",
+              borderRadius: tokens.borderRadius.DEFAULT,
+              cursor: "pointer",
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={containerStyle} {...rest}>
-      {/* Error notice if needed */}
-      {error && <ErrorNotice />}
-
       {/* Location Section */}
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>Location</div>
@@ -482,7 +355,7 @@ export default function VehicleConfiguration(props) {
             key={vehicle.id}
             vehicleName={vehicle.name}
             vehicleImage={vehicle.image}
-            price={vehicle.price}
+            price={getVehiclePrice(vehicle.id) || vehicle.price}
             isSelected={vehicle.id === vehicleValue}
             onClick={() => handleVehicleSelect(vehicle.id)}
             borderColor={borderColor}
@@ -517,46 +390,55 @@ export default function VehicleConfiguration(props) {
       )}
 
       {/* Color Selection Section - only show if a vehicle is selected */}
-      {selectedVehicle && (
-        <div style={sectionStyle}>
-          <div style={sectionTitleStyle}>Choose Color</div>
-          <ColorSelector
-            colors={selectedVehicle.colors}
-            selectedColorId={colorValue}
-            onChange={handleColorSelect}
-          />
-        </div>
-      )}
+      {selectedVehicle &&
+        selectedVehicle.colors &&
+        selectedVehicle.colors.length > 0 && (
+          <div style={sectionStyle}>
+            <div style={sectionTitleStyle}>Choose Color</div>
+            <ColorSelector
+              colors={selectedVehicle.colors}
+              selectedColorId={colorValue}
+              onChange={handleColorSelect}
+            />
+          </div>
+        )}
 
       {/* Optional Components Section - only show if a vehicle is selected */}
-      {selectedVehicle && selectedVehicle.optionalComponents && (
-        <div style={sectionStyle}>
-          <div style={sectionTitleStyle}>Optional Component</div>
-          {selectedVehicle.optionalComponents.map((component) => (
-            <VariantCard
-              key={component.id}
-              title={component.title}
-              subtitle={component.subtitle}
-              price={
-                component.priceAddition > 0
-                  ? `₹${component.priceAddition.toLocaleString("en-IN")}`
-                  : ""
-              }
-              includedText={component.required ? "Mandatory" : ""}
-              isSelected={componentValues.includes(component.id)}
-              onClick={() => {
-                handleComponentSelect(
-                  component.id,
-                  !componentValues.includes(component.id),
-                );
-              }}
-              borderColor={borderColor}
-              selectedBorderColor={primaryColor}
-              style={{ opacity: component.required ? 0.8 : 1 }}
-            />
-          ))}
-        </div>
-      )}
+      {selectedVehicle &&
+        selectedVehicle.optionalComponents &&
+        selectedVehicle.optionalComponents.length > 0 && (
+          <div style={sectionStyle}>
+            <div style={sectionTitleStyle}>Optional Component</div>
+            {selectedVehicle.optionalComponents.map((component) => (
+              <VariantCard
+                key={component.id}
+                title={component.title}
+                subtitle={component.subtitle}
+                price={
+                  component.priceAddition > 0
+                    ? `₹${component.priceAddition.toLocaleString("en-IN")}`
+                    : ""
+                }
+                includedText={
+                  component.includedText ||
+                  (component.required ? "Mandatory" : "")
+                }
+                isSelected={componentValues.includes(component.id)}
+                onClick={() => {
+                  handleComponentSelect(
+                    component.id,
+                    !componentValues.includes(component.id),
+                  );
+                }}
+                borderColor={borderColor}
+                selectedBorderColor={primaryColor}
+                style={{
+                  opacity: component.required ? 0.8 : 1,
+                }}
+              />
+            ))}
+          </div>
+        )}
 
       {/* Next Button */}
       <div style={buttonContainerStyle}>
@@ -592,7 +474,7 @@ addPropertyControls(VehicleConfiguration, {
   dataEndpoint: {
     type: ControlType.String,
     title: "Data Endpoint",
-    defaultValue: "",
+    defaultValue: "https://your-n8n-endpoint.com/vehicle-data?type=all",
   },
   location: {
     type: ControlType.String,
