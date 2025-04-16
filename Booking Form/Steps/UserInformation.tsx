@@ -1,9 +1,9 @@
-import { addPropertyControls, ControlType } from "framer";
-import { useState, useEffect } from "react";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import Button from "https://framer.com/m/Button-SLtw.js";
-import InputField from "https://framer.com/m/InputField-d7w7.js";
-import PhoneInput from "https://framer.com/m/PhoneInput-bO2G.js";
+import { addPropertyControls, ControlType } from "framer"
+import { useState, useEffect } from "react"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import Button from "https://framer.com/m/Button-SLtw.js"
+import InputField from "https://framer.com/m/InputField-d7w7.js"
+import PhoneInput from "https://framer.com/m/PhoneInput-bO2G.js"
 
 /**
  * @framerSupportedLayoutWidth any
@@ -33,7 +33,7 @@ export default function UserInformation(props) {
     // Component styling
     style,
     ...rest
-  } = props;
+  } = props
 
   // Local state
   const [formData, setFormData] = useState({
@@ -44,101 +44,104 @@ export default function UserInformation(props) {
     city: city || "",
     state: state || "",
     pincode: pincode || "",
-  });
-  const [errors, setErrors] = useState({});
-  const [submitted, setSubmitted] = useState(false);
+  })
+  const [errors, setErrors] = useState({})
+  const [submitted, setSubmitted] = useState(false)
 
   // Update form data on any field change
   useEffect(() => {
     if (onFormDataChange) {
-      onFormDataChange(formData);
+      onFormDataChange(formData)
     }
-  }, [formData]);
+  }, [formData])
 
   // Handle input change
   const handleChange = (field, value) => {
     setFormData({
       ...formData,
       [field]: value,
-    });
+    })
 
     // Clear error for this field if any
     if (errors[field]) {
       setErrors({
         ...errors,
         [field]: null,
-      });
+      })
     }
-  };
+  }
 
   // Validate form
   const validateForm = () => {
-    let isValid = true;
-    const newErrors = {};
+    let isValid = true
+    const newErrors = {}
 
     // Full Name validation
     if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required";
-      isValid = false;
+      newErrors.fullName = "Full name is required"
+      isValid = false
     }
 
     // Email validation
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-      isValid = false;
+      newErrors.email = "Email is required"
+      isValid = false
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-      isValid = false;
+      newErrors.email = "Please enter a valid email address"
+      isValid = false
     }
 
     // Phone validation
     if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-      isValid = false;
-    } else if (formData.phone.length !== 10 || !/^\d+$/.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid 10-digit phone number";
-      isValid = false;
+      newErrors.phone = "Phone number is required"
+      isValid = false
+    } else if (
+      formData.phone.length !== 10 ||
+      !/^\d+$/.test(formData.phone)
+    ) {
+      newErrors.phone = "Please enter a valid 10-digit phone number"
+      isValid = false
     }
 
     // Address validation
     if (!formData.address.trim()) {
-      newErrors.address = "Address is required";
-      isValid = false;
+      newErrors.address = "Address is required"
+      isValid = false
     }
 
     // City validation
     if (!formData.city.trim()) {
-      newErrors.city = "City is required";
-      isValid = false;
+      newErrors.city = "City is required"
+      isValid = false
     }
 
     // State validation
     if (!formData.state.trim()) {
-      newErrors.state = "State is required";
-      isValid = false;
+      newErrors.state = "State is required"
+      isValid = false
     }
 
     // Pincode validation
     if (!formData.pincode.trim()) {
-      newErrors.pincode = "Pincode is required";
-      isValid = false;
+      newErrors.pincode = "Pincode is required"
+      isValid = false
     } else if (!/^\d{6}$/.test(formData.pincode)) {
-      newErrors.pincode = "Please enter a valid 6-digit pincode";
-      isValid = false;
+      newErrors.pincode = "Please enter a valid 6-digit pincode"
+      isValid = false
     }
 
-    setErrors(newErrors);
-    return isValid;
-  };
+    setErrors(newErrors)
+    return isValid
+  }
 
   // Handle next button click
   const handleNext = () => {
-    setSubmitted(true);
+    setSubmitted(true)
 
     if (validateForm()) {
-      if (onNextStep) onNextStep();
+      if (onNextStep) onNextStep()
     }
-  };
+  }
 
   // Styling
   const containerStyle = {
@@ -146,11 +149,11 @@ export default function UserInformation(props) {
     flexDirection: "column",
     width: "100%",
     ...style,
-  };
+  }
 
   const sectionStyle = {
     marginBottom: tokens.spacing[6],
-  };
+  }
 
   const sectionTitleStyle = {
     fontSize: tokens.fontSize.sm,
@@ -158,19 +161,19 @@ export default function UserInformation(props) {
     color: tokens.colors.neutral[600],
     textTransform: "uppercase",
     marginBottom: tokens.spacing[3],
-  };
+  }
 
   const rowStyle = {
     display: "flex",
     gap: tokens.spacing[4],
     marginBottom: tokens.spacing[4],
-  };
+  }
 
   const buttonContainerStyle = {
     display: "flex",
     gap: tokens.spacing[4],
     marginTop: tokens.spacing[8],
-  };
+  }
 
   return (
     <div style={containerStyle} {...rest}>
@@ -246,7 +249,9 @@ export default function UserInformation(props) {
               placeholder="Enter your state"
               value={formData.state}
               onChange={(value) => handleChange("state", value)}
-              error={submitted && errors.state ? errors.state : ""}
+              error={
+                submitted && errors.state ? errors.state : ""
+              }
               required={true}
               borderColor={borderColor}
               focusBorderColor={primaryColor}
@@ -275,9 +280,9 @@ export default function UserInformation(props) {
           marginBottom: tokens.spacing[6],
         }}
       >
-        By proceeding, you agree to our Terms of Service and Privacy Policy.
-        Your information will be used to process your booking and for
-        communication related to your purchase.
+        By proceeding, you agree to our Terms of Service and Privacy
+        Policy. Your information will be used to process your booking
+        and for communication related to your purchase.
       </div>
 
       {/* Navigation Buttons */}
@@ -298,7 +303,7 @@ export default function UserInformation(props) {
         />
       </div>
     </div>
-  );
+  )
 }
 
 addPropertyControls(UserInformation, {
@@ -352,4 +357,4 @@ addPropertyControls(UserInformation, {
     title: "Pincode",
     defaultValue: "",
   },
-});
+})

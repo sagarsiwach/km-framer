@@ -1,8 +1,9 @@
 // LocationSearch.tsx
-import React, { useRef, useState } from "react"
+import React, { useRef, useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { createPortal } from "react-dom"
 // Assuming tokens are correctly imported - replace with actual path if needed
-import tokens from "https://framer.com/m/designTokens-42aq.js"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 // --- Helper Function to Format Location (Unchanged from previous version) ---
 const formatLocationString = (feature) => {
@@ -122,10 +123,81 @@ export function LocationField({
     const locationResultsRef = useRef(null)
     const blurTimeoutRef = useRef(null)
     const isSelectingResult = useRef(false) // Flag to prevent blur logic during selection
+    const dropdownContainerRef = useRef(null)
+    const [dropdownPosition, setDropdownPosition] = useState({
+        top: 0,
+        left: 0,
+        width: 0,
+    })
 
     // Internal state to manage dropdown visibility and results for this component
     const [internalShowResults, setInternalShowResults] = useState(false)
     const [internalResults, setInternalResults] = useState([])
+    const [portalContainer, setPortalContainer] = useState(null)
+    const [activeIndex, setActiveIndex] = useState(-1)
+
+    // Setup portal container
+    useEffect(() => {
+        if (typeof document !== "undefined") {
+            // Check if we need to create a container for our portal
+            let container = document.getElementById(
+                "location-dropdown-container"
+            )
+            if (!container) {
+                container = document.createElement("div")
+                container.id = "location-dropdown-container"
+                container.style.position = "absolute"
+                container.style.top = "0"
+                container.style.left = "0"
+                container.style.width = "100%"
+                container.style.height = "0"
+                container.style.overflow = "visible"
+                container.style.pointerEvents = "none" // Let clicks pass through container
+                container.style.zIndex = "99999" // Very high z-index
+                document.body.appendChild(container)
+            }
+            setPortalContainer(container)
+
+            return () => {
+                // Optional cleanup if component unmounts
+                // Normally we'd remove the container but since it might be shared, leave it
+            }
+        }
+    }, [])
+
+    // Update dropdown position when input position changes
+    useEffect(() => {
+        if (inputRef?.current && internalShowResults) {
+            const updatePosition = () => {
+                const rect = inputRef.current.getBoundingClientRect()
+                setDropdownPosition({
+                    top: rect.bottom + window.scrollY + 8, // 8px margin
+                    left: rect.left + window.scrollX,
+                    width: rect.width,
+                })
+            }
+
+            updatePosition()
+
+            // Update on scroll or resize
+            window.addEventListener("scroll", updatePosition)
+            window.addEventListener("resize", updatePosition)
+
+            return () => {
+                window.removeEventListener("scroll", updatePosition)
+                window.removeEventListener("resize", updatePosition)
+            }
+        }
+    }, [internalShowResults, inputRef?.current])
+
+    // Reset activeIndex when dropdown opens or results change
+    useEffect(() => {
+        if (internalShowResults && internalResults?.length) {
+            setActiveIndex(0)
+        } else {
+            setActiveIndex(-1)
+        }
+    }, [internalShowResults, internalResults])
 
     const handleFocus = () => {
         if (onFocus) onFocus()
@@ -245,13 +317,44 @@ export function LocationField({
         }
     }
 
+    const handleInputKeyDown = (e) => {
+        if (!internalShowResults || !internalResults?.length) return
+        if (e.key === "ArrowDown") {
+            e.preventDefault()
+            setActiveIndex((prev) => (prev + 1) % internalResults.length)
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault()
+            setActiveIndex((prev) =>
+                prev <= 0 ? internalResults.length - 1 : prev - 1
+            )
+        } else if (e.key === "Home") {
+            e.preventDefault()
+            setActiveIndex(0)
+        } else if (e.key === "End") {
+            e.preventDefault()
+            setActiveIndex(internalResults.length - 1)
+        } else if (e.key === "Enter") {
+            if (activeIndex >= 0 && activeIndex < internalResults.length) {
+                handleResultClick(internalResults[activeIndex])
+            }
+        } else if (e.key === "Escape") {
+            setInternalShowResults(false)
+        }
+    }
+
+    // Prevent clicks inside dropdown from closing it
+    const handleDropdownMouseDown = (e) => {
+        e.preventDefault()
+        isSelectingResult.current = true
+    }
+
     return (
-        <div style={{ position: "relative" }}>
+        <div style={{ position: "relative" }} ref={dropdownContainerRef}>
             <label
                 style={{
                     display: "block",
                     fontSize: "12px",
-                    fontWeight: "600", // Corrected typo
+                    fontWeight: "600",
                     color: tokens.colors.neutral[700],
                     textTransform: "uppercase",
                     letterSpacing: "0.06em",
@@ -305,12 +408,22 @@ export function LocationField({
                         fontSize: "16px",
                         letterSpacing: "-0.02em",
                         fontFamily: "'Geist', sans-serif",
-                        fontWeight: value ? "500" : "400", // Corrected typo
+                        fontWeight: value ? "500" : "400",
                         color: value
                             ? tokens.colors.neutral[700]
                             : tokens.colors.neutral[400],
                         backgroundColor: "transparent",
                     }}
+                    aria-controls="location-dropdown-listbox"
+                    aria-activedescendant={
+                        activeIndex >= 0
+                            ? `location-option-${internalResults[activeIndex]?.id || activeIndex}`
+                            : undefined
+                    }
+                    aria-expanded={internalShowResults}
+                    aria-autocomplete="list"
+                    role="combobox"
+                    onKeyDown={handleInputKeyDown}
                 />
                 {/* Location Icon / Button */}
                 <div
@@ -363,11 +476,13 @@ export function LocationField({
                 </p>
             )}
 
-            {/* Location Results Dropdown (Uses internal state now) */}
-            <AnimatePresence>
-                {internalShowResults &&
-                    internalResults &&
-                    internalResults.length > 0 && (
+            {/* Location Results Dropdown (Portal) */}
+            {portalContainer &&
+                internalShowResults &&
+                internalResults &&
+                internalResults.length > 0 &&
+                createPortal(
+                    <AnimatePresence>
                         <motion.div
                             ref={locationResultsRef}
                             initial={{ opacity: 0, y: -10 }}
@@ -376,21 +491,30 @@ export function LocationField({
                             transition={{ duration: 0.2, ease: "easeOut" }}
                             style={{
                                 position: "absolute",
-                                width: "100%",
+                                top: dropdownPosition.top,
+                                left: dropdownPosition.left,
+                                width: dropdownPosition.width,
                                 maxHeight: "240px",
                                 overflowY: "auto",
                                 background: tokens.colors.white,
                                 border: `1px solid ${tokens.colors.neutral[200]}`,
                                 borderRadius: "10px",
                                 boxShadow: "0 6px 15px rgba(0, 0, 0, 0.1)",
-                                zIndex: 1000,
-                                marginTop: "8px",
+                                zIndex: 99999,
                                 fontFamily: "'Geist', sans-serif",
+                                pointerEvents: "auto", // Enable clicking
                             }}
+                            onMouseDown={handleDropdownMouseDown}
+                            role="listbox"
+                            id="location-dropdown-listbox"
+                            tabIndex={-1}
                         >
                             {internalResults.map((feature, index) => (
                                 <div
                                     key={feature.id || index}
+                                    id={`location-option-${feature.id || index}`}
+                                    role="option"
+                                    aria-selected={activeIndex === index}
                                     style={{
                                         padding: "12px 16px",
                                         cursor: "pointer",
@@ -401,35 +525,33 @@ export function LocationField({
                                         color: tokens.colors.neutral[700],
                                         fontSize: "14px",
                                         letterSpacing: "-0.02em",
-                                        fontWeight: "400", // Corrected typo
+                                        fontWeight: "400",
                                         whiteSpace: "nowrap",
                                         overflow: "hidden",
                                         textOverflow: "ellipsis",
-                                        transition:
-                                            "background-color 0.1s ease",
+                                        transition: "background-color 0.1s ease",
+                                        backgroundColor:
+                                            activeIndex === index
+                                                ? tokens.colors.neutral[100]
+                                                : tokens.colors.white,
                                     }}
-                                    // Use onMouseDown to set flag and prevent blur logic during click
+                                    onMouseEnter={() => setActiveIndex(index)}
                                     onMouseDown={(e) => {
                                         e.preventDefault()
-                                        isSelectingResult.current = true // Set flag
+                                        e.stopPropagation()
+                                        isSelectingResult.current = true
                                         handleResultClick(feature)
                                     }}
-                                    onMouseOver={(e) => {
-                                        e.currentTarget.style.backgroundColor =
-                                            tokens.colors.neutral[100]
-                                    }}
-                                    onMouseOut={(e) => {
-                                        e.currentTarget.style.backgroundColor =
-                                            tokens.colors.white
-                                    }}
+                                    ref={activeIndex === index ? (el) => el && el.scrollIntoView({ block: "nearest" }) : undefined}
                                     title={feature.place_name}
                                 >
                                     {feature.place_name}
                                 </div>
                             ))}
                         </motion.div>
-                    )}
-            </AnimatePresence>
+                    </AnimatePresence>,
+                    portalContainer
+                )}
         </div>
     )
 }

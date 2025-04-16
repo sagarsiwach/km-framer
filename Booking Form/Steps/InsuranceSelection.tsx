@@ -1,8 +1,8 @@
-import { addPropertyControls, ControlType } from "framer";
-import { useState, useEffect } from "react";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import Button from "https://framer.com/m/Button-SLtw.js";
-import VariantCard from "https://framer.com/m/VariantCard-5sVx.js";
+import { addPropertyControls, ControlType } from "framer"
+import { useState, useEffect } from "react"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import Button from "https://framer.com/m/Button-SLtw.js"
+import VariantCard from "https://framer.com/m/VariantCard-5sVx.js"
 
 /**
  * @framerSupportedLayoutWidth any
@@ -16,7 +16,7 @@ export default function InsuranceSelection(props) {
     borderColor = tokens.colors.neutral[200],
 
     // API endpoint for data
-    dataEndpoint = "https://your-n8n-endpoint.com/insurance-data",
+    dataEndpoint = "https://booking-engine.sagarsiwach.workers.dev/",
 
     // Initial values
     selectedTenureId = "",
@@ -36,155 +36,163 @@ export default function InsuranceSelection(props) {
     // Component styling
     style,
     ...rest
-  } = props;
+  } = props
 
   // Local state
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [insuranceData, setInsuranceData] = useState({
-    tenures: [],
-    providers: [],
-    coreInsurance: [],
-    additionalCoverage: [],
-  });
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [insuranceData, setInsuranceData] = useState({})
 
-  const [tenureValue, setTenureValue] = useState(selectedTenureId);
-  const [providerValue, setProviderValue] = useState(selectedProviderId);
+  const [tenureValue, setTenureValue] = useState(selectedTenureId)
+  const [providerValue, setProviderValue] = useState(selectedProviderId)
   const [coreInsuranceValues, setCoreInsuranceValues] = useState(
-    selectedCoreInsuranceIds,
-  );
+    selectedCoreInsuranceIds
+  )
   const [additionalCoverageValues, setAdditionalCoverageValues] = useState(
-    selectedAdditionalCoverageIds,
-  );
+    selectedAdditionalCoverageIds
+  )
 
   // Fetch data on mount
   useEffect(() => {
     const fetchData = async () => {
-      if (!dataEndpoint) {
-        // When no endpoint is provided, use fallback data for testing/development
-        setInsuranceData({
-          tenures: [
-            { id: "1year", name: "01 Year" },
-            { id: "5years", name: "05 Years" },
-          ],
-          providers: [
-            { id: "icici", name: "ICICI Lombard" },
-            { id: "hdfc", name: "HDFC ERGO" },
-            { id: "bajaj", name: "Bajaj Allianz" },
-          ],
-          coreInsurance: [
-            {
-              id: "base",
-              title: "Base Insurance",
-              subtitle: "03 Free Service with 01 Labour Charge",
-              price: 9942,
-              required: true,
-            },
-            {
-              id: "personal-accident",
-              title: "Personal Accident Cover",
-              subtitle: "02 Service + 01 Inspection Camp",
-              price: 1582,
-              required: true,
-            },
-            {
-              id: "zero-depreciation",
-              title: "Zero Depreciation",
-              subtitle: "02 Service + 01 Inspection Camp",
-              price: 1582,
-              required: false,
-            },
-            {
-              id: "roadside-assistance",
-              title: "Road Side Assistance",
-              subtitle: "On-Road Tow and Repair",
-              price: 117,
-              required: false,
-            },
-          ],
-          additionalCoverage: [
-            {
-              id: "rim-protection",
-              title: "Rim Protection",
-              subtitle: "03 Free Service with 01 Labour Charge",
-              price: 1000,
-              required: false,
-            },
-            {
-              id: "rodent-protection",
-              title: "Rodent Protection",
-              subtitle: "02 Service + 01 Inspection Camp",
-              price: 2999,
-              required: false,
-            },
-          ],
-        });
-
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
       try {
-        const response = await fetch(dataEndpoint);
+        // Fetch insurance data
+        const response = await fetch(dataEndpoint)
 
         if (!response.ok) {
-          throw new Error(`Network response was not ok: ${response.status}`);
+          throw new Error(
+            `Network response was not ok: ${response.status}`
+          )
         }
 
-        const data = await response.json();
-        setInsuranceData(
-          data.insuranceOptions || {
-            tenures: [],
-            providers: [],
-            coreInsurance: [],
-            additionalCoverage: [],
-          },
-        );
-      } catch (err) {
-        console.error("Error fetching insurance data:", err);
-        setError("Failed to load insurance data. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
+        const result = await response.json()
 
-    fetchData();
-  }, [dataEndpoint]);
+        if (result.status === "success" && result.data) {
+          // Extract insurance providers and plans
+          setInsuranceData({
+            providers: result.data.insurance_providers || [],
+            plans: result.data.insurance_plans || [],
+          })
+        } else {
+          throw new Error("Invalid data format received from API")
+        }
+      } catch (err) {
+        console.error("Error fetching insurance data:", err)
+        setError(
+          "Failed to load insurance data. Please try again later."
+        )
+
+        // Set fallback data for testing/development
+        setInsuranceData({
+          providers: [
+            { id: 1, name: "DIGIT" },
+            { id: 2, name: "ICICI LOMBARD" },
+            { id: 3, name: "TURTLEMINT" },
+            { id: 4, name: "BAJAJ ALLIANZ" },
+          ],
+          plans: [
+            {
+              id: 1,
+              provider_id: 3,
+              provider_name: "TURTLEMINT",
+              plan_type: "CORE",
+              title: "BASE INSURANCE",
+              subtitle: "STANDARD LINE FOR BASE INSURANCE",
+              description: "Basic required insurance coverage",
+              price: 9942,
+              is_required: true,
+              tenure_months: 12,
+            },
+            {
+              id: 2,
+              provider_id: 3,
+              provider_name: "TURTLEMINT",
+              plan_type: "CORE",
+              title: "PERSONAL ACCIDENT COVER",
+              subtitle:
+                "STANDARD LINE FOR PERSONAL ACCIDENT COVER",
+              description: "Coverage for personal injuries",
+              price: 9942,
+              is_required: true,
+              tenure_months: 12,
+            },
+            {
+              id: 5,
+              provider_id: 3,
+              provider_name: "TURTLEMINT",
+              plan_type: "ADDITIONAL",
+              title: "RIM PROTECTION",
+              subtitle: "STANDARD LINE FOR RIM PROTECTION",
+              description: "Coverage for wheel rim damage",
+              price: 9942,
+              is_required: false,
+              tenure_months: 12,
+            },
+            {
+              id: 6,
+              provider_id: 3,
+              provider_name: "TURTLEMINT",
+              plan_type: "ADDITIONAL",
+              title: "RODENT PROTECTION",
+              subtitle: "STANDARD LINE FOR RODENT PROTECTION",
+              description: "Coverage for rodent damage to wiring",
+              price: 9942,
+              is_required: false,
+              tenure_months: 12,
+            },
+          ],
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [dataEndpoint])
+
+  // Prepare data for display
+  const tenures = [
+    { id: "1year", name: "01 Year" },
+    { id: "5years", name: "05 Years" },
+  ]
+
+  const providers = insuranceData.providers || []
+
+  const corePlans = insuranceData.plans
+    ? insuranceData.plans.filter((plan) => plan.plan_type === "CORE")
+    : []
+
+  const additionalPlans = insuranceData.plans
+    ? insuranceData.plans.filter((plan) => plan.plan_type === "ADDITIONAL")
+    : []
 
   // Set default values after data is loaded
   useEffect(() => {
     // Set default tenure if not already set
-    if (
-      !tenureValue &&
-      insuranceData.tenures &&
-      insuranceData.tenures.length > 0
-    ) {
-      setTenureValue(insuranceData.tenures[0].id);
-      if (onTenureSelect) onTenureSelect(insuranceData.tenures[0].id);
+    if (!tenureValue && tenures.length > 0) {
+      setTenureValue(tenures[0].id)
+      if (onTenureSelect) onTenureSelect(tenures[0].id)
     }
 
     // Set default provider if not already set
-    if (
-      !providerValue &&
-      insuranceData.providers &&
-      insuranceData.providers.length > 0
-    ) {
-      setProviderValue(insuranceData.providers[0].id);
-      if (onProviderSelect) onProviderSelect(insuranceData.providers[0].id);
+    if (!providerValue && providers.length > 0) {
+      setProviderValue(providers[0].id)
+      if (onProviderSelect) onProviderSelect(providers[0].id)
     }
 
     // Set required core insurance options
-    if (coreInsuranceValues.length === 0 && insuranceData.coreInsurance) {
-      const requiredInsurance = insuranceData.coreInsurance
-        .filter((ins) => ins.required)
-        .map((ins) => ins.id);
+    if (coreInsuranceValues.length === 0 && corePlans.length > 0) {
+      const requiredInsurance = corePlans
+        .filter((plan) => plan.is_required)
+        .map((plan) => plan.id)
 
-      setCoreInsuranceValues(requiredInsurance);
-      if (onCoreInsuranceSelect) onCoreInsuranceSelect(requiredInsurance);
+      setCoreInsuranceValues(requiredInsurance)
+      if (onCoreInsuranceSelect) onCoreInsuranceSelect(requiredInsurance)
     }
-  }, [insuranceData]);
+  }, [insuranceData, tenures, providers, corePlans])
 
   // Update form data on any field change
   useEffect(() => {
@@ -194,59 +202,57 @@ export default function InsuranceSelection(props) {
         provider: providerValue,
         coreInsurance: coreInsuranceValues,
         additionalCoverage: additionalCoverageValues,
-      });
+      })
     }
   }, [
     tenureValue,
     providerValue,
     coreInsuranceValues,
     additionalCoverageValues,
-  ]);
+  ])
 
   // Handlers
   const handleTenureSelect = (id) => {
-    setTenureValue(id);
-    if (onTenureSelect) onTenureSelect(id);
-  };
+    setTenureValue(id)
+    if (onTenureSelect) onTenureSelect(id)
+  }
 
   const handleProviderSelect = (id) => {
-    setProviderValue(id);
-    if (onProviderSelect) onProviderSelect(id);
-  };
+    setProviderValue(id)
+    if (onProviderSelect) onProviderSelect(id)
+  }
 
   const handleCoreInsuranceSelect = (id, isSelected) => {
     // Get the insurance item
-    const insuranceItem = insuranceData.coreInsurance.find(
-      (item) => item.id === id,
-    );
+    const insuranceItem = corePlans.find((item) => item.id === id)
 
     // If required, don't allow deselection
-    if (insuranceItem && insuranceItem.required && !isSelected) {
-      return;
+    if (insuranceItem && insuranceItem.is_required && !isSelected) {
+      return
     }
 
-    let newValues;
+    let newValues
     if (isSelected) {
-      newValues = [...coreInsuranceValues, id];
+      newValues = [...coreInsuranceValues, id]
     } else {
-      newValues = coreInsuranceValues.filter((item) => item !== id);
+      newValues = coreInsuranceValues.filter((item) => item !== id)
     }
 
-    setCoreInsuranceValues(newValues);
-    if (onCoreInsuranceSelect) onCoreInsuranceSelect(newValues);
-  };
+    setCoreInsuranceValues(newValues)
+    if (onCoreInsuranceSelect) onCoreInsuranceSelect(newValues)
+  }
 
   const handleAdditionalCoverageSelect = (id, isSelected) => {
-    let newValues;
+    let newValues
     if (isSelected) {
-      newValues = [...additionalCoverageValues, id];
+      newValues = [...additionalCoverageValues, id]
     } else {
-      newValues = additionalCoverageValues.filter((item) => item !== id);
+      newValues = additionalCoverageValues.filter((item) => item !== id)
     }
 
-    setAdditionalCoverageValues(newValues);
-    if (onAdditionalCoverageSelect) onAdditionalCoverageSelect(newValues);
-  };
+    setAdditionalCoverageValues(newValues)
+    if (onAdditionalCoverageSelect) onAdditionalCoverageSelect(newValues)
+  }
 
   // Styling
   const containerStyle = {
@@ -254,11 +260,11 @@ export default function InsuranceSelection(props) {
     flexDirection: "column",
     width: "100%",
     ...style,
-  };
+  }
 
   const sectionStyle = {
     marginBottom: tokens.spacing[6],
-  };
+  }
 
   const sectionTitleStyle = {
     fontSize: tokens.fontSize.sm,
@@ -266,13 +272,13 @@ export default function InsuranceSelection(props) {
     color: tokens.colors.neutral[600],
     textTransform: "uppercase",
     marginBottom: tokens.spacing[3],
-  };
+  }
 
   const optionsContainerStyle = {
     display: "flex",
     gap: tokens.spacing[3],
     marginBottom: tokens.spacing[4],
-  };
+  }
 
   const optionButtonStyle = (isSelected) => ({
     flex: 1,
@@ -286,44 +292,46 @@ export default function InsuranceSelection(props) {
     textAlign: "center",
     cursor: "pointer",
     transition: "all 0.2s ease",
-  });
+  })
 
   const buttonContainerStyle = {
     display: "flex",
     gap: tokens.spacing[4],
     marginTop: tokens.spacing[8],
-  };
+  }
 
   // Calculate total price
   const calculateTotalPrice = () => {
-    let total = 0;
+    let total = 0
 
     // Add core insurance prices
-    insuranceData.coreInsurance.forEach((item) => {
+    corePlans.forEach((item) => {
       if (coreInsuranceValues.includes(item.id)) {
-        total += item.price || 0;
+        total += item.price || 0
       }
-    });
+    })
 
     // Add additional coverage prices
-    insuranceData.additionalCoverage.forEach((item) => {
+    additionalPlans.forEach((item) => {
       if (additionalCoverageValues.includes(item.id)) {
-        total += item.price || 0;
+        total += item.price || 0
       }
-    });
+    })
 
-    return total;
-  };
+    return total
+  }
 
   // Loading and error states
   if (loading) {
     return (
       <div style={containerStyle}>
-        <div style={{ textAlign: "center", padding: tokens.spacing[8] }}>
+        <div
+          style={{ textAlign: "center", padding: tokens.spacing[8] }}
+        >
           Loading insurance information...
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -353,7 +361,7 @@ export default function InsuranceSelection(props) {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -362,7 +370,7 @@ export default function InsuranceSelection(props) {
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>Tenure</div>
         <div style={optionsContainerStyle}>
-          {insuranceData.tenures.map((tenure) => (
+          {tenures.map((tenure) => (
             <div
               key={tenure.id}
               style={optionButtonStyle(tenure.id === tenureValue)}
@@ -378,10 +386,12 @@ export default function InsuranceSelection(props) {
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>Provider</div>
         <div style={optionsContainerStyle}>
-          {insuranceData.providers.map((provider) => (
+          {providers.map((provider) => (
             <div
               key={provider.id}
-              style={optionButtonStyle(provider.id === providerValue)}
+              style={optionButtonStyle(
+                provider.id === providerValue
+              )}
               onClick={() => handleProviderSelect(provider.id)}
             >
               {provider.name}
@@ -393,24 +403,25 @@ export default function InsuranceSelection(props) {
       {/* Core Insurance Coverage */}
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>Core Insurance Coverage</div>
-        {insuranceData.coreInsurance.map((insurance) => (
+        {corePlans.map((insurance) => (
           <VariantCard
             key={insurance.id}
             title={insurance.title}
             subtitle={insurance.subtitle}
+            description={insurance.description}
             pricePrefix=""
             price={`₹${insurance.price.toLocaleString("en-IN")}`}
-            includedText={insurance.required ? "Mandatory" : ""}
+            includedText={insurance.is_required ? "Mandatory" : ""}
             isSelected={coreInsuranceValues.includes(insurance.id)}
             onClick={() =>
               handleCoreInsuranceSelect(
                 insurance.id,
-                !coreInsuranceValues.includes(insurance.id),
+                !coreInsuranceValues.includes(insurance.id)
               )
             }
             borderColor={borderColor}
             selectedBorderColor={primaryColor}
-            style={{ opacity: insurance.required ? 0.9 : 1 }}
+            style={{ opacity: insurance.is_required ? 0.9 : 1 }}
           />
         ))}
       </div>
@@ -418,18 +429,21 @@ export default function InsuranceSelection(props) {
       {/* Additional Coverage */}
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>Additional Coverage</div>
-        {insuranceData.additionalCoverage.map((coverage) => (
+        {additionalPlans.map((coverage) => (
           <VariantCard
             key={coverage.id}
             title={coverage.title}
             subtitle={coverage.subtitle}
+            description={coverage.description}
             pricePrefix=""
             price={`₹${coverage.price.toLocaleString("en-IN")}`}
-            isSelected={additionalCoverageValues.includes(coverage.id)}
+            isSelected={additionalCoverageValues.includes(
+              coverage.id
+            )}
             onClick={() =>
               handleAdditionalCoverageSelect(
                 coverage.id,
-                !additionalCoverageValues.includes(coverage.id),
+                !additionalCoverageValues.includes(coverage.id)
               )
             }
             borderColor={borderColor}
@@ -486,7 +500,7 @@ export default function InsuranceSelection(props) {
         />
       </div>
     </div>
-  );
+  )
 }
 
 addPropertyControls(InsuranceSelection, {
@@ -508,7 +522,7 @@ addPropertyControls(InsuranceSelection, {
   dataEndpoint: {
     type: ControlType.String,
     title: "Data Endpoint",
-    defaultValue: "",
+    defaultValue: "https://booking-engine.sagarsiwach.workers.dev/",
   },
   selectedTenureId: {
     type: ControlType.String,
@@ -532,4 +546,4 @@ addPropertyControls(InsuranceSelection, {
     control: { type: ControlType.String },
     defaultValue: [],
   },
-});
+})

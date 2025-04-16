@@ -1,14 +1,14 @@
 // VehicleConfiguration.tsx
 // Updated to fetch real data from the API
 
-import { addPropertyControls, ControlType } from "framer";
-import { useState, useEffect } from "react";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import InputField from "https://framer.com/m/InputField-d7w7.js";
-import VehicleCards from "https://framer.com/m/VehicleCards-mBlt.js";
-import Button from "https://framer.com/m/Button-SLtw.js";
-import VariantCard from "https://framer.com/m/VariantCard-5sVx.js";
-import ColorSelector from "https://framer.com/m/ColorSelector-jPny.js";
+import { addPropertyControls, ControlType } from "framer"
+import { useState, useEffect } from "react"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import InputField from "https://framer.com/m/InputField-d7w7.js"
+import VehicleCards from "https://framer.com/m/VehicleCards-mBlt.js"
+import Button from "https://framer.com/m/Button-SLtw.js"
+import VariantCard from "https://framer.com/m/VariantCard-5sVx.js"
+import ColorSelector from "https://framer.com/m/ColorSelector-jPny.js"
 
 /**
  * @framerSupportedLayoutWidth any
@@ -22,7 +22,7 @@ export default function VehicleConfiguration(props) {
     borderColor = tokens.colors.neutral[200],
 
     // API endpoint for data
-    dataEndpoint = "https://automation.unipack.asia/webhook/kabiramobility/booking/api/vehicle-data/?type=all",
+    dataEndpoint = "https://booking-engine.sagarsiwach.workers.dev/",
 
     // Initial values
     location = "",
@@ -46,85 +46,87 @@ export default function VehicleConfiguration(props) {
     // Component styling
     style,
     ...rest
-  } = props;
+  } = props
 
   // Local state
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [locationValue, setLocationValue] = useState(location);
-  const [vehicleValue, setVehicleValue] = useState(selectedVehicleId);
-  const [variantValue, setVariantValue] = useState(selectedVariantId);
-  const [colorValue, setColorValue] = useState(selectedColorId);
-  const [componentValues, setComponentValues] = useState(selectedComponents);
-  const [vehicles, setVehicles] = useState([]);
-  const [pricingData, setPricingData] = useState({});
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [locationValue, setLocationValue] = useState(location)
+  const [vehicleValue, setVehicleValue] = useState(selectedVehicleId)
+  const [variantValue, setVariantValue] = useState(selectedVariantId)
+  const [colorValue, setColorValue] = useState(selectedColorId)
+  const [componentValues, setComponentValues] = useState(selectedComponents)
+  const [vehicleData, setVehicleData] = useState({
+    models: [],
+    variants: [],
+    colors: [],
+    components: [],
+  })
+
+  // Processed data for display
+  const vehicles = vehicleData.models || []
 
   // Get the currently selected vehicle object
-  const selectedVehicle = vehicles.find((v) => v.id === vehicleValue) || null;
+  const selectedVehicle = vehicles.find((v) => v.id === vehicleValue) || null
+
+  // Get variants for selected vehicle
+  const selectedVehicleVariants = vehicleData.variants
+    ? vehicleData.variants.filter((v) => v.model_id === vehicleValue)
+    : []
+
+  // Get colors for selected vehicle
+  const selectedVehicleColors = vehicleData.colors
+    ? vehicleData.colors.filter((c) => c.model_id === vehicleValue)
+    : []
+
+  // Get components for selected vehicle
+  const selectedVehicleComponents = vehicleData.components
+    ? vehicleData.components.filter((c) => c.model_id === vehicleValue)
+    : []
 
   // Fetch vehicle data on mount
   useEffect(() => {
     const fetchVehicleData = async () => {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
       try {
         // Fetch vehicle data
-        const response = await fetch(dataEndpoint);
+        const response = await fetch(dataEndpoint)
 
         if (!response.ok) {
-          throw new Error(`Network response was not ok: ${response.status}`);
+          throw new Error(
+            `Network response was not ok: ${response.status}`
+          )
         }
 
-        const result = await response.json();
+        const result = await response.json()
 
-        if (result && result.success && result.data) {
-          setVehicles(result.data);
+        if (result && result.status === "success" && result.data) {
+          setVehicleData(result.data)
         } else {
-          throw new Error("Invalid data format received from API");
+          throw new Error("Invalid data format received from API")
         }
       } catch (err) {
-        console.error("Error fetching vehicle data:", err);
-        setError("Failed to load vehicle data. Please try again later.");
+        console.error("Error fetching vehicle data:", err)
+        setError("Failed to load vehicle data. Please try again later.")
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    // Fetch pricing data separately
-    const fetchPricingData = async () => {
-      try {
-        const response = await fetch(
-          `${dataEndpoint.split("?")[0]}?type=pricing`,
-        );
-
-        if (!response.ok) {
-          throw new Error(`Network response was not ok: ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        if (result && result.success && result.data) {
-          setPricingData(result.data);
-        }
-      } catch (err) {
-        console.error("Error fetching pricing data:", err);
-      }
-    };
-
-    fetchVehicleData();
-    fetchPricingData();
-  }, [dataEndpoint]);
+    fetchVehicleData()
+  }, [dataEndpoint])
 
   // Set default selection when vehicles load or change
   useEffect(() => {
     // If no vehicle is selected but we have vehicles, select the first one
     if (!vehicleValue && vehicles.length > 0) {
-      setVehicleValue(vehicles[0].id);
+      setVehicleValue(vehicles[0].id)
 
       // Also notify parent component
       if (onVehicleSelect) {
-        onVehicleSelect(vehicles[0].id);
+        onVehicleSelect(vehicles[0].id)
       }
     }
 
@@ -132,18 +134,23 @@ export default function VehicleConfiguration(props) {
     if (
       vehicleValue &&
       !variantValue &&
-      selectedVehicle?.variants?.length > 0
+      selectedVehicleVariants.length > 0
     ) {
-      setVariantValue(selectedVehicle.variants[0].id);
-      if (onVariantSelect) onVariantSelect(selectedVehicle.variants[0].id);
+      setVariantValue(selectedVehicleVariants[0].id)
+      if (onVariantSelect) onVariantSelect(selectedVehicleVariants[0].id)
     }
 
     // If we have a vehicle selected but no color, select the first color
-    if (vehicleValue && !colorValue && selectedVehicle?.colors?.length > 0) {
-      setColorValue(selectedVehicle.colors[0].id);
-      if (onColorSelect) onColorSelect(selectedVehicle.colors[0].id);
+    if (vehicleValue && !colorValue && selectedVehicleColors.length > 0) {
+      setColorValue(selectedVehicleColors[0].id)
+      if (onColorSelect) onColorSelect(selectedVehicleColors[0].id)
     }
-  }, [vehicles, vehicleValue, selectedVehicle]);
+  }, [
+    vehicleData,
+    vehicleValue,
+    selectedVehicleVariants,
+    selectedVehicleColors,
+  ])
 
   // Update form data on any field change
   useEffect(() => {
@@ -154,81 +161,80 @@ export default function VehicleConfiguration(props) {
         variant: variantValue,
         color: colorValue,
         components: componentValues,
-      });
+      })
     }
-  }, [locationValue, vehicleValue, variantValue, colorValue, componentValues]);
+  }, [locationValue, vehicleValue, variantValue, colorValue, componentValues])
 
   // Handle location input change
   const handleLocationChange = (value) => {
-    setLocationValue(value);
-    if (onLocationChange) onLocationChange(value);
-  };
+    setLocationValue(value)
+    if (onLocationChange) onLocationChange(value)
+  }
 
   // Handle vehicle selection
   const handleVehicleSelect = (id) => {
-    setVehicleValue(id);
+    setVehicleValue(id)
 
     // Reset dependent selections when vehicle changes
-    setVariantValue("");
-    setColorValue("");
-    setComponentValues([]);
+    setVariantValue("")
+    setColorValue("")
+    setComponentValues([])
 
-    if (onVehicleSelect) onVehicleSelect(id);
-  };
+    if (onVehicleSelect) onVehicleSelect(id)
+  }
 
   // Handle variant selection
   const handleVariantSelect = (id) => {
-    setVariantValue(id);
-    if (onVariantSelect) onVariantSelect(id);
-  };
+    setVariantValue(id)
+    if (onVariantSelect) onVariantSelect(id)
+  }
 
   // Handle color selection
   const handleColorSelect = (id) => {
-    setColorValue(id);
-    if (onColorSelect) onColorSelect(id);
-  };
+    setColorValue(id)
+    if (onColorSelect) onColorSelect(id)
+  }
 
   // Handle component selection
   const handleComponentSelect = (id, isSelected) => {
     // Get the component item
-    const componentItem = selectedVehicle?.optionalComponents.find(
-      (item) => item.id === id,
-    );
+    const componentItem = selectedVehicleComponents.find(
+      (item) => item.id === id
+    )
 
     // If required, don't allow deselection
-    if (componentItem && componentItem.required && !isSelected) {
-      return;
+    if (componentItem && componentItem.is_required && !isSelected) {
+      return
     }
 
-    let newComponents;
+    let newComponents
 
     if (isSelected) {
-      newComponents = [...componentValues, id];
+      newComponents = [...componentValues, id]
     } else {
-      newComponents = componentValues.filter((cId) => cId !== id);
+      newComponents = componentValues.filter((cId) => cId !== id)
     }
 
-    setComponentValues(newComponents);
-    if (onComponentSelect) onComponentSelect(newComponents);
-  };
+    setComponentValues(newComponents)
+    if (onComponentSelect) onComponentSelect(newComponents)
+  }
 
   // Get price for a vehicle
   const getVehiclePrice = (vehicleId) => {
-    if (!pricingData || !pricingData.summary) return null;
-
-    // Extract model code from vehicle ID (assuming formats like B10, B20)
-    const modelCode = vehicleId;
+    if (!vehicleData.pricing) return null
 
     // Find matching price
-    const pricing = pricingData.summary.find((p) => p.modelCode === modelCode);
-    return pricing ? pricing.formattedPrice : null;
-  };
+    const pricing = vehicleData.pricing.find(
+      (p) => p.model_id === vehicleId
+    )
+    return pricing ? `₹${pricing.base_price.toLocaleString("en-IN")}` : null
+  }
 
   // Handle next button click
   const handleNext = () => {
     // Additional validation could be done here
-    if (onNextStep) onNextStep();
-  };
+    if (onNextStep) onNextStep()
+  }
 
   // Container styling
   const containerStyle = {
@@ -236,11 +242,11 @@ export default function VehicleConfiguration(props) {
     flexDirection: "column",
     width: "100%",
     ...style,
-  };
+  }
 
   const sectionStyle = {
     marginBottom: tokens.spacing[6],
-  };
+  }
 
   const sectionTitleStyle = {
     fontSize: tokens.fontSize.sm,
@@ -248,51 +254,53 @@ export default function VehicleConfiguration(props) {
     color: tokens.colors.neutral[600],
     textTransform: "uppercase",
     marginBottom: tokens.spacing[3],
-  };
+  }
 
   const buttonContainerStyle = {
     marginTop: tokens.spacing[8],
-  };
+  }
 
   // Determine if next button should be enabled
   const isNextEnabled =
-    locationValue && vehicleValue && variantValue && colorValue;
+    locationValue && vehicleValue && variantValue && colorValue
 
   // Ensure required components are selected
   useEffect(() => {
-    if (selectedVehicle && selectedVehicle.optionalComponents) {
-      const requiredComponents = selectedVehicle.optionalComponents
-        .filter((comp) => comp.required)
-        .map((comp) => comp.id);
+    if (selectedVehicleComponents && selectedVehicleComponents.length > 0) {
+      const requiredComponents = selectedVehicleComponents
+        .filter((comp) => comp.is_required)
+        .map((comp) => comp.id)
 
       // Add any missing required components
       if (requiredComponents.length > 0) {
-        const newComponents = [...componentValues];
-        let changed = false;
+        const newComponents = [...componentValues]
+        let changed = false
 
         requiredComponents.forEach((compId) => {
           if (!componentValues.includes(compId)) {
-            newComponents.push(compId);
-            changed = true;
+            newComponents.push(compId)
+            changed = true
           }
-        });
+        })
 
         if (changed) {
-          setComponentValues(newComponents);
+          setComponentValues(newComponents)
         }
       }
     }
-  }, [selectedVehicle, componentValues]);
+  }, [selectedVehicleComponents, componentValues])
 
   // Loading state display
   if (loading) {
     return (
       <div style={containerStyle}>
-        <div style={{ textAlign: "center", padding: tokens.spacing[8] }}>
+        <div
+          style={{ textAlign: "center", padding: tokens.spacing[8] }}
+        >
           Loading vehicle information...
         </div>
       </div>
-    );
+    )
   }
 
   // Error state display
@@ -326,8 +334,17 @@ export default function VehicleConfiguration(props) {
           </button>
         </div>
       </div>
-    );
+    )
   }
+
+  // Map colors to the format expected by ColorSelector
+  const colorOptions = selectedVehicleColors.map((color) => ({
+    id: color.id,
+    name: color.name,
+    value: color.color_value
+      ? JSON.parse(color.color_value).colorStart
+      : "#f00027",
+  }))
 
   return (
     <div style={containerStyle} {...rest}>
@@ -354,8 +371,10 @@ export default function VehicleConfiguration(props) {
           <VehicleCards
             key={vehicle.id}
             vehicleName={vehicle.name}
-            vehicleImage={vehicle.image}
-            price={getVehiclePrice(vehicle.id) || vehicle.price}
+            vehicleImage={vehicle.image_url}
+            price={
+              getVehiclePrice(vehicle.id) || "Price on request"
+            }
             isSelected={vehicle.id === vehicleValue}
             onClick={() => handleVehicleSelect(vehicle.id)}
             borderColor={borderColor}
@@ -365,21 +384,21 @@ export default function VehicleConfiguration(props) {
       </div>
 
       {/* Variant Selection Section - only show if a vehicle is selected */}
-      {selectedVehicle && (
+      {selectedVehicleVariants.length > 0 && (
         <div style={sectionStyle}>
           <div style={sectionTitleStyle}>Choose Variant</div>
-          {selectedVehicle.variants.map((variant) => (
+          {selectedVehicleVariants.map((variant) => (
             <VariantCard
               key={variant.id}
               title={variant.title}
               subtitle={variant.subtitle}
               description={variant.description}
               price={
-                variant.priceAddition > 0
-                  ? `₹${variant.priceAddition.toLocaleString("en-IN")}`
+                variant.price_addition > 0
+                  ? `₹${variant.price_addition.toLocaleString("en-IN")}`
                   : ""
               }
-              includedText={variant.includedText}
+              includedText={variant.is_default ? "Default" : ""}
               isSelected={variant.id === variantValue}
               onClick={() => handleVariantSelect(variant.id)}
               borderColor={borderColor}
@@ -390,55 +409,51 @@ export default function VehicleConfiguration(props) {
       )}
 
       {/* Color Selection Section - only show if a vehicle is selected */}
-      {selectedVehicle &&
-        selectedVehicle.colors &&
-        selectedVehicle.colors.length > 0 && (
-          <div style={sectionStyle}>
-            <div style={sectionTitleStyle}>Choose Color</div>
-            <ColorSelector
-              colors={selectedVehicle.colors}
-              selectedColorId={colorValue}
-              onChange={handleColorSelect}
-            />
-          </div>
-        )}
+      {selectedVehicleColors.length > 0 && (
+        <div style={sectionStyle}>
+          <div style={sectionTitleStyle}>Choose Color</div>
+          <ColorSelector
+            colors={colorOptions}
+            selectedColorId={colorValue}
+            onChange={handleColorSelect}
+          />
+        </div>
+      )}
 
       {/* Optional Components Section - only show if a vehicle is selected */}
-      {selectedVehicle &&
-        selectedVehicle.optionalComponents &&
-        selectedVehicle.optionalComponents.length > 0 && (
-          <div style={sectionStyle}>
-            <div style={sectionTitleStyle}>Optional Component</div>
-            {selectedVehicle.optionalComponents.map((component) => (
-              <VariantCard
-                key={component.id}
-                title={component.title}
-                subtitle={component.subtitle}
-                price={
-                  component.priceAddition > 0
-                    ? `₹${component.priceAddition.toLocaleString("en-IN")}`
-                    : ""
-                }
-                includedText={
-                  component.includedText ||
-                  (component.required ? "Mandatory" : "")
-                }
-                isSelected={componentValues.includes(component.id)}
-                onClick={() => {
-                  handleComponentSelect(
-                    component.id,
-                    !componentValues.includes(component.id),
-                  );
-                }}
-                borderColor={borderColor}
-                selectedBorderColor={primaryColor}
-                style={{
-                  opacity: component.required ? 0.8 : 1,
-                }}
-              />
-            ))}
-          </div>
-        )}
+      {selectedVehicleComponents.length > 0 && (
+        <div style={sectionStyle}>
+          <div style={sectionTitleStyle}>Optional Component</div>
+          {selectedVehicleComponents.map((component) => (
+            <VariantCard
+              key={component.id}
+              title={component.title}
+              subtitle={component.subtitle}
+              description={component.description}
+              price={
+                component.price > 0
+                  ? `₹${component.price.toLocaleString("en-IN")}`
+                  : ""
+              }
+              includedText={
+                component.is_required ? "Mandatory" : ""
+              }
+              isSelected={componentValues.includes(component.id)}
+              onClick={() => {
+                handleComponentSelect(
+                  component.id,
+                  !componentValues.includes(component.id)
+                )
+              }}
+              borderColor={borderColor}
+              selectedBorderColor={primaryColor}
+              style={{
+                opacity: component.is_required ? 0.8 : 1,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Next Button */}
       <div style={buttonContainerStyle}>
@@ -452,7 +467,7 @@ export default function VehicleConfiguration(props) {
         />
       </div>
     </div>
-  );
+  )
 }
 
 addPropertyControls(VehicleConfiguration, {
@@ -474,7 +489,7 @@ addPropertyControls(VehicleConfiguration, {
   dataEndpoint: {
     type: ControlType.String,
     title: "Data Endpoint",
-    defaultValue: "https://your-n8n-endpoint.com/vehicle-data?type=all",
+    defaultValue: "https://booking-engine.sagarsiwach.workers.dev/",
   },
   location: {
     type: ControlType.String,
@@ -507,4 +522,4 @@ addPropertyControls(VehicleConfiguration, {
     title: "Errors",
     defaultValue: {},
   },
-});
+})

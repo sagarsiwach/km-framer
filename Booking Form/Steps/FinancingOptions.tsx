@@ -1,12 +1,12 @@
 // FinancingOptions.tsx
 // Updated to use actual pricing data
 
-import { addPropertyControls, ControlType } from "framer";
-import { useState, useEffect } from "react";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import Button from "https://framer.com/m/Button-SLtw.js";
-import InputField from "https://framer.com/m/InputField-d7w7.js";
-import VariantCard from "https://framer.com/m/VariantCard-5sVx.js";
+import { addPropertyControls, ControlType } from "framer"
+import { useState, useEffect } from "react"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import Button from "https://framer.com/m/Button-SLtw.js"
+import InputField from "https://framer.com/m/InputField-d7w7.js"
+import VariantCard from "https://framer.com/m/VariantCard-5sVx.js"
 
 /**
  * @framerSupportedLayoutWidth any
@@ -20,7 +20,7 @@ export default function FinancingOptions(props) {
     borderColor = tokens.colors.neutral[200],
 
     // API endpoint for data
-    dataEndpoint = "https://your-n8n-endpoint.com/vehicle-data?type=pricing",
+    dataEndpoint = "https://booking-engine.sagarsiwach.workers.dev/",
 
     // Vehicle data
     selectedVehicleId = "",
@@ -43,7 +43,7 @@ export default function FinancingOptions(props) {
     // Component styling
     style,
     ...rest
-  } = props;
+  } = props
 
   // Payment methods
   const paymentMethods = [
@@ -59,7 +59,7 @@ export default function FinancingOptions(props) {
       subtitle: "Start your ride with Zero down payment",
       description: "EMI starting from ₹499/month",
     },
-  ];
+  ]
 
   // Loan tenure options
   const tenureOptions = [
@@ -68,91 +68,77 @@ export default function FinancingOptions(props) {
     { months: 36, label: "36 Months" },
     { months: 48, label: "48 Months" },
     { months: 60, label: "60 Months" },
-  ];
+  ]
 
   // Local state
   const [paymentMethod, setPaymentMethod] = useState(
-    selectedPaymentMethod || "full-payment",
-  );
-  const [tenure, setTenure] = useState(loanTenure);
-  const [downPayment, setDownPayment] = useState(downPaymentAmount);
-  const [emiAmount, setEmiAmount] = useState(499);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [pricingData, setPricingData] = useState(null);
-  const [vehiclePrice, setVehiclePrice] = useState(190236);
-  const [insurancePrice, setInsurancePrice] = useState(12000);
-  const [totalPrice, setTotalPrice] = useState(202236);
+    selectedPaymentMethod || "full-payment"
+  )
+  const [tenure, setTenure] = useState(loanTenure)
+  const [downPayment, setDownPayment] = useState(downPaymentAmount)
+  const [emiAmount, setEmiAmount] = useState(499)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [financeData, setFinanceData] = useState({
+    providers: [],
+    options: [],
+  })
+  const [vehiclePrice, setVehiclePrice] = useState(0)
+  const [insurancePrice, setInsurancePrice] = useState(12000)
+  const [totalPrice, setTotalPrice] = useState(0)
 
   // Fetch pricing data based on selected vehicle and location
   useEffect(() => {
-    if (!selectedVehicleId) return;
+    if (!selectedVehicleId) return
 
     const fetchPricingData = async () => {
-      setLoading(true);
-      setError(null);
-
-      let url = dataEndpoint;
-
-      // Add pincode if available
-      if (selectedLocation && selectedLocation.match(/^\d{6}$/)) {
-        url = `${url}&pincode=${selectedLocation}`;
-      }
+      setLoading(true)
+      setError(null)
 
       try {
-        const response = await fetch(url);
+        const response = await fetch(dataEndpoint)
 
         if (!response.ok) {
-          throw new Error(`Network response was not ok: ${response.status}`);
+          throw new Error(
+            `Network response was not ok: ${response.status}`
+          )
         }
 
-        const result = await response.json();
+        const result = await response.json()
 
-        if (result && result.success && result.data) {
-          setPricingData(result.data);
+        if (result.status === "success" && result.data) {
+          // Set finance data
+          setFinanceData({
+            providers: result.data.finance_providers || [],
+            options: result.data.finance_options || [],
+          })
 
           // Find the price for the selected vehicle
-          let price = 0;
-
-          if (selectedLocation && selectedLocation.match(/^\d{6}$/)) {
-            // If we have pincode-specific pricing
-            const vehiclePricing = result.data.find(
-              (item) => item.modelCode === selectedVehicleId,
-            );
+          if (result.data.pricing) {
+            const vehiclePricing = result.data.pricing.find(
+              (item) => item.model_id === selectedVehicleId
+            )
 
             if (vehiclePricing) {
-              price = vehiclePricing.price || 0;
+              const price = vehiclePricing.base_price || 0
+              setVehiclePrice(price)
+              setTotalPrice(price + insurancePrice)
+
+              // Calculate EMI
+              calculateEmi(price, tenure)
             }
-          } else {
-            // Use summary pricing
-            const summaryPricing = result.data.summary?.find(
-              (item) => item.modelCode === selectedVehicleId,
-            );
-
-            if (summaryPricing) {
-              price = summaryPricing.minPrice || 0;
-            }
-          }
-
-          // Update price state
-          if (price > 0) {
-            setVehiclePrice(price);
-            setTotalPrice(price + insurancePrice);
-
-            // Calculate EMI
-            calculateEmi(price, tenure);
           }
         }
       } catch (err) {
-        console.error("Error fetching pricing data:", err);
-        setError("Failed to load pricing data. Using default values.");
+        console.error("Error fetching pricing data:", err)
+        setError("Failed to load pricing data. Using default values.")
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchPricingData();
-  }, [dataEndpoint, selectedVehicleId, selectedLocation]);
+    fetchPricingData()
+  }, [dataEndpoint, selectedVehicleId, selectedLocation])
 
   // Update form data on any field change
   useEffect(() => {
@@ -161,44 +147,44 @@ export default function FinancingOptions(props) {
         paymentMethod,
         loanTenure: tenure,
         downPaymentAmount: downPayment,
-      });
+      })
     }
-  }, [paymentMethod, tenure, downPayment]);
+  }, [paymentMethod, tenure, downPayment])
 
   // Calculate EMI amount
   const calculateEmi = (price, tenureMonths) => {
     // Simple EMI calculation
     // In reality, this would use a more complex formula with interest rates
-    const effectivePrice = price - downPayment;
-    const emi = Math.round(effectivePrice / tenureMonths);
-    setEmiAmount(emi);
-  };
+    const effectivePrice = price - downPayment
+    const emi = Math.round(effectivePrice / tenureMonths)
+    setEmiAmount(emi)
+  }
 
   // Handle payment method selection
   const handlePaymentMethodSelect = (id) => {
-    setPaymentMethod(id);
-    if (onPaymentMethodSelect) onPaymentMethodSelect(id);
-  };
+    setPaymentMethod(id)
+    if (onPaymentMethodSelect) onPaymentMethodSelect(id)
+  }
 
   // Handle loan tenure change
   const handleTenureChange = (months) => {
-    setTenure(months);
-    calculateEmi(vehiclePrice, months);
-    if (onLoanTenureChange) onLoanTenureChange(months);
-  };
+    setTenure(months)
+    calculateEmi(vehiclePrice, months)
+    if (onLoanTenureChange) onLoanTenureChange(months)
+  }
 
   // Handle down payment change
   const handleDownPaymentChange = (value) => {
-    const paymentValue = parseInt(value) || 0;
-    setDownPayment(paymentValue);
-    calculateEmi(vehiclePrice, tenure);
-    if (onDownPaymentChange) onDownPaymentChange(paymentValue);
-  };
+    const paymentValue = parseInt(value) || 0
+    setDownPayment(paymentValue)
+    calculateEmi(vehiclePrice, tenure)
+    if (onDownPaymentChange) onDownPaymentChange(paymentValue)
+  }
 
   // Format price for display
   const formatPrice = (price) => {
-    return `₹${price.toLocaleString("en-IN")}`;
-  };
+    return `₹${price.toLocaleString("en-IN")}`
+  }
 
   // Styling
   const containerStyle = {
@@ -206,11 +192,11 @@ export default function FinancingOptions(props) {
     flexDirection: "column",
     width: "100%",
     ...style,
-  };
+  }
 
   const sectionStyle = {
     marginBottom: tokens.spacing[6],
-  };
+  }
 
   const sectionTitleStyle = {
     fontSize: tokens.fontSize.sm,
@@ -218,33 +204,33 @@ export default function FinancingOptions(props) {
     color: tokens.colors.neutral[600],
     textTransform: "uppercase",
     marginBottom: tokens.spacing[3],
-  };
+  }
 
   const priceBoxStyle = {
     backgroundColor: tokens.colors.neutral[100],
     borderRadius: tokens.borderRadius.DEFAULT,
     padding: tokens.spacing[4],
     marginBottom: tokens.spacing[6],
-  };
+  }
 
   const flexBetweenStyle = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-  };
+  }
 
   const buttonContainerStyle = {
     display: "flex",
     gap: tokens.spacing[4],
     marginTop: tokens.spacing[8],
-  };
+  }
 
   const tenureOptionsStyle = {
     display: "flex",
     gap: tokens.spacing[2],
     flexWrap: "wrap",
     marginBottom: tokens.spacing[4],
-  };
+  }
 
   const tenureOptionStyle = (isSelected) => ({
     padding: `${tokens.spacing[2]} ${tokens.spacing[3]}`,
@@ -254,7 +240,7 @@ export default function FinancingOptions(props) {
     borderRadius: tokens.borderRadius.DEFAULT,
     fontSize: tokens.fontSize.sm,
     cursor: "pointer",
-  });
+  })
 
   return (
     <div style={containerStyle} {...rest}>
@@ -349,8 +335,12 @@ export default function FinancingOptions(props) {
             {tenureOptions.map((option) => (
               <div
                 key={option.months}
-                style={tenureOptionStyle(option.months === tenure)}
-                onClick={() => handleTenureChange(option.months)}
+                style={tenureOptionStyle(
+                  option.months === tenure
+                )}
+                onClick={() =>
+                  handleTenureChange(option.months)
+                }
               >
                 {option.label}
               </div>
@@ -441,7 +431,7 @@ export default function FinancingOptions(props) {
         />
       </div>
     </div>
-  );
+  )
 }
 
 addPropertyControls(FinancingOptions, {
@@ -463,7 +453,7 @@ addPropertyControls(FinancingOptions, {
   dataEndpoint: {
     type: ControlType.String,
     title: "Pricing API Endpoint",
-    defaultValue: "https://your-n8n-endpoint.com/vehicle-data?type=pricing",
+    defaultValue: "https://booking-engine.sagarsiwach.workers.dev/",
   },
   selectedVehicleId: {
     type: ControlType.String,
@@ -485,7 +475,6 @@ addPropertyControls(FinancingOptions, {
     title: "Payment Method",
     defaultValue: "full-payment",
   },
-  // Continue from previous FinancingOptions addPropertyControls
   loanTenure: {
     type: ControlType.Number,
     title: "Loan Tenure (months)",
@@ -502,4 +491,4 @@ addPropertyControls(FinancingOptions, {
     max: 200000,
     step: 1000,
   },
-});
+})

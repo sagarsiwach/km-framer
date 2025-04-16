@@ -2,7 +2,7 @@
 import React from "react"
 import { motion } from "framer-motion"
 // Assuming tokens are correctly imported - replace with actual path if needed
-import tokens from "https://framer.com/m/designTokens-42aq.js"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 // --- Updated Props ---
 export function SuccessState({

@@ -1,7 +1,7 @@
-import { addPropertyControls, ControlType } from "framer";
-import { useState, useEffect, useRef } from "react";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import Button from "https://framer.com/m/Button-SLtw.js";
+import { addPropertyControls, ControlType } from "framer"
+import { useState, useEffect, useRef } from "react"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import Button from "https://framer.com/m/Button-SLtw.js"
 
 /**
  * @framerSupportedLayoutWidth any
@@ -29,134 +29,138 @@ export default function OTPVerification(props) {
     // Component styling
     style,
     ...rest
-  } = props;
+  } = props
 
   // Local state
-  const [otpValues, setOtpValues] = useState(["", "", "", "", "", ""]);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationError, setVerificationError] = useState(null);
-  const [resendDisabled, setResendDisabled] = useState(true);
-  const [resendCountdown, setResendCountdown] = useState(30);
-  const [isPhoneVerification, setIsPhoneVerification] = useState(true);
+  const [otpValues, setOtpValues] = useState(["", "", "", "", "", ""])
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [verificationError, setVerificationError] = useState(null)
+  const [resendDisabled, setResendDisabled] = useState(true)
+  const [resendCountdown, setResendCountdown] = useState(30)
+  const [isPhoneVerification, setIsPhoneVerification] = useState(true)
 
   // Refs for OTP inputs
-  const inputRefs = useRef([]);
+  const inputRefs = useRef([])
 
   // Auto-fill OTP if provided (for testing)
   useEffect(() => {
     if (autoFillOTP && autoFillOTP.length === 6) {
-      const autoFillArray = autoFillOTP.split("");
-      setOtpValues(autoFillArray);
+      const autoFillArray = autoFillOTP.split("")
+      setOtpValues(autoFillArray)
     }
-  }, [autoFillOTP]);
+  }, [autoFillOTP])
 
   // Resend timer countdown
   useEffect(() => {
     if (resendCountdown > 0) {
       const timer = setTimeout(() => {
-        setResendCountdown(resendCountdown - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
+        setResendCountdown(resendCountdown - 1)
+      }, 1000)
+      return () => clearTimeout(timer)
     } else {
-      setResendDisabled(false);
+      setResendDisabled(false)
     }
-  }, [resendCountdown]);
+  }, [resendCountdown])
 
   // Focus first input on mount
   useEffect(() => {
     if (inputRefs.current[0]) {
-      inputRefs.current[0].focus();
+      inputRefs.current[0].focus()
     }
-  }, []);
+  }, [])
 
   // Handle OTP input change
   const handleChange = (index, value) => {
     // Only allow digits
-    if (!/^\d*$/.test(value)) return;
+    if (!/^\d*$/.test(value)) return
 
-    const newOtpValues = [...otpValues];
-    newOtpValues[index] = value.slice(0, 1);
-    setOtpValues(newOtpValues);
+    const newOtpValues = [...otpValues]
+    newOtpValues[index] = value.slice(0, 1)
+    setOtpValues(newOtpValues)
 
     // Auto-move to next input
     if (value && index < 5 && inputRefs.current[index + 1]) {
-      inputRefs.current[index + 1].focus();
+      inputRefs.current[index + 1].focus()
     }
-  };
+  }
 
   // Handle key down events for backspace
   const handleKeyDown = (index, e) => {
     if (e.key === "Backspace") {
-      if (!otpValues[index] && index > 0 && inputRefs.current[index - 1]) {
-        inputRefs.current[index - 1].focus();
+      if (
+        !otpValues[index] &&
+        index > 0 &&
+        inputRefs.current[index - 1]
+      ) {
+        inputRefs.current[index - 1].focus()
       }
     }
-  };
+  }
 
   // Handle paste event
   const handlePaste = (e) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData("text/plain").trim();
+    e.preventDefault()
+    const pastedData = e.clipboardData.getData("text/plain").trim()
 
     if (/^\d+$/.test(pastedData)) {
-      const digits = pastedData.slice(0, 6).split("");
-      const newOtpValues = [...otpValues];
+      const digits = pastedData.slice(0, 6).split("")
+      const newOtpValues = [...otpValues]
 
       digits.forEach((digit, index) => {
         if (index < 6) {
-          newOtpValues[index] = digit;
+          newOtpValues[index] = digit
         }
-      });
+      })
 
-      setOtpValues(newOtpValues);
+      setOtpValues(newOtpValues)
 
       // Focus last filled input or next empty one
-      const lastIndex = Math.min(digits.length, 5);
+      const lastIndex = Math.min(digits.length, 5)
       if (inputRefs.current[lastIndex]) {
-        inputRefs.current[lastIndex].focus();
+        inputRefs.current[lastIndex].focus()
       }
     }
-  };
+  }
 
   // Handle resend OTP
   const handleResendOTP = () => {
-    setResendDisabled(true);
-    setResendCountdown(30);
+    setResendDisabled(true)
+    setResendCountdown(30)
     // In a real implementation, would call an API to resend OTP
-  };
+  }
 
   // Toggle between phone and email verification
   const toggleVerificationMethod = () => {
-    setIsPhoneVerification(!isPhoneVerification);
-    setOtpValues(["", "", "", "", "", ""]);
-    setVerificationError(null);
-  };
+    setIsPhoneVerification(!isPhoneVerification)
+    setOtpValues(["", "", "", "", "", ""])
+    setVerificationError(null)
+  }
 
   // Verify OTP
   const verifyOTP = () => {
-    const otp = otpValues.join("");
+    const otp = otpValues.join("")
 
     if (otp.length !== 6) {
-      setVerificationError("Please enter a valid 6-digit OTP");
-      return;
+      setVerificationError("Please enter a valid 6-digit OTP")
+      return
     }
 
-    setIsVerifying(true);
-    setVerificationError(null);
+    setIsVerifying(true)
+    setVerificationError(null)
 
     // Mock verification for testing
     setTimeout(() => {
-      setIsVerifying(false);
+      setIsVerifying(false)
 
       // For testing, accept 123456 or any value from autoFillOTP as valid
       if (otp === "123456" || (autoFillOTP && otp === autoFillOTP)) {
-        if (onVerificationSuccess) onVerificationSuccess();
+        if (onVerificationSuccess) onVerificationSuccess()
       } else {
-        setVerificationError("Invalid OTP. Please try again.");
-        if (onVerificationFailure) onVerificationFailure();
+        setVerificationError("Invalid OTP. Please try again.")
+        if (onVerificationFailure) onVerificationFailure()
       }
-    }, 1500);
-  };
+    }, 1500)
+  }
 
   // Styling
   const containerStyle = {
@@ -164,35 +168,35 @@ export default function OTPVerification(props) {
     flexDirection: "column",
     width: "100%",
     ...style,
-  };
+  }
 
   const sectionStyle = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     marginBottom: tokens.spacing[6],
-  };
+  }
 
   const headingStyle = {
     fontSize: tokens.fontSize.xl,
     fontWeight: tokens.fontWeight.bold,
     marginBottom: tokens.spacing[2],
     textAlign: "center",
-  };
+  }
 
   const subheadingStyle = {
     fontSize: tokens.fontSize.sm,
     color: tokens.colors.neutral[600],
     marginBottom: tokens.spacing[6],
     textAlign: "center",
-  };
+  }
 
   const otpInputContainerStyle = {
     display: "flex",
     gap: tokens.spacing[2],
     marginBottom: tokens.spacing[6],
     justifyContent: "center",
-  };
+  }
 
   const otpInputStyle = {
     width: "40px",
@@ -202,34 +206,34 @@ export default function OTPVerification(props) {
     border: `1px solid ${borderColor}`,
     borderRadius: tokens.borderRadius.DEFAULT,
     outline: "none",
-  };
+  }
 
   const actionsStyle = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     gap: tokens.spacing[4],
-  };
+  }
 
   const linkStyle = {
     color: primaryColor,
     cursor: "pointer",
     fontSize: tokens.fontSize.sm,
-  };
+  }
 
   const errorStyle = {
     color: tokens.colors.red[600],
     fontSize: tokens.fontSize.sm,
     marginBottom: tokens.spacing[4],
     textAlign: "center",
-  };
+  }
 
   const buttonContainerStyle = {
     display: "flex",
     gap: tokens.spacing[4],
     marginTop: tokens.spacing[8],
     width: "100%",
-  };
+  }
 
   return (
     <div style={containerStyle} {...rest}>
@@ -250,7 +254,9 @@ export default function OTPVerification(props) {
               type="text"
               maxLength={1}
               value={value}
-              onChange={(e) => handleChange(index, e.target.value)}
+              onChange={(e) =>
+                handleChange(index, e.target.value)
+              }
               onKeyDown={(e) => handleKeyDown(index, e)}
               style={otpInputStyle}
             />
@@ -258,7 +264,9 @@ export default function OTPVerification(props) {
         </div>
 
         {/* Error message */}
-        {verificationError && <div style={errorStyle}>{verificationError}</div>}
+        {verificationError && (
+          <div style={errorStyle}>{verificationError}</div>
+        )}
 
         {/* Action links */}
         <div style={actionsStyle}>
@@ -276,7 +284,9 @@ export default function OTPVerification(props) {
               }}
               onClick={resendDisabled ? null : handleResendOTP}
             >
-              {resendDisabled ? `Resend in ${resendCountdown}s` : "Resend code"}
+              {resendDisabled
+                ? `Resend in ${resendCountdown}s`
+                : "Resend code"}
             </div>
           </div>
 
@@ -329,7 +339,7 @@ export default function OTPVerification(props) {
         />
       </div>
     </div>
-  );
+  )
 }
 
 addPropertyControls(OTPVerification, {
@@ -363,4 +373,4 @@ addPropertyControls(OTPVerification, {
     title: "Auto-fill OTP (testing)",
     defaultValue: "123456",
   },
-});
+})

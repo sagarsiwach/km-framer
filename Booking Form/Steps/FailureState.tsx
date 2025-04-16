@@ -1,6 +1,6 @@
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import Button from "https://framer.com/m/Button-SLtw.js";
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import Button from "https://framer.com/m/Button-SLtw.js"
 
 /**
  * @framerSupportedLayoutWidth any
@@ -23,7 +23,7 @@ export default function FailureState(props) {
     // Component styling
     style,
     ...rest
-  } = props;
+  } = props
 
   // Styling
   const containerStyle = {
@@ -32,7 +32,7 @@ export default function FailureState(props) {
     alignItems: "center",
     padding: tokens.spacing[6],
     ...style,
-  };
+  }
 
   const iconContainerStyle = {
     width: "80px",
@@ -43,7 +43,7 @@ export default function FailureState(props) {
     justifyContent: "center",
     alignItems: "center",
     marginBottom: tokens.spacing[6],
-  };
+  }
 
   const headingStyle = {
     fontSize: tokens.fontSize["2xl"],
@@ -51,21 +51,21 @@ export default function FailureState(props) {
     color: tokens.colors.red[600],
     marginBottom: tokens.spacing[2],
     textAlign: "center",
-  };
+  }
 
   const subheadingStyle = {
     fontSize: tokens.fontSize.lg,
     color: tokens.colors.neutral[700],
     marginBottom: tokens.spacing[2],
     textAlign: "center",
-  };
+  }
 
   const errorCodeStyle = {
     fontSize: tokens.fontSize.sm,
     color: tokens.colors.neutral[500],
     marginBottom: tokens.spacing[6],
     textAlign: "center",
-  };
+  }
 
   const troubleshootingCardStyle = {
     width: "100%",
@@ -73,19 +73,19 @@ export default function FailureState(props) {
     borderRadius: tokens.borderRadius.lg,
     padding: tokens.spacing[6],
     marginBottom: tokens.spacing[6],
-  };
+  }
 
   const cardHeadingStyle = {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.bold,
     marginBottom: tokens.spacing[4],
-  };
+  }
 
   const tipStyle = {
     display: "flex",
     marginBottom: tokens.spacing[3],
     gap: tokens.spacing[3],
-  };
+  }
 
   const tipNumberStyle = {
     width: "24px",
@@ -97,20 +97,20 @@ export default function FailureState(props) {
     alignItems: "center",
     fontSize: tokens.fontSize.sm,
     fontWeight: tokens.fontWeight.medium,
-  };
+  }
 
   const tipTextStyle = {
     fontSize: tokens.fontSize.sm,
     color: tokens.colors.neutral[700],
     flex: 1,
-  };
+  }
 
   const buttonContainerStyle = {
     display: "flex",
     flexDirection: "column",
     gap: tokens.spacing[3],
     width: "100%",
-  };
+  }
 
   const errorIcon = (
     <svg
@@ -140,7 +140,7 @@ export default function FailureState(props) {
         strokeLinecap="round"
       />
     </svg>
-  );
+  )
 
   return (
     <div style={containerStyle} {...rest}>
@@ -169,7 +169,9 @@ export default function FailureState(props) {
 
         <div style={tipStyle}>
           <div style={tipNumberStyle}>3</div>
-          <div style={tipTextStyle}>Try a different payment method</div>
+          <div style={tipTextStyle}>
+            Try a different payment method
+          </div>
         </div>
 
         <div style={tipStyle}>
@@ -202,7 +204,7 @@ export default function FailureState(props) {
         />
       </div>
     </div>
-  );
+  )
 }
 
 addPropertyControls(FailureState, {
@@ -221,4 +223,4 @@ addPropertyControls(FailureState, {
     title: "Error Code",
     defaultValue: "ERR-PAYMENT-3042",
   },
-});
+})

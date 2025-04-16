@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import { addPropertyControls, ControlType } from "framer"
 import { motion, AnimatePresence } from "framer-motion"
-import tokens from "https://framer.com/m/designTokens-42aq.js" // Adjust path if needed
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 // Import our component modules with the provided URLs
 import {

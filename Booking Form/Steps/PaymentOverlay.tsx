@@ -1,7 +1,7 @@
-import { addPropertyControls, ControlType } from "framer";
-import { useState, useEffect } from "react";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import Button from "https://framer.com/m/Button-SLtw.js";
+import { addPropertyControls, ControlType } from "framer"
+import { useState, useEffect } from "react"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import Button from "https://framer.com/m/Button-SLtw.js"
 
 /**
  * @framerSupportedLayoutWidth any
@@ -25,10 +25,10 @@ export default function PaymentOverlay(props) {
     // Component styling
     style,
     ...rest
-  } = props;
+  } = props
 
   // Local state
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false)
 
   // Styling
   const overlayStyle = {
@@ -43,7 +43,7 @@ export default function PaymentOverlay(props) {
     alignItems: "center",
     zIndex: 1000,
     ...style,
-  };
+  }
 
   const paymentCardStyle = {
     backgroundColor: "white",
@@ -52,59 +52,59 @@ export default function PaymentOverlay(props) {
     width: "90%",
     maxWidth: "400px",
     boxShadow: tokens.boxShadow.xl,
-  };
+  }
 
   const headingStyle = {
     fontSize: tokens.fontSize.xl,
     fontWeight: tokens.fontWeight.bold,
     marginBottom: tokens.spacing[2],
     textAlign: "center",
-  };
+  }
 
   const subheadingStyle = {
     fontSize: tokens.fontSize.sm,
     color: tokens.colors.neutral[600],
     marginBottom: tokens.spacing[6],
     textAlign: "center",
-  };
+  }
 
   const amountStyle = {
     fontSize: tokens.fontSize["2xl"],
     fontWeight: tokens.fontWeight.bold,
     textAlign: "center",
     marginBottom: tokens.spacing[6],
-  };
+  }
 
   const buttonGroupStyle = {
     display: "flex",
     flexDirection: "column",
     gap: tokens.spacing[3],
-  };
+  }
 
   // Demo payment processing
   const processPayment = (success) => {
-    setIsProcessing(true);
+    setIsProcessing(true)
 
     // Simulate payment processing
     setTimeout(() => {
-      setIsProcessing(false);
+      setIsProcessing(false)
 
       if (success) {
-        if (onPaymentSuccess) onPaymentSuccess();
+        if (onPaymentSuccess) onPaymentSuccess()
       } else {
-        if (onPaymentFailure) onPaymentFailure();
+        if (onPaymentFailure) onPaymentFailure()
       }
-    }, 2000);
-  };
+    }, 2000)
+  }
 
   return (
     <div style={overlayStyle} {...rest}>
       <div style={paymentCardStyle}>
         <div style={headingStyle}>Complete Payment</div>
         <div style={subheadingStyle}>
-          In a real implementation, this would integrate with Razorpay or
-          another payment gateway. For demo purposes, please use the buttons
-          below.
+          In a real implementation, this would integrate with Razorpay
+          or another payment gateway. For demo purposes, please use
+          the buttons below.
         </div>
 
         <div style={amountStyle}>Total: {totalAmount}</div>
@@ -112,7 +112,9 @@ export default function PaymentOverlay(props) {
         <div style={buttonGroupStyle}>
           <Button
             text={
-              isProcessing ? "Processing..." : "Simulate Successful Payment"
+              isProcessing
+                ? "Processing..."
+                : "Simulate Successful Payment"
             }
             onClick={() => processPayment(true)}
             primaryColor={tokens.colors.green[600]}
@@ -135,7 +137,7 @@ export default function PaymentOverlay(props) {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 addPropertyControls(PaymentOverlay, {
@@ -159,4 +161,4 @@ addPropertyControls(PaymentOverlay, {
     title: "Total Amount",
     defaultValue: "₹2,02,236",
   },
-});
+})

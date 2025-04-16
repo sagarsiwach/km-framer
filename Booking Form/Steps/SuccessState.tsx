@@ -1,6 +1,6 @@
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import Button from "https://framer.com/m/Button-SLtw.js";
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import Button from "https://framer.com/m/Button-SLtw.js"
 
 /**
  * @framerSupportedLayoutWidth any
@@ -25,7 +25,7 @@ export default function SuccessState(props) {
     // Component styling
     style,
     ...rest
-  } = props;
+  } = props
 
   // Styling
   const containerStyle = {
@@ -34,7 +34,7 @@ export default function SuccessState(props) {
     alignItems: "center",
     padding: tokens.spacing[6],
     ...style,
-  };
+  }
 
   const iconContainerStyle = {
     width: "80px",
@@ -45,7 +45,7 @@ export default function SuccessState(props) {
     justifyContent: "center",
     alignItems: "center",
     marginBottom: tokens.spacing[6],
-  };
+  }
 
   const headingStyle = {
     fontSize: tokens.fontSize["2xl"],
@@ -53,14 +53,14 @@ export default function SuccessState(props) {
     color: tokens.colors.green[600],
     marginBottom: tokens.spacing[2],
     textAlign: "center",
-  };
+  }
 
   const subheadingStyle = {
     fontSize: tokens.fontSize.lg,
     color: tokens.colors.neutral[700],
     marginBottom: tokens.spacing[6],
     textAlign: "center",
-  };
+  }
 
   const detailsCardStyle = {
     width: "100%",
@@ -68,31 +68,31 @@ export default function SuccessState(props) {
     borderRadius: tokens.borderRadius.lg,
     padding: tokens.spacing[6],
     marginBottom: tokens.spacing[6],
-  };
+  }
 
   const detailRowStyle = {
     display: "flex",
     justifyContent: "space-between",
     marginBottom: tokens.spacing[3],
-  };
+  }
 
   const detailLabelStyle = {
     fontSize: tokens.fontSize.sm,
     color: tokens.colors.neutral[600],
-  };
+  }
 
   const detailValueStyle = {
     fontSize: tokens.fontSize.sm,
     fontWeight: tokens.fontWeight.medium,
     color: tokens.colors.neutral[900],
-  };
+  }
 
   const buttonContainerStyle = {
     display: "flex",
     flexDirection: "column",
     gap: tokens.spacing[3],
     width: "100%",
-  };
+  }
 
   const checkmarkIcon = (
     <svg
@@ -111,7 +111,7 @@ export default function SuccessState(props) {
       />
       <circle cx="24" cy="24" r="21" stroke="#16A34A" strokeWidth="4" />
     </svg>
-  );
+  )
 
   return (
     <div style={containerStyle} {...rest}>
@@ -182,7 +182,7 @@ export default function SuccessState(props) {
         />
       </div>
     </div>
-  );
+  )
 }
 
 addPropertyControls(SuccessState, {
@@ -211,4 +211,4 @@ addPropertyControls(SuccessState, {
     title: "Estimated Delivery",
     defaultValue: "15 May, 2025",
   },
-});
+})
