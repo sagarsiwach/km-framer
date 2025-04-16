@@ -1,9 +1,12 @@
-// VehicleConfiguration.tsx (modified version)
+// VehicleConfiguration.tsx - Improved version
 
 import { addPropertyControls, ControlType } from "framer"
 import { useState, useEffect, useRef } from "react"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
-import { LocationField, getLocationIcon } from "https://framer.com/m/LocationSearch-hr1w.js"
+import {
+  LocationField,
+  getLocationIcon,
+} from "https://framer.com/m/LocationSearch-hr1w.js"
 import VehicleCards from "https://framer.com/m/VehicleCards-mBlt.js"
 import Button from "https://framer.com/m/Button-SLtw.js"
 import VariantCard from "https://framer.com/m/VariantCard-5sVx.js"
@@ -57,8 +60,11 @@ export default function VehicleConfiguration(props) {
     variants: [],
     colors: [],
     components: [],
-    pricing: []
+    pricing: [],
   })
+
+  // Track active section
+  const [activeSection, setActiveSection] = useState("location")
 
   // State for location search functionality
   const [locationStatus, setLocationStatus] = useState("idle")
@@ -66,6 +72,14 @@ export default function VehicleConfiguration(props) {
   const [locationResults, setLocationResults] = useState([])
   const [focusedField, setFocusedField] = useState(null)
   const locationInputRef = useRef(null)
+
+  // Refs for each section for scrolling
+  const locationSectionRef = useRef(null)
+  const vehicleSectionRef = useRef(null)
+  const variantSectionRef = useRef(null)
+  const colorSectionRef = useRef(null)
+  const componentSectionRef = useRef(null)
+  const summarySectionRef = useRef(null)
 
   // Processed data for display
   const vehicles = vehicleData.models || []
@@ -167,7 +181,9 @@ export default function VehicleConfiguration(props) {
       selectedVehicleVariants.length > 0
     ) {
       // Find default variant if available
-      const defaultVariant = selectedVehicleVariants.find(v => v.is_default) || selectedVehicleVariants[0]
+      const defaultVariant =
+        selectedVehicleVariants.find((v) => v.is_default) ||
+        selectedVehicleVariants[0]
       setVariantValue(defaultVariant.id)
       if (onVariantSelect) onVariantSelect(defaultVariant.id)
     }
@@ -175,7 +191,9 @@ export default function VehicleConfiguration(props) {
     // If we have a vehicle selected but no color, select the first color
     if (vehicleValue && !colorValue && selectedVehicleColors.length > 0) {
       // Find default color if available
-      const defaultColor = selectedVehicleColors.find(c => c.is_default) || selectedVehicleColors[0]
+      const defaultColor =
+        selectedVehicleColors.find((c) => c.is_default) ||
+        selectedVehicleColors[0]
       setColorValue(defaultColor.id)
       if (onColorSelect) onColorSelect(defaultColor.id)
     }
@@ -199,14 +217,56 @@ export default function VehicleConfiguration(props) {
     }
   }, [locationValue, vehicleValue, variantValue, colorValue, componentValues])
 
+  // Effect to scroll to active section
+  useEffect(() => {
+    if (activeSection === "location" && locationSectionRef.current) {
+      locationSectionRef.current.scrollIntoView({ behavior: "smooth" })
+    } else if (activeSection === "vehicle" && vehicleSectionRef.current) {
+      vehicleSectionRef.current.scrollIntoView({ behavior: "smooth" })
+    } else if (activeSection === "variant" && variantSectionRef.current) {
+      variantSectionRef.current.scrollIntoView({ behavior: "smooth" })
+    } else if (activeSection === "color" && colorSectionRef.current) {
+      colorSectionRef.current.scrollIntoView({ behavior: "smooth" })
+    } else if (
+      activeSection === "components" &&
+      componentSectionRef.current
+    ) {
+      componentSectionRef.current.scrollIntoView({ behavior: "smooth" })
+    } else if (activeSection === "summary" && summarySectionRef.current) {
+      summarySectionRef.current.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [activeSection])
+
+  // Advance to next section
+  const goToNextSection = () => {
+    if (activeSection === "location") {
+      if (locationValue) setActiveSection("vehicle")
+    } else if (activeSection === "vehicle") {
+      if (vehicleValue) setActiveSection("variant")
+    } else if (activeSection === "variant") {
+      if (variantValue) setActiveSection("color")
+    } else if (activeSection === "color") {
+      if (colorValue) setActiveSection("components")
+    } else if (activeSection === "components") {
+      setActiveSection("summary")
+    }
+  }
+
   // Handle location input change
   const handleLocationChange = (value) => {
-    if (typeof value === 'object' && value.target) {
+    if (typeof value === "object" && value.target) {
       setLocationValue(value.target.value)
       if (onLocationChange) onLocationChange(value.target.value)
     } else {
       setLocationValue(value)
       if (onLocationChange) onLocationChange(value)
+    }
+
+    // Automatically move to next section when location is set
+    if (value && typeof value === "string" && value.length > 0) {
+      setTimeout(() => {
+        setActiveSection("vehicle")
+      }, 500)
     }
   }
 
@@ -217,12 +277,15 @@ export default function VehicleConfiguration(props) {
       // For this demo, we'll simulate by searching through pricing data
       if (/^\d{6}$/.test(query)) {
         // If it's a 6-digit pincode, find matching locations
-        const matchingLocations = vehicleData.pricing?.filter(
-          p => p.pincode_start <= parseInt(query) && p.pincode_end >= parseInt(query)
-        ) || []
+        const matchingLocations =
+          vehicleData.pricing?.filter(
+            (p) =>
+              p.pincode_start <= parseInt(query) &&
+              p.pincode_end >= parseInt(query)
+          ) || []
 
         // Format results like Mapbox features for compatibility
-        return matchingLocations.map(loc => ({
+        return matchingLocations.map((loc) => ({
           id: `loc-${loc.id}`,
           place_name: `${query}, ${loc.city || ""}, ${loc.state}, India`,
           place_type: ["postcode"],
@@ -231,17 +294,24 @@ export default function VehicleConfiguration(props) {
             { id: "place.123", text: loc.city || "" },
             { id: "region.123", text: loc.state },
           ],
-          text: query
+          text: query,
         }))
       } else if (query.length >= 3) {
         // Simulate search based on city/state
-        const matchingLocations = vehicleData.pricing?.filter(
-          p =>
-            (p.city && p.city.toLowerCase().includes(query.toLowerCase())) ||
-            (p.state && p.state.toLowerCase().includes(query.toLowerCase()))
-        ) || []
+        const matchingLocations =
+          vehicleData.pricing?.filter(
+            (p) =>
+              (p.city &&
+                p.city
+                  .toLowerCase()
+                  .includes(query.toLowerCase())) ||
+              (p.state &&
+                p.state
+                  .toLowerCase()
+                  .includes(query.toLowerCase()))
+          ) || []
 
-        return matchingLocations.map(loc => ({
+        return matchingLocations.map((loc) => ({
           id: `loc-${loc.id}`,
           place_name: `${loc.city || ""}, ${loc.state}, India`,
           place_type: ["place"],
@@ -249,7 +319,7 @@ export default function VehicleConfiguration(props) {
             { id: "place.123", text: loc.city || "" },
             { id: "region.123", text: loc.state },
           ],
-          text: loc.city || loc.state
+          text: loc.city || loc.state,
         }))
       }
 
@@ -269,6 +339,11 @@ export default function VehicleConfiguration(props) {
       // Mock success - set a default location
       setLocationValue("Delhi, India")
       setLocationStatus("success")
+
+      // Move to next section after location is set
+      setTimeout(() => {
+        setActiveSection("vehicle")
+      }, 500)
     }, 1500)
   }
 
@@ -282,18 +357,33 @@ export default function VehicleConfiguration(props) {
     setComponentValues([])
 
     if (onVehicleSelect) onVehicleSelect(id)
+
+    // Automatically advance to variant section
+    setTimeout(() => {
+      setActiveSection("variant")
+    }, 300)
   }
 
   // Handle variant selection
   const handleVariantSelect = (id) => {
     setVariantValue(id)
     if (onVariantSelect) onVariantSelect(id)
+
+    // Automatically advance to color section
+    setTimeout(() => {
+      setActiveSection("color")
+    }, 300)
   }
 
   // Handle color selection
   const handleColorSelect = (id) => {
     setColorValue(id)
     if (onColorSelect) onColorSelect(id)
+
+    // Automatically advance to components section
+    setTimeout(() => {
+      setActiveSection("components")
+    }, 300)
   }
 
   // Handle component selection
@@ -318,270 +408,421 @@ export default function VehicleConfiguration(props) {
 
     setComponentValues(newComponents)
     if (onComponentSelect) onComponentSelect(newComponents)
-    // VehicleConfiguration.tsx (continued)
+  }
 
-    // Get price for a vehicle
-    const getVehiclePrice = (vehicleId) => {
-      if (!vehicleData.pricing) return null
+  // Get price for a vehicle
+  const getVehiclePrice = (vehicleId) => {
+    if (!vehicleData.pricing) return null
 
-      // Find matching price
-      const pricing = vehicleData.pricing.find(
-        (p) => p.model_id === vehicleId
+    // Find matching price
+    const pricing = vehicleData.pricing.find(
+      (p) => p.model_id === vehicleId
+    )
+    return pricing ? `₹${pricing.base_price.toLocaleString("en-IN")}` : null
+  }
+
+  // Get total price for current selections
+  const getTotalPrice = () => {
+    let total = 0
+
+    // Base vehicle price
+    if (vehicleValue && vehicleData.pricing) {
+      const vehiclePricing = vehicleData.pricing.find(
+        (p) => p.model_id === vehicleValue
       )
-      return pricing ? `₹${pricing.base_price.toLocaleString("en-IN")}` : null
+      if (vehiclePricing) total += vehiclePricing.base_price || 0
     }
 
-    // Handle next button click
-    const handleNext = () => {
-      setSubmitted(true)
-
-      // Validation
-      if (!locationValue) {
-        setError({ ...error, location: "Please enter a location" })
-        return
-      }
-
-      // Additional validation could be done here
-      if (onNextStep) onNextStep()
+    // Variant additional price
+    if (variantValue && selectedVehicleVariants) {
+      const selectedVariant = selectedVehicleVariants.find(
+        (v) => v.id === variantValue
+      )
+      if (selectedVariant) total += selectedVariant.price_addition || 0
     }
 
-    // Ensure required components are selected
-    useEffect(() => {
-      if (selectedVehicleComponents && selectedVehicleComponents.length > 0) {
-        const requiredComponents = selectedVehicleComponents
-          .filter((comp) => comp.is_required)
-          .map((comp) => comp.id)
+    // Components prices
+    if (componentValues.length > 0 && selectedVehicleComponents) {
+      componentValues.forEach((compId) => {
+        const component = selectedVehicleComponents.find(
+          (c) => c.id === compId
+        )
+        if (component) total += component.price || 0
+      })
+    }
 
-        // Add any missing required components
-        if (requiredComponents.length > 0) {
-          const newComponents = [...componentValues]
-          let changed = false
+    return total
+  }
 
-          requiredComponents.forEach((compId) => {
-            if (!componentValues.includes(compId)) {
-              newComponents.push(compId)
-              changed = true
-            }
-          })
+  // Handle next button click
+  const handleNext = () => {
+    setSubmitted(true)
 
-          if (changed) {
-            setComponentValues(newComponents)
+    // Validation
+    if (!locationValue) {
+      setError({ ...error, location: "Please enter a location" })
+      setActiveSection("location")
+      return
+    }
+
+    if (!vehicleValue) {
+      setActiveSection("vehicle")
+      return
+    }
+
+    if (!variantValue) {
+      setActiveSection("variant")
+      return
+    }
+
+    if (!colorValue) {
+      setActiveSection("color")
+      return
+    }
+
+    // All validated, continue to next step
+    if (onNextStep) onNextStep()
+  }
+
+  // Ensure required components are selected
+  useEffect(() => {
+    if (selectedVehicleComponents && selectedVehicleComponents.length > 0) {
+      const requiredComponents = selectedVehicleComponents
+        .filter((comp) => comp.is_required)
+        .map((comp) => comp.id)
+
+      // Add any missing required components
+      if (requiredComponents.length > 0) {
+        const newComponents = [...componentValues]
+        let changed = false
+
+        requiredComponents.forEach((compId) => {
+          if (!componentValues.includes(compId)) {
+            newComponents.push(compId)
+            changed = true
           }
+        })
+
+        if (changed) {
+          setComponentValues(newComponents)
         }
       }
-    }, [selectedVehicleComponents, componentValues])
-
-    // Container styling
-    const containerStyle = {
-      display: "flex",
-      flexDirection: "column",
-      width: "100%",
-      ...style,
     }
+  }, [selectedVehicleComponents, componentValues])
 
-    const sectionStyle = {
-      marginBottom: tokens.spacing[6],
-    }
+  // Container styling
+  const containerStyle = {
+    display: "flex",
+    flexDirection: "column",
+    width: "100%",
+    height: "100%",
+    overflow: "auto",
+    paddingBottom: "80px", // Add padding for bottom bar
+    ...style,
+  }
 
-    const sectionTitleStyle = {
-      fontSize: tokens.fontSize.sm,
-      fontWeight: tokens.fontWeight.medium,
-      color: tokens.colors.neutral[600],
-      textTransform: "uppercase",
-      marginBottom: tokens.spacing[3],
-    }
+  const sectionStyle = {
+    marginBottom: tokens.spacing[12],
+    scrollMarginTop: "20px",
+  }
 
-    const buttonContainerStyle = {
-      marginTop: tokens.spacing[8],
-    }
+  const sectionTitleStyle = {
+    fontSize: tokens.fontSize.sm,
+    fontWeight: tokens.fontWeight.medium,
+    color: tokens.colors.neutral[600],
+    textTransform: "uppercase",
+    marginBottom: tokens.spacing[3],
+  }
 
-    // Determine if next button should be enabled
-    const isNextEnabled =
-      locationValue && vehicleValue && variantValue && colorValue
+  const buttonContainerStyle = {
+    position: "fixed",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: tokens.spacing[4],
+    backgroundColor: "white",
+    borderTop: `1px solid ${borderColor}`,
+    zIndex: 100,
+    width: "100%",
+  }
 
-    // Loading state display
-    if (loading) {
-      return (
-        <div style={containerStyle}>
-          <div
-            style={{ textAlign: "center", padding: tokens.spacing[8] }}
-          >
-            Loading vehicle information...
-          </div>
+  // Format price
+  const formatPrice = (price) => {
+    return `₹${price.toLocaleString("en-IN")}`
+  }
+
+  // Determine if next button should be enabled
+  const isNextEnabled =
+    locationValue && vehicleValue && variantValue && colorValue
+
+  // Loading state display
+  if (loading) {
+    return (
+      <div style={containerStyle}>
+        <div
+          style={{ textAlign: "center", padding: tokens.spacing[8] }}
+        >
+          Loading vehicle information...
         </div>
-      )
-    }
+      </div>
+    )
+  }
 
-    // Error state display
-    if (error && typeof error === 'string') {
-      return (
-        <div style={containerStyle}>
-          <div
+  // Error state display
+  if (error && typeof error === "string") {
+    return (
+      <div style={containerStyle}>
+        <div
+          style={{
+            padding: tokens.spacing[4],
+            marginBottom: tokens.spacing[4],
+            backgroundColor: tokens.colors.red[50],
+            color: tokens.colors.red[700],
+            borderRadius: tokens.borderRadius.DEFAULT,
+            fontSize: tokens.fontSize.sm,
+          }}
+        >
+          {error}
+          <button
+            onClick={() => window.location.reload()}
             style={{
-              padding: tokens.spacing[4],
-              marginBottom: tokens.spacing[4],
-              backgroundColor: tokens.colors.red[50],
-              color: tokens.colors.red[700],
+              marginTop: tokens.spacing[4],
+              padding: `${tokens.spacing[2]} ${tokens.spacing[4]}`,
+              backgroundColor: primaryColor,
+              color: "white",
+              border: "none",
               borderRadius: tokens.borderRadius.DEFAULT,
-              fontSize: tokens.fontSize.sm,
+              cursor: "pointer",
             }}
           >
-            {error}
-            <button
-              onClick={() => window.location.reload()}
-              style={{
-                marginTop: tokens.spacing[4],
-                padding: `${tokens.spacing[2]} ${tokens.spacing[4]}`,
-                backgroundColor: primaryColor,
-                color: "white",
-                border: "none",
-                borderRadius: tokens.borderRadius.DEFAULT,
-                cursor: "pointer",
-              }}
-            >
-              Retry
-            </button>
-          </div>
+            Retry
+          </button>
         </div>
-      )
+      </div>
+    )
+  }
+
+  // Map colors to the format expected by ColorSelector
+  const colorOptions = selectedVehicleColors.map((color) => {
+    let colorValue = "#f00027" // Default fallback
+
+    try {
+      if (color.color_value) {
+        const parsed = JSON.parse(color.color_value)
+        colorValue = parsed.colorStart || colorValue
+      }
+    } catch (e) {
+      console.error("Error parsing color value:", e)
     }
 
-    // Map colors to the format expected by ColorSelector
-    const colorOptions = selectedVehicleColors.map((color) => {
-      let colorValue = "#f00027"; // Default fallback
+    return {
+      id: color.id,
+      name: color.name,
+      value: colorValue,
+    }
+  })
 
-      try {
-        if (color.color_value) {
-          const parsed = JSON.parse(color.color_value);
-          colorValue = parsed.colorStart || colorValue;
-        }
-      } catch (e) {
-        console.error("Error parsing color value:", e);
-      }
+  // Group components by type
+  const componentTypes = [
+    ...new Set(selectedVehicleComponents.map((c) => c.component_type)),
+  ]
 
-      return {
-        id: color.id,
-        name: color.name,
-        value: colorValue
-      };
-    });
+  // Map component types to human-readable names
+  const getComponentTypeName = (type) => {
+    switch (type) {
+      case "ACCESSORY":
+        return "Accessories"
+      case "PACKAGE":
+        return "Packages"
+      case "WARRANTY":
+        return "Warranty"
+      case "SERVICE":
+        return "Servicing"
+      default:
+        return "Optional Components"
+    }
+  }
 
-    // Group components by type
-    const componentTypes = [...new Set(selectedVehicleComponents.map(c => c.component_type))];
+  // Get selected vehicle model code
+  const getSelectedVehicleCode = () => {
+    if (!selectedVehicle) return ""
+    return selectedVehicle.model_code || ""
+  }
 
-    // Map component types to human-readable names
-    const getComponentTypeName = (type) => {
-      switch (type) {
-        case "ACCESSORY": return "Accessories";
-        case "PACKAGE": return "Packages";
-        case "WARRANTY": return "Warranty";
-        case "SERVICE": return "Servicing";
-        default: return "Optional Components";
-      }
-    };
+  return (
+    <div style={containerStyle} {...rest}>
+      {/* Location Section */}
+      <div
+        ref={locationSectionRef}
+        style={{
+          ...sectionStyle,
+          display: activeSection === "location" ? "block" : "none",
+          height: activeSection === "location" ? "auto" : "0",
+        }}
+      >
+        <div style={sectionTitleStyle}>LOCATION</div>
+        <LocationField
+          value={locationValue}
+          onChange={handleLocationChange}
+          onFocus={() => {
+            setFocusedField("location")
+            setActiveSection("location")
+          }}
+          onBlur={() => setFocusedField(null)}
+          error={errors.location || ""}
+          showError={submitted && !!errors.location}
+          focusedField={focusedField}
+          inputRef={locationInputRef}
+          locationStatus={locationStatus}
+          setLocationStatus={setLocationStatus}
+          setLocationResults={setLocationResults}
+          setShowLocationResults={setShowLocationResults}
+          searchLocation={searchLocation}
+          getCurrentLocation={getCurrentLocation}
+          enableLocationServices={true}
+          debugMode={false}
+        />
+      </div>
 
-    return (
-      <div style={containerStyle} {...rest}>
-        {/* Location Section */}
-        <div style={sectionStyle}>
-          <div style={sectionTitleStyle}>Location</div>
-          <LocationField
-            value={locationValue}
-            onChange={handleLocationChange}
-            onFocus={() => setFocusedField("location")}
-            onBlur={() => setFocusedField(null)}
-            error={errors.location || ""}
-            showError={submitted && !!errors.location}
-            focusedField={focusedField}
-            inputRef={locationInputRef}
-            locationStatus={locationStatus}
-            setLocationStatus={setLocationStatus}
-            setLocationResults={setLocationResults}
-            setShowLocationResults={setShowLocationResults}
-            searchLocation={searchLocation}
-            getCurrentLocation={getCurrentLocation}
-            enableLocationServices={true}
-            debugMode={false}
+      {/* Vehicle Selection Section */}
+      <div
+        ref={vehicleSectionRef}
+        style={{
+          ...sectionStyle,
+          display: activeSection === "vehicle" ? "block" : "none",
+          height: activeSection === "vehicle" ? "auto" : "0",
+        }}
+      >
+        <div style={sectionTitleStyle}>CHOOSE YOUR VEHICLE</div>
+        {vehicles.map((vehicle) => (
+          <VehicleCards
+            key={vehicle.id}
+            vehicleName={vehicle.name}
+            vehicleImage={
+              vehicle.image_url ||
+              "https://framerusercontent.com/images/kGiQohfz1kTljpgxcUnUxGNSE.png"
+            }
+            price={
+              getVehiclePrice(vehicle.id) || "Price on request"
+            }
+            isSelected={vehicle.id === vehicleValue}
+            onClick={() => handleVehicleSelect(vehicle.id)}
+            borderColor={borderColor}
+            selectedBorderColor={primaryColor}
           />
-        </div>
+        ))}
+      </div>
 
-        {/* Vehicle Selection Section */}
-        <div style={sectionStyle}>
-          <div style={sectionTitleStyle}>Choose your Vehicle</div>
-          {vehicles.map((vehicle) => (
-            <VehicleCards
-              key={vehicle.id}
-              vehicleName={vehicle.name}
-              vehicleImage={vehicle.image_url || "https://framerusercontent.com/images/kGiQohfz1kTljpgxcUnUxGNSE.png"}
-              price={getVehiclePrice(vehicle.id) || "Price on request"}
-              isSelected={vehicle.id === vehicleValue}
-              onClick={() => handleVehicleSelect(vehicle.id)}
-              borderColor={borderColor}
-              selectedBorderColor={primaryColor}
-            />
-          ))}
-        </div>
+      {/* Variant Selection Section - only show if a vehicle is selected */}
+      <div
+        ref={variantSectionRef}
+        style={{
+          ...sectionStyle,
+          display:
+            activeSection === "variant" &&
+              selectedVehicleVariants.length > 0
+              ? "block"
+              : "none",
+          height:
+            activeSection === "variant" &&
+              selectedVehicleVariants.length > 0
+              ? "auto"
+              : "0",
+        }}
+      >
+        <div style={sectionTitleStyle}>CHOOSE VARIANT</div>
+        {selectedVehicleVariants.map((variant) => (
+          <VariantCard
+            key={variant.id}
+            title={variant.title}
+            subtitle={variant.subtitle}
+            description={variant.description}
+            price={
+              variant.price_addition > 0
+                ? `₹${variant.price_addition.toLocaleString("en-IN")}`
+                : ""
+            }
+            includedText={variant.is_default ? "Included" : ""}
+            isSelected={variant.id === variantValue}
+            onClick={() => handleVariantSelect(variant.id)}
+            borderColor={borderColor}
+            selectedBorderColor={primaryColor}
+          />
+        ))}
+      </div>
 
-        {/* Variant Selection Section - only show if a vehicle is selected */}
-        {selectedVehicleVariants.length > 0 && (
-          <div style={sectionStyle}>
-            <div style={sectionTitleStyle}>Choose Variant</div>
-            {selectedVehicleVariants.map((variant) => (
-              <VariantCard
-                key={variant.id}
-                title={variant.title}
-                subtitle={variant.subtitle}
-                description={variant.description}
-                price={
-                  variant.price_addition > 0
-                    ? `₹${variant.price_addition.toLocaleString("en-IN")}`
-                    : ""
-                }
-                includedText={variant.is_default ? "Included" : ""}
-                isSelected={variant.id === variantValue}
-                onClick={() => handleVariantSelect(variant.id)}
-                borderColor={borderColor}
-                selectedBorderColor={primaryColor}
-              />
-            ))}
+      {/* Color Selection Section - only show if a vehicle is selected */}
+      <div
+        ref={colorSectionRef}
+        style={{
+          ...sectionStyle,
+          display:
+            activeSection === "color" &&
+              selectedVehicleColors.length > 0
+              ? "block"
+              : "none",
+          height:
+            activeSection === "color" &&
+              selectedVehicleColors.length > 0
+              ? "auto"
+              : "0",
+        }}
+      >
+        <div style={sectionTitleStyle}>FINISH</div>
+        {/* Display selected color name if any */}
+        {colorValue && (
+          <div
+            style={{
+              fontSize: "24px",
+              fontWeight: "bold",
+              marginBottom: tokens.spacing[3],
+              color: tokens.colors.neutral[900],
+            }}
+          >
+            {selectedVehicleColors.find((c) => c.id === colorValue)
+              ?.name || ""}
           </div>
         )}
+        <ColorSelector
+          colors={colorOptions}
+          selectedColorId={colorValue}
+          onChange={handleColorSelect}
+        />
+      </div>
 
-        {/* Color Selection Section - only show if a vehicle is selected */}
-        {selectedVehicleColors.length > 0 && (
-          <div style={sectionStyle}>
-            <div style={sectionTitleStyle}>Finish</div>
-            {/* Display selected color name if any */}
-            {colorValue && (
-              <div style={{
-                fontSize: "24px",
-                fontWeight: "bold",
-                marginBottom: tokens.spacing[3],
-                color: tokens.colors.neutral[900]
-              }}>
-                {selectedVehicleColors.find(c => c.id === colorValue)?.name || ""}
-              </div>
-            )}
-            <ColorSelector
-              colors={colorOptions}
-              selectedColorId={colorValue}
-              onChange={handleColorSelect}
-            />
-          </div>
-        )}
-
-        {/* Optional Components Section - grouped by component_type */}
-        {componentTypes.length > 0 && componentTypes.map(componentType => {
+      {/* Optional Components Section - grouped by component_type */}
+      <div
+        ref={componentSectionRef}
+        style={{
+          ...sectionStyle,
+          display:
+            activeSection === "components" &&
+              componentTypes.length > 0
+              ? "block"
+              : "none",
+          height:
+            activeSection === "components" &&
+              componentTypes.length > 0
+              ? "auto"
+              : "0",
+        }}
+      >
+        {componentTypes.map((componentType) => {
           // Filter components for this type
           const componentsOfType = selectedVehicleComponents.filter(
-            c => c.component_type === componentType
-          );
+            (c) => c.component_type === componentType
+          )
 
-          if (componentsOfType.length === 0) return null;
+          if (componentsOfType.length === 0) return null
 
           return (
-            <div key={componentType} style={sectionStyle}>
-              <div style={sectionTitleStyle}>{getComponentTypeName(componentType)}</div>
+            <div
+              key={componentType}
+              style={{ marginBottom: tokens.spacing[8] }}
+            >
+              <div style={sectionTitleStyle}>
+                {getComponentTypeName(componentType)}
+              </div>
               {componentsOfType.map((component) => (
                 <VariantCard
                   key={component.id}
@@ -596,89 +837,197 @@ export default function VehicleConfiguration(props) {
                   includedText={
                     component.is_required ? "Mandatory" : ""
                   }
-                  isSelected={componentValues.includes(component.id)}
+                  isSelected={componentValues.includes(
+                    component.id
+                  )}
                   onClick={() => {
                     handleComponentSelect(
                       component.id,
-                      !componentValues.includes(component.id)
+                      !componentValues.includes(
+                        component.id
+                      )
                     )
                   }}
                   borderColor={borderColor}
                   selectedBorderColor={primaryColor}
                   style={{
-                    opacity: component.is_required ? 0.8 : 1,
+                    opacity: component.is_required
+                      ? 0.8
+                      : 1,
                   }}
                 />
               ))}
             </div>
-          );
+          )
         })}
+      </div>
 
-        {/* Next Button */}
-        <div style={buttonContainerStyle}>
-          <Button
-            text="Select Insurance"
-            rightIcon={true}
-            onClick={handleNext}
-            disabled={!isNextEnabled}
-            primaryColor={primaryColor}
-            variant="primary"
-          />
+      {/* Summary Section */}
+      <div
+        ref={summarySectionRef}
+        style={{
+          ...sectionStyle,
+          marginTop: tokens.spacing[12],
+          marginBottom: tokens.spacing[12],
+          display: activeSection === "summary" ? "block" : "none",
+          height: activeSection === "summary" ? "auto" : "0",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: tokens.colors.neutral[50],
+            padding: tokens.spacing[6],
+            borderRadius: tokens.borderRadius.md,
+            marginBottom: tokens.spacing[8],
+          }}
+        >
+          <div
+            style={{
+              fontSize: tokens.fontSize.xl,
+              fontWeight: tokens.fontWeight.bold,
+              marginBottom: tokens.spacing[4],
+            }}
+          >
+            {selectedVehicle?.name || "Selected Vehicle"}
+          </div>
+
+          <div
+            style={{
+              fontSize: tokens.fontSize.sm,
+              color: tokens.colors.neutral[600],
+              marginBottom: tokens.spacing[1],
+            }}
+          >
+            {getSelectedVehicleCode()}
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              marginTop: tokens.spacing[4],
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: tokens.fontSize.sm,
+                  color: tokens.colors.neutral[600],
+                }}
+              >
+                Delivery Location
+              </div>
+              <div
+                style={{
+                  fontSize: tokens.fontSize.base,
+                  fontWeight: tokens.fontWeight.medium,
+                }}
+              >
+                {locationValue || "Select Location"}
+              </div>
+            </div>
+
+            <div
+              style={{
+                textAlign: "right",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: tokens.fontSize.xl,
+                  fontWeight: tokens.fontWeight.bold,
+                }}
+              >
+                {formatPrice(getTotalPrice())}
+              </div>
+              <div
+                style={{
+                  fontSize: tokens.fontSize.xs,
+                  color: tokens.colors.neutral[600],
+                }}
+              >
+                EMI Starting from ₹499/mo
+              </div>
+              <div
+                style={{
+                  fontSize: tokens.fontSize.xs,
+                  color: tokens.colors.neutral[600],
+                }}
+              >
+                Available with Zero Downpayment
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    )
-  }
 
-  addPropertyControls(VehicleConfiguration, {
-    primaryColor: {
-      type: ControlType.Color,
-      title: "Primary Color",
-      defaultValue: tokens.colors.blue[600],
-    },
-    backgroundColor: {
-      type: ControlType.Color,
-      title: "Background Color",
-      defaultValue: tokens.colors.neutral[50],
-    },
-    borderColor: {
-      type: ControlType.Color,
-      title: "Border Color",
-      defaultValue: tokens.colors.neutral[200],
-    },
-    dataEndpoint: {
-      type: ControlType.String,
-      title: "Data Endpoint",
-      defaultValue: "https://booking-engine.sagarsiwach.workers.dev/",
-    },
-    location: {
-      type: ControlType.String,
-      title: "Location",
-      defaultValue: "",
-    },
-    selectedVehicleId: {
-      type: ControlType.String,
-      title: "Selected Vehicle",
-      defaultValue: "",
-    },
-    selectedVariantId: {
-      type: ControlType.String,
-      title: "Selected Variant",
-      defaultValue: "",
-    },
-    selectedColorId: {
-      type: ControlType.String,
-      title: "Selected Color",
-      defaultValue: "",
-    },
-    selectedComponents: {
-      type: ControlType.Array,
-      title: "Selected Components",
-      control: { type: ControlType.String },
-      defaultValue: [],
-    },
-    errors: {
-      type: ControlType.Object,
-      title: "Errors",
-      defaultValue: {},
-    },
-  })
+      {/* Fixed Next Button */}
+      <div style={buttonContainerStyle}>
+        <Button
+          text="Select Insurance"
+          rightIcon={true}
+          onClick={handleNext}
+          disabled={!isNextEnabled}
+          primaryColor={primaryColor}
+          variant="primary"
+          width="100%"
+        />
+      </div>
+    </div>
+  )
+}
+
+addPropertyControls(VehicleConfiguration, {
+  primaryColor: {
+    type: ControlType.Color,
+    title: "Primary Color",
+    defaultValue: tokens.colors.blue[600],
+  },
+  backgroundColor: {
+    type: ControlType.Color,
+    title: "Background Color",
+    defaultValue: tokens.colors.neutral[50],
+  },
+  borderColor: {
+    type: ControlType.Color,
+    title: "Border Color",
+    defaultValue: tokens.colors.neutral[200],
+  },
+  dataEndpoint: {
+    type: ControlType.String,
+    title: "Data Endpoint",
+    defaultValue: "https://booking-engine.sagarsiwach.workers.dev/",
+  },
+  location: {
+    type: ControlType.String,
+    title: "Location",
+    defaultValue: "",
+  },
+  selectedVehicleId: {
+    type: ControlType.String,
+    title: "Selected Vehicle",
+    defaultValue: "",
+  },
+  selectedVariantId: {
+    type: ControlType.String,
+    title: "Selected Variant",
+    defaultValue: "",
+  },
+  selectedColorId: {
+    type: ControlType.String,
+    title: "Selected Color",
+    defaultValue: "",
+  },
+  selectedComponents: {
+    type: ControlType.Array,
+    title: "Selected Components",
+    control: { type: ControlType.String },
+    defaultValue: [],
+  },
+  errors: {
+    type: ControlType.Object,
+    title: "Errors",
+    defaultValue: {},
+  },
+})

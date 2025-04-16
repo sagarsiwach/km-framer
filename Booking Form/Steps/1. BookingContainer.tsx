@@ -494,14 +494,13 @@ export default function BookingContainer(props) {
   }
 
   // Get actual product image for the selected vehicle
-  const getProductImage = () => {
-    if (!formData.selectedVehicle || !vehicleData?.models)
-      return productImage
+  // Get actual product image for the selected vehicle
+  // In BookingContainer.tsx
+  // Replace the current getProductImage() function with this simplified version:
 
-    const vehicle = vehicleData.models.find(
-      (v) => v.id === formData.selectedVehicle
-    )
-    return vehicle && vehicle.image_url ? vehicle.image_url : productImage
+  // Always use the product image from props
+  const getProductImage = () => {
+    return productImage
   }
 
   // Render the appropriate step content

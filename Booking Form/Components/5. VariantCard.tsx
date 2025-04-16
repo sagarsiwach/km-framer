@@ -1,5 +1,4 @@
-// VariantCard.tsx (enhanced version)
-
+// VariantCard.tsx (Updated)
 import { addPropertyControls, ControlType } from "framer"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
@@ -10,8 +9,8 @@ import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 export default function VariantCard(props) {
   const {
     title = "Standard Variant",
-    subtitle = "5.15 kWh Battery Pack",
-    description = "262km Range (IDC)",
+    subtitle = "5.1h kWh Battery Pack",
+    description = "250km Range (IDC)",
     price = "",
     includedText = "Included",
     pricePrefix = "+",
@@ -34,57 +33,89 @@ export default function VariantCard(props) {
     backgroundColor,
     cursor: "pointer",
     transition: "all 0.2s ease",
-    marginBottom: tokens.spacing[4],
-    boxShadow: isSelected ? `0 0 0 1px ${selectedBorderColor}` : "none",
+    marginBottom: "5px",
+    boxShadow: isSelected ? `0 0 0 3px ${tokens.colors.blue[400]}` : "none",
     ...style,
   }
 
   const contentStyle = {
     display: "flex",
     flexDirection: "column",
+    gap: "20px",
+  }
+
+  const titleContainerStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
   }
 
   const titleStyle = {
-    fontSize: tokens.fontSize.base,
+    fontSize: "24px",
+    fontFamily: "Geist, sans-serif",
     fontWeight: tokens.fontWeight.semibold,
-    color: tokens.colors.neutral[900],
+    letterSpacing: "-0.03em",
+    color: isSelected
+      ? tokens.colors.blue[700]
+      : tokens.colors.neutral[900],
     marginBottom: tokens.spacing[1],
+  }
+
+  const subtitleContainerStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
   }
 
   const subtitleStyle = {
-    fontSize: tokens.fontSize.sm,
+    fontSize: "16px",
+    fontFamily: "Geist, sans-serif",
+    fontWeight: tokens.fontWeight.medium,
+    letterSpacing: "-0.03em",
     color: tokens.colors.neutral[500],
-    marginBottom: tokens.spacing[1],
   }
 
   const descriptionStyle = {
-    fontSize: tokens.fontSize.sm,
+    fontSize: "16px",
+    fontFamily: "Geist, sans-serif",
+    fontWeight: tokens.fontWeight.normal,
+    letterSpacing: "-0.03em",
     color: tokens.colors.neutral[500],
   }
 
-  const priceContainerStyle = {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
-  }
-
   const priceStyle = {
-    fontSize: tokens.fontSize.sm,
-    fontWeight: tokens.fontWeight.semibold,
-    color: price ? tokens.colors.neutral[900] : tokens.colors.neutral[500],
+    display: "flex",
+    gap: "5px",
+    alignItems: "center",
+    fontSize: "18px",
+    fontFamily: "Geist, sans-serif",
+    fontWeight: tokens.fontWeight.normal,
+    letterSpacing: "-0.03em",
+    color: tokens.colors.neutral[500],
   }
 
   return (
     <div style={containerStyle} onClick={onClick} {...rest}>
       <div style={contentStyle}>
-        <div style={titleStyle}>{title}</div>
-        <div style={subtitleStyle}>{subtitle}</div>
-        <div style={descriptionStyle}>{description}</div>
-      </div>
-      <div style={priceContainerStyle}>
-        <div style={priceStyle}>
-          {price ? `${pricePrefix} ${price}` : includedText}
+        <div style={titleContainerStyle}>
+          <div style={titleStyle}>{title}</div>
+          {subtitle && <div style={subtitleStyle}>{subtitle}</div>}
         </div>
+        {description && (
+          <div style={subtitleContainerStyle}>
+            <div style={descriptionStyle}>{description}</div>
+          </div>
+        )}
+      </div>
+      <div style={priceStyle}>
+        {price ? (
+          <>
+            <div>{pricePrefix}</div>
+            <div>{price}</div>
+          </>
+        ) : (
+          <div>{includedText}</div>
+        )}
       </div>
     </div>
   )
@@ -99,12 +130,12 @@ addPropertyControls(VariantCard, {
   subtitle: {
     type: ControlType.String,
     title: "Subtitle",
-    defaultValue: "5.15 kWh Battery Pack",
+    defaultValue: "5.1h kWh Battery Pack",
   },
   description: {
     type: ControlType.String,
     title: "Description",
-    defaultValue: "262km Range (IDC)",
+    defaultValue: "250km Range (IDC)",
   },
   price: {
     type: ControlType.String,

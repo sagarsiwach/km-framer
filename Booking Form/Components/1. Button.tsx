@@ -1,5 +1,4 @@
-// Button.tsx (enhanced version)
-
+// Button.tsx (Updated)
 import { addPropertyControls, ControlType } from "framer"
 import { useState } from "react"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
@@ -24,11 +23,7 @@ export default function Button(props) {
     ...rest
   } = props
 
-  const [isHovered, setIsHovered] = useState(false)
-  const [isPressed, setIsPressed] = useState(false)
-  const [isFocused, setIsFocused] = useState(false)
-
-  // Determine the button style based on the variant and interaction state
+  // Determine the button style based on the variant
   const getButtonStyle = () => {
     const baseStyle = {
       display: "flex",
@@ -36,114 +31,79 @@ export default function Button(props) {
       justifyContent: "center",
       padding: `${tokens.spacing[4]} ${tokens.spacing[6]}`,
       borderRadius: tokens.borderRadius.DEFAULT,
+      fontFamily: "Geist, sans-serif",
       fontWeight: tokens.fontWeight.medium,
       fontSize: tokens.fontSize.base,
+      letterSpacing: "-0.03em",
       cursor: disabled ? "not-allowed" : "pointer",
       transition: "all 0.2s ease",
       width,
       height,
       opacity: disabled ? 0.7 : 1,
-      outline: isFocused
-        ? `2px solid ${tokens.colors.blue[300]}`
-        : "none",
-      outlineOffset: isFocused ? "2px" : "0",
     }
 
-    const getInteractionColors = (baseColor, hoverColor, pressedColor) => {
-      if (disabled) return baseColor
-      if (isPressed) return pressedColor
-      if (isHovered) return hoverColor
-      return baseColor
-    }
-
-    // Get colors for the current variant
     switch (variant) {
       case "primary":
-        const primaryBase = primaryColor
-        const primaryHover = tokens.colors.blue[700]
-        const primaryPressed = tokens.colors.blue[800]
-
         return {
           ...baseStyle,
-          backgroundColor: getInteractionColors(
-            primaryBase,
-            primaryHover,
-            primaryPressed
-          ),
+          backgroundColor: primaryColor,
           color: textColor,
           border: "none",
         }
-
       case "secondary":
-        const secondaryBase = tokens.colors.neutral[100]
-        const secondaryHover = tokens.colors.neutral[200]
-        const secondaryPressed = tokens.colors.neutral[300]
-
         return {
           ...baseStyle,
-          backgroundColor: getInteractionColors(
-            secondaryBase,
-            secondaryHover,
-            secondaryPressed
-          ),
+          backgroundColor: tokens.colors.neutral[100],
           color: tokens.colors.neutral[900],
           border: "none",
         }
-
       case "outline":
-        const outlineBase = "transparent"
-        const outlineHover = tokens.colors.neutral[50]
-        const outlinePressed = tokens.colors.neutral[100]
-
         return {
           ...baseStyle,
-          backgroundColor: getInteractionColors(
-            outlineBase,
-            outlineHover,
-            outlinePressed
-          ),
+          backgroundColor: "transparent",
           color: primaryColor,
           border: `1px solid ${primaryColor}`,
         }
-
       default:
         return baseStyle
     }
   }
-
-  // Arrow icon for right icon
-  const ArrowIcon = () => (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      style={{ marginLeft: 8 }}
-    >
-      <path
-        d="M10 3.33337L8.83334 4.50004L13.6667 9.33337H3.33334V11H13.6667L8.83334 15.8334L10 17L17 10L10 3.33337Z"
-        fill="currentColor"
-      />
-    </svg>
-  )
 
   return (
     <button
       style={{ ...getButtonStyle(), ...style }}
       onClick={!disabled ? onClick : undefined}
       disabled={disabled}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
-      onFocus={() => setIsFocused(true)}
-      onBlur={() => setIsFocused(false)}
-      aria-disabled={disabled}
       {...rest}
     >
       {leftIcon && <span style={{ marginRight: 8 }}>{leftIcon}</span>}
       {text}
-      {rightIcon && <ArrowIcon />}
+      {rightIcon && (
+        <span style={{ marginLeft: 8 }}>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4.16669 10H15.8334"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M10 4.16669L15.8333 10L10 15.8334"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      )}
     </button>
   )
 }
