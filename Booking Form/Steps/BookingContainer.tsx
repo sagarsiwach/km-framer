@@ -188,7 +188,7 @@ export default function BookingContainer(props) {
 
     // Get vehicle name from ID
     const getVehicleName = (vehicleId) => {
-        if (!vehicleData || !vehicleData.models) return ""
+        if (!vehicleData?.models) return ""
         const vehicle = vehicleData.models.find((v) => v.id === vehicleId)
         return vehicle ? vehicle.name : ""
     }
@@ -207,7 +207,7 @@ export default function BookingContainer(props) {
     const handleVehicleConfigurationUpdate = (data) => {
         const vehicleName = getVehicleName(data.vehicle)
         const totalPrice = getVehiclePrice(data.vehicle)
-        const selectedVehicle = vehicleData.models.find(
+        const selectedVehicle = vehicleData?.models?.find(
             (v) => v.id === data.vehicle
         )
         const vehicleCode = selectedVehicle ? selectedVehicle.model_code : ""
@@ -443,7 +443,7 @@ export default function BookingContainer(props) {
 
     // Get actual product image for the selected vehicle
     const getProductImage = () => {
-        if (!formData.selectedVehicle || !vehicleData || !vehicleData.models)
+        if (!formData.selectedVehicle || !vehicleData?.models)
             return productImage
 
         const vehicle = vehicleData.models.find(
