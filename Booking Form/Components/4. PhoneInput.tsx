@@ -1,6 +1,6 @@
-import { addPropertyControls, ControlType } from "framer";
-import { useState, useEffect } from "react";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { addPropertyControls, ControlType } from "framer"
+import { useState, useEffect } from "react"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -24,23 +24,23 @@ export default function PhoneInput(props) {
     backgroundColor = "#FFFFFF",
     style,
     ...rest
-  } = props;
+  } = props
 
-  const [isFocused, setIsFocused] = useState(false);
-  const [inputValue, setInputValue] = useState(value);
+  const [isFocused, setIsFocused] = useState(false)
+  const [inputValue, setInputValue] = useState(value)
 
   useEffect(() => {
-    setInputValue(value);
-  }, [value]);
+    setInputValue(value)
+  }, [value])
 
   const handleChange = (e) => {
     // Only allow numbers
-    const newValue = e.target.value.replace(/[^0-9]/g, "");
-    setInputValue(newValue);
+    const newValue = e.target.value.replace(/[^0-9]/g, "")
+    setInputValue(newValue)
     if (onChange) {
-      onChange(newValue);
+      onChange(newValue)
     }
-  };
+  }
 
   const containerStyle = {
     display: "flex",
@@ -48,24 +48,27 @@ export default function PhoneInput(props) {
     marginBottom: tokens.spacing[4],
     width: "100%",
     ...style,
-  };
+  }
 
   const labelStyle = {
     marginBottom: tokens.spacing[2],
     fontSize: tokens.fontSize.sm,
     fontWeight: tokens.fontWeight.medium,
     color: labelColor,
-  };
+  }
 
   const inputContainerStyle = {
     display: "flex",
     width: "100%",
     borderRadius: tokens.borderRadius.DEFAULT,
-    border: `1px solid ${
-      error ? errorBorderColor : isFocused ? focusBorderColor : borderColor
-    }`,
+    border: `1px solid ${error
+        ? errorBorderColor
+        : isFocused
+          ? focusBorderColor
+          : borderColor
+      }`,
     overflow: "hidden",
-  };
+  }
 
   const countryCodeStyle = {
     padding: tokens.spacing[4],
@@ -76,7 +79,7 @@ export default function PhoneInput(props) {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-  };
+  }
 
   const inputStyle = {
     padding: tokens.spacing[4],
@@ -88,20 +91,22 @@ export default function PhoneInput(props) {
     width: "100%",
     boxSizing: "border-box",
     opacity: disabled ? 0.7 : 1,
-  };
+  }
 
   const errorStyle = {
     color: errorBorderColor,
     fontSize: tokens.fontSize.xs,
     marginTop: tokens.spacing[1],
-  };
+  }
 
   return (
     <div style={containerStyle}>
       {label && (
         <label style={labelStyle}>
           {label}{" "}
-          {required && <span style={{ color: errorBorderColor }}>*</span>}
+          {required && (
+            <span style={{ color: errorBorderColor }}>*</span>
+          )}
         </label>
       )}
       <div style={inputContainerStyle}>
@@ -121,7 +126,7 @@ export default function PhoneInput(props) {
       </div>
       {error && <div style={errorStyle}>{error}</div>}
     </div>
-  );
+  )
 }
 
 addPropertyControls(PhoneInput, {
@@ -180,4 +185,4 @@ addPropertyControls(PhoneInput, {
     title: "Background Color",
     defaultValue: "#FFFFFF",
   },
-});
+})

@@ -1,5 +1,5 @@
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -17,7 +17,7 @@ export default function VehicleCard(props) {
     backgroundColor = "#FFFFFF",
     style,
     ...rest
-  } = props;
+  } = props
 
   const containerStyle = {
     display: "flex",
@@ -32,31 +32,31 @@ export default function VehicleCard(props) {
     marginBottom: tokens.spacing[4],
     boxShadow: isSelected ? `0 0 0 1px ${selectedBorderColor}` : "none",
     ...style,
-  };
+  }
 
   const imageStyle = {
     width: 80,
     height: 50,
     objectFit: "contain",
-  };
+  }
 
   const contentStyle = {
     display: "flex",
     flexDirection: "column",
     alignItems: "flex-end",
-  };
+  }
 
   const nameStyle = {
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.bold,
     color: tokens.colors.neutral[900],
     marginBottom: tokens.spacing[1],
-  };
+  }
 
   const priceStyle = {
     fontSize: tokens.fontSize.sm,
     color: tokens.colors.neutral[500],
-  };
+  }
 
   return (
     <div style={containerStyle} onClick={onClick} {...rest}>
@@ -66,7 +66,7 @@ export default function VehicleCard(props) {
         <div style={priceStyle}>{price}</div>
       </div>
     </div>
-  );
+  )
 }
 
 addPropertyControls(VehicleCard, {
@@ -104,4 +104,4 @@ addPropertyControls(VehicleCard, {
     title: "Background Color",
     defaultValue: "#FFFFFF",
   },
-});
+})

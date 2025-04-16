@@ -1,6 +1,6 @@
-import { addPropertyControls, ControlType } from "framer";
-import { useState, useEffect } from "react";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { addPropertyControls, ControlType } from "framer"
+import { useState, useEffect } from "react"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -24,21 +24,21 @@ export default function InputField(props) {
     backgroundColor = "#FFFFFF",
     style,
     ...rest
-  } = props;
+  } = props
 
-  const [isFocused, setIsFocused] = useState(false);
-  const [inputValue, setInputValue] = useState(value);
+  const [isFocused, setIsFocused] = useState(false)
+  const [inputValue, setInputValue] = useState(value)
 
   useEffect(() => {
-    setInputValue(value);
-  }, [value]);
+    setInputValue(value)
+  }, [value])
 
   const handleChange = (e) => {
-    setInputValue(e.target.value);
+    setInputValue(e.target.value)
     if (onChange) {
-      onChange(e.target.value);
+      onChange(e.target.value)
     }
-  };
+  }
 
   const containerStyle = {
     display: "flex",
@@ -46,42 +46,47 @@ export default function InputField(props) {
     marginBottom: tokens.spacing[4],
     width: "100%",
     ...style,
-  };
+  }
 
   const labelStyle = {
     marginBottom: tokens.spacing[2],
     fontSize: tokens.fontSize.sm,
     fontWeight: tokens.fontWeight.medium,
     color: labelColor,
-  };
+  }
 
   const inputStyle = {
     padding: tokens.spacing[4],
     borderRadius: tokens.borderRadius.DEFAULT,
     fontSize: tokens.fontSize.base,
-    border: `1px solid ${
-      error ? errorBorderColor : isFocused ? focusBorderColor : borderColor
-    }`,
+    border: `1px solid ${error
+        ? errorBorderColor
+        : isFocused
+          ? focusBorderColor
+          : borderColor
+      }`,
     outline: "none",
     backgroundColor,
     color: tokens.colors.neutral[900],
     width: "100%",
     boxSizing: "border-box",
     opacity: disabled ? 0.7 : 1,
-  };
+  }
 
   const errorStyle = {
     color: errorBorderColor,
     fontSize: tokens.fontSize.xs,
     marginTop: tokens.spacing[1],
-  };
+  }
 
   return (
     <div style={containerStyle}>
       {label && (
         <label style={labelStyle}>
           {label}{" "}
-          {required && <span style={{ color: errorBorderColor }}>*</span>}
+          {required && (
+            <span style={{ color: errorBorderColor }}>*</span>
+          )}
         </label>
       )}
       <input
@@ -97,7 +102,7 @@ export default function InputField(props) {
       />
       {error && <div style={errorStyle}>{error}</div>}
     </div>
-  );
+  )
 }
 
 addPropertyControls(InputField, {
@@ -157,4 +162,4 @@ addPropertyControls(InputField, {
     title: "Background Color",
     defaultValue: "#FFFFFF",
   },
-});
+})
