@@ -85,14 +85,34 @@ export default function VehicleConfiguration(props) {
     : []
 
   // Fetch vehicle data on mount
+  // Fetch vehicle data on mount
   useEffect(() => {
     const fetchVehicleData = async () => {
       setLoading(true)
       setError(null)
 
       try {
-        // Fetch vehicle data
-        const response = await fetch(dataEndpoint)
+        // Add a cache-busting parameter to the URL
+        const cacheBuster = `?t=${Date.now()}`
+        const url = `${dataEndpoint}${cacheBuster}`
+        console.log("Fetching from URL:", url)
+
+        // Fetch with explicit headers
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          // Ensure credentials are not sent
+          credentials: "omit",
+        })
+
+        console.log(
+          "VehicleConfiguration API Response Status:",
+          response.status,
+          response.statusText
+        )
 
         if (!response.ok) {
           throw new Error(
@@ -100,7 +120,35 @@ export default function VehicleConfiguration(props) {
           )
         }
 
-        const result = await response.json()
+        // Get the response text first and log it
+        const responseText = await response.text()
+        console.log(
+          "VehicleConfiguration API Response Text Length:",
+          responseText.length
+        )
+        console.log(
+          "VehicleConfiguration API Response Text Preview:",
+          responseText.substring(0, 100) + "..."
+        )
+
+        if (!responseText || responseText.trim() === "") {
+          throw new Error("Empty response received")
+        }
+
+        // Then parse the JSON
+        let result
+        try {
+          result = JSON.parse(responseText)
+          console.log("VehicleConfiguration Parsed Result:", result)
+        } catch (parseError) {
+          console.error(
+            "VehicleConfiguration JSON Parse Error:",
+            parseError
+          )
+          throw new Error(
+            `Failed to parse response: ${parseError.message}`
+          )
+        }
 
         if (result && result.status === "success" && result.data) {
           setVehicleData(result.data)
