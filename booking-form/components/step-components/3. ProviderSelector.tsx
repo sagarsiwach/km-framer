@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { addPropertyControls, ControlType } from "framer";
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import SectionTitle from "../form-sections/SectionTitle";
+import SectionTitle from "../form-sections/1. SectionTitle";
 
 /**
  * @framerSupportedLayoutWidth auto

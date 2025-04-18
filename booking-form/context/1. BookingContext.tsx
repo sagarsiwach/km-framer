@@ -1,6 +1,6 @@
-// Booking Context for managing state between components
+// context/BookingContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
-import { fetchVehicleData } from "../utils/3. api";
+import { fetchVehicleData } from "../utils/api";
 
 // Create context
 const BookingContext = createContext(null);
@@ -50,9 +50,6 @@ export function BookingProvider({ children, apiBaseUrl }) {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
 
-  // State for current step
-  const [currentStep, setCurrentStep] = useState(1);
-
   // Fetch vehicle data on mount
   useEffect(() => {
     const loadVehicleData = async () => {
@@ -64,7 +61,7 @@ export function BookingProvider({ children, apiBaseUrl }) {
         setVehicleData(data);
 
         // Initialize default selected vehicle if available
-        if (data.models && data.models.length > 0) {
+        if (data?.models && data.models.length > 0) {
           const firstVehicle = data.models[0];
           updateFormData({
             selectedVehicle: firstVehicle.id,
@@ -73,7 +70,7 @@ export function BookingProvider({ children, apiBaseUrl }) {
           });
 
           // Set initial price if available
-          const vehiclePricing = data.pricing.find(
+          const vehiclePricing = data.pricing?.find(
             (p) => p.model_id === firstVehicle.id
           );
 
@@ -131,24 +128,37 @@ export function BookingProvider({ children, apiBaseUrl }) {
     return pricing ? pricing.base_price : 0;
   };
 
-  // Handle step changes
-  const handleNextStep = () => {
-    setCurrentStep(prev => prev + 1);
-  };
-
-  const handlePreviousStep = () => {
-    setCurrentStep(prev => (prev > 1 ? prev - 1 : 1));
-  };
-
-  const goToStep = (step) => {
-    setCurrentStep(step);
-  };
-
-  // Calculate total price
+  // Calculate total price including all selections
   const calculateTotalPrice = () => {
-    let total = formData.totalPrice || 0;
+    let total = 0;
 
-    // Add insurance prices if selected
+    // Base vehicle price
+    if (formData.selectedVehicle && vehicleData?.pricing) {
+      const vehiclePricing = vehicleData.pricing.find(
+        (p) => p.model_id === formData.selectedVehicle
+      );
+      if (vehiclePricing) total += vehiclePricing.base_price || 0;
+    }
+
+    // Variant additional price
+    if (formData.selectedVariant && vehicleData?.variants) {
+      const selectedVariant = vehicleData.variants.find(
+        (v) => v.id === formData.selectedVariant
+      );
+      if (selectedVariant) total += selectedVariant.price_addition || 0;
+    }
+
+    // Components prices
+    if (formData.optionalComponents.length > 0 && vehicleData?.components) {
+      formData.optionalComponents.forEach((compId) => {
+        const component = vehicleData.components.find(
+          (c) => c.id === compId
+        );
+        if (component) total += component.price || 0;
+      });
+    }
+
+    // Insurance prices
     if (formData.selectedCoreInsurance.length > 0 && vehicleData?.insurance_plans) {
       formData.selectedCoreInsurance.forEach(id => {
         const plan = vehicleData.insurance_plans.find(p => p.id === id);
@@ -166,6 +176,33 @@ export function BookingProvider({ children, apiBaseUrl }) {
     return total;
   };
 
+  // Get variants for a vehicle
+  const getVariantsForVehicle = (vehicleId) => {
+    if (!vehicleData?.variants) return [];
+    return vehicleData.variants.filter(v => v.model_id === vehicleId);
+  };
+
+  // Get colors for a vehicle
+  const getColorsForVehicle = (vehicleId) => {
+    if (!vehicleData?.colors) return [];
+    return vehicleData.colors.filter(c => c.model_id === vehicleId);
+  };
+
+  // Get components for a vehicle
+  const getComponentsForVehicle = (vehicleId) => {
+    if (!vehicleData?.components) return [];
+    return vehicleData.components.filter(c => c.model_id === vehicleId);
+  };
+
+  // Get insurance plans
+  const getInsurancePlans = (type = null) => {
+    if (!vehicleData?.insurance_plans) return [];
+    if (type) {
+      return vehicleData.insurance_plans.filter(plan => plan.plan_type === type);
+    }
+    return vehicleData.insurance_plans;
+  };
+
   // Context value
   const contextValue = {
     formData,
@@ -175,13 +212,13 @@ export function BookingProvider({ children, apiBaseUrl }) {
     vehicleData,
     loading,
     apiError,
-    currentStep,
-    handleNextStep,
-    handlePreviousStep,
-    goToStep,
     getVehicleName,
     getVehiclePrice,
     calculateTotalPrice,
+    getVariantsForVehicle,
+    getColorsForVehicle,
+    getComponentsForVehicle,
+    getInsurancePlans
   };
 
   return (
