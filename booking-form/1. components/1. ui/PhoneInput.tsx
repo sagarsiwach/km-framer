@@ -1,5 +1,6 @@
-import { addPropertyControls, ControlType } from "framer"
+// PhoneInput component with ShadCN styling and improved accessibility
 import { useState, useEffect } from "react"
+import { addPropertyControls, ControlType } from "framer"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
@@ -14,6 +15,7 @@ export default function PhoneInput(props) {
     value = "",
     onChange,
     error = "",
+    description = "",
     required = false,
     disabled = false,
     borderColor = tokens.colors.neutral[300],
@@ -21,13 +23,17 @@ export default function PhoneInput(props) {
     errorBorderColor = tokens.colors.red[600],
     labelColor = tokens.colors.neutral[900],
     placeholderColor = tokens.colors.neutral[400],
-    backgroundColor = "#FFFFFF",
+    backgroundColor = "#FAFAFA",
+    id,
+    name,
     style,
     ...rest
   } = props
 
   const [isFocused, setIsFocused] = useState(false)
   const [inputValue, setInputValue] = useState(value)
+  const uniqueId =
+    id || `phone-input-${Math.random().toString(36).substring(2, 9)}`
 
   useEffect(() => {
     setInputValue(value)
@@ -50,81 +56,144 @@ export default function PhoneInput(props) {
     ...style,
   }
 
-  const labelStyle = {
+  const labelContainerStyle = {
     marginBottom: tokens.spacing[2],
-    fontSize: tokens.fontSize.sm,
-    fontWeight: tokens.fontWeight.medium,
+  }
+
+  const labelStyle = {
+    fontSize: "12px",
+    fontFamily: "Geist, sans-serif",
+    fontWeight: tokens.fontWeight.semibold,
+    letterSpacing: "0.72px",
+    textTransform: "uppercase",
     color: labelColor,
+    display: "block",
+  }
+
+  const descriptionStyle = {
+    fontSize: tokens.fontSize.xs,
+    fontFamily: "Geist, sans-serif",
+    color: tokens.colors.neutral[500],
+    marginTop: "2px",
   }
 
   const inputContainerStyle = {
     display: "flex",
-    width: "100%",
-    borderRadius: tokens.borderRadius.DEFAULT,
-    border: `1px solid ${error
-        ? errorBorderColor
-        : isFocused
-          ? focusBorderColor
-          : borderColor
-      }`,
+    height: "64px",
+    borderRadius: tokens.borderRadius.lg,
     overflow: "hidden",
+    border: `0.5px solid ${error ? errorBorderColor : isFocused ? focusBorderColor : borderColor}`,
+    boxShadow: isFocused
+      ? `0px 0px 0px 3px ${tokens.colors.blue[400]}`
+      : "none",
+    transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+    opacity: disabled ? 0.7 : 1,
+    backgroundColor,
   }
 
   const countryCodeStyle = {
-    padding: tokens.spacing[4],
-    backgroundColor: tokens.colors.neutral[100],
-    color: tokens.colors.neutral[900],
-    fontWeight: tokens.fontWeight.medium,
-    borderRight: `1px solid ${borderColor}`,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    padding: `0 ${tokens.spacing[4]}`,
+    backgroundColor: tokens.colors.neutral[100],
+    color: tokens.colors.neutral[900],
+    fontWeight: tokens.fontWeight.medium,
+    fontSize: "18px",
+    fontFamily: "Geist, sans-serif",
+    borderRight: `1px solid ${borderColor}`,
   }
 
   const inputStyle = {
-    padding: tokens.spacing[4],
-    fontSize: tokens.fontSize.base,
+    flex: 1,
+    padding: `0 ${tokens.spacing[5]}`,
+    fontSize: "18px",
+    fontFamily: "Geist, sans-serif",
+    letterSpacing: "-0.03em",
     border: "none",
     outline: "none",
     backgroundColor,
     color: tokens.colors.neutral[900],
-    width: "100%",
-    boxSizing: "border-box",
-    opacity: disabled ? 0.7 : 1,
+  }
+
+  const floatingLabelStyle = {
+    position: "absolute",
+    left: tokens.spacing[5],
+    top: "50%",
+    transform: "translateY(-50%)",
+    pointerEvents: "none",
+    color: placeholderColor,
+    fontSize: "18px",
+    fontFamily: "Geist, sans-serif",
+    transition: "all 0.2s ease",
+    opacity: inputValue || isFocused ? 0 : 1,
   }
 
   const errorStyle = {
     color: errorBorderColor,
     fontSize: tokens.fontSize.xs,
+    fontFamily: "Geist, sans-serif",
     marginTop: tokens.spacing[1],
   }
 
   return (
-    <div style={containerStyle}>
-      {label && (
-        <label style={labelStyle}>
-          {label}{" "}
-          {required && (
-            <span style={{ color: errorBorderColor }}>*</span>
-          )}
-        </label>
-      )}
-      <div style={inputContainerStyle}>
-        <div style={countryCodeStyle}>{countryCode}</div>
-        <input
-          type="tel"
-          placeholder={placeholder}
-          value={inputValue}
-          onChange={handleChange}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          disabled={disabled}
-          style={inputStyle}
-          maxLength={10}
-          {...rest}
-        />
+    <div style={containerStyle} {...rest}>
+      <div style={labelContainerStyle}>
+        {label && (
+          <label htmlFor={uniqueId} style={labelStyle}>
+            {label}{" "}
+            {required && (
+              <span style={{ color: errorBorderColor }}>*</span>
+            )}
+          </label>
+        )}
+        {description && (
+          <div
+            id={`${uniqueId}-description`}
+            style={descriptionStyle}
+          >
+            {description}
+          </div>
+        )}
       </div>
-      {error && <div style={errorStyle}>{error}</div>}
+
+      <div style={inputContainerStyle}>
+        <div style={countryCodeStyle} aria-hidden="true">
+          {countryCode}
+        </div>
+        <div style={{ position: "relative", flex: 1 }}>
+          <input
+            id={uniqueId}
+            type="tel"
+            name={name || uniqueId}
+            value={inputValue}
+            onChange={handleChange}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            disabled={disabled}
+            required={required}
+            aria-invalid={!!error}
+            aria-describedby={
+              error
+                ? `${uniqueId}-error`
+                : description
+                  ? `${uniqueId}-description`
+                  : undefined
+            }
+            style={inputStyle}
+            maxLength={10}
+            autoComplete="tel"
+            placeholder=""
+          />
+          <div style={floatingLabelStyle}>{placeholder}</div>
+        </div>
+      </div>
+
+      {error && (
+        <div id={`${uniqueId}-error`} style={errorStyle} role="alert">
+          {error}
+        </div>
+      )}
     </div>
   )
 }
@@ -134,6 +203,11 @@ addPropertyControls(PhoneInput, {
     type: ControlType.String,
     title: "Label",
     defaultValue: "Mobile Number",
+  },
+  description: {
+    type: ControlType.String,
+    title: "Description",
+    defaultValue: "",
   },
   placeholder: {
     type: ControlType.String,
@@ -183,6 +257,16 @@ addPropertyControls(PhoneInput, {
   backgroundColor: {
     type: ControlType.Color,
     title: "Background Color",
-    defaultValue: "#FFFFFF",
+    defaultValue: "#FAFAFA",
+  },
+  id: {
+    type: ControlType.String,
+    title: "ID",
+    defaultValue: "",
+  },
+  name: {
+    type: ControlType.String,
+    title: "Name",
+    defaultValue: "",
   },
 })

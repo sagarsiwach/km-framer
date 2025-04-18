@@ -21,6 +21,7 @@ export default function SectionTitle(props) {
     color,
     textTransform: uppercase ? "uppercase" : "none",
     marginBottom: tokens.spacing[3],
+    letterSpacing: "0.04em",
     ...style,
   }
 

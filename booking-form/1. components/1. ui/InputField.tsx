@@ -1,6 +1,6 @@
-// InputField component from original InputField.tsx file
-import { addPropertyControls, ControlType } from "framer"
+// InputField component with ShadCN styling and improved accessibility
 import { useState, useEffect } from "react"
+import { addPropertyControls, ControlType } from "framer"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
@@ -15,6 +15,7 @@ export default function InputField(props) {
     value = "",
     onChange,
     error = "",
+    description = "",
     required = false,
     disabled = false,
     borderColor = tokens.colors.neutral[300],
@@ -23,12 +24,21 @@ export default function InputField(props) {
     labelColor = tokens.colors.neutral[700],
     placeholderColor = tokens.colors.neutral[400],
     backgroundColor = "#FAFAFA",
+    id,
+    name,
+    maxLength,
+    minLength,
+    pattern,
+    readOnly = false,
+    autocomplete,
+    autoFocus = false,
     style,
     ...rest
   } = props
 
   const [isFocused, setIsFocused] = useState(false)
   const [inputValue, setInputValue] = useState(value)
+  const uniqueId = id || `input-${Math.random().toString(36).substring(2, 9)}`
 
   useEffect(() => {
     setInputValue(value)
@@ -49,57 +59,62 @@ export default function InputField(props) {
     ...style,
   }
 
-  const labelStyle = {
+  const labelContainerStyle = {
     marginBottom: tokens.spacing[2],
+  }
+
+  const labelStyle = {
     fontSize: "12px",
     fontFamily: "Geist, sans-serif",
     fontWeight: tokens.fontWeight.semibold,
     letterSpacing: "0.72px",
     textTransform: "uppercase",
     color: labelColor,
+    display: "block",
+  }
+
+  const descriptionStyle = {
+    fontSize: tokens.fontSize.xs,
+    fontFamily: "Geist, sans-serif",
+    color: tokens.colors.neutral[500],
+    marginTop: "2px",
   }
 
   const inputContainerStyle = {
-    display: "flex",
-    height: "64px",
-    borderRadius: tokens.borderRadius.lg,
-    overflow: "hidden",
-    border: `0.5px solid ${error
-        ? errorBorderColor
-        : isFocused
-          ? focusBorderColor
-          : borderColor
-      }`,
-    outline: error
-      ? `0.5px solid ${errorBorderColor}`
-      : isFocused
-        ? `0.5px solid ${focusBorderColor}`
-        : "none",
-    boxShadow: isFocused
-      ? `0px 0px 0px 3px ${tokens.colors.blue[400]}`
-      : "none",
-    opacity: disabled ? 0.7 : 1,
-    backgroundColor,
+    position: "relative",
+    width: "100%",
   }
 
   const inputStyle = {
-    flex: 1,
+    width: "100%",
+    height: "64px",
     padding: `0 ${tokens.spacing[5]}`,
     fontSize: "18px",
     fontFamily: "Geist, sans-serif",
     letterSpacing: "-0.03em",
-    border: "none",
+    borderRadius: tokens.borderRadius.lg,
+    border: `0.5px solid ${error ? errorBorderColor : isFocused ? focusBorderColor : borderColor}`,
     outline: "none",
     backgroundColor,
     color: tokens.colors.neutral[900],
+    boxShadow: isFocused
+      ? `0px 0px 0px 3px ${tokens.colors.blue[400]}`
+      : "none",
+    transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+    opacity: disabled ? 0.7 : 1,
   }
 
-  const placeholderStyle = {
+  const floatingLabelStyle = {
+    position: "absolute",
+    left: tokens.spacing[5],
+    top: "50%",
+    transform: "translateY(-50%)",
+    pointerEvents: "none",
     color: placeholderColor,
     fontSize: "18px",
     fontFamily: "Geist, sans-serif",
-    fontWeight: 400,
-    lineHeight: "18px",
+    transition: "all 0.2s ease",
+    opacity: inputValue || isFocused ? 0 : 1,
   }
 
   const errorStyle = {
@@ -110,43 +125,56 @@ export default function InputField(props) {
   }
 
   return (
-    <div style={containerStyle}>
-      {label && (
-        <label style={labelStyle}>
-          {label}{" "}
-          {required && (
-            <span style={{ color: errorBorderColor }}>*</span>
-          )}
-        </label>
-      )}
+    <div style={containerStyle} {...rest}>
+      <div style={labelContainerStyle}>
+        {label && (
+          <label htmlFor={uniqueId} style={labelStyle}>
+            {label}{" "}
+            {required && (
+              <span style={{ color: errorBorderColor }}>*</span>
+            )}
+          </label>
+        )}
+        {description && (
+          <div style={descriptionStyle}>{description}</div>
+        )}
+      </div>
+
       <div style={inputContainerStyle}>
         <input
+          id={uniqueId}
           type={type}
-          placeholder={placeholder}
+          name={name || uniqueId}
           value={inputValue}
           onChange={handleChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           disabled={disabled}
+          readOnly={readOnly}
+          required={required}
+          maxLength={maxLength}
+          minLength={minLength}
+          pattern={pattern}
+          autoComplete={autocomplete}
+          autoFocus={autoFocus}
+          aria-invalid={!!error}
+          aria-describedby={
+            error
+              ? `${uniqueId}-error`
+              : description
+                ? `${uniqueId}-description`
+                : undefined
+          }
           style={inputStyle}
-          {...rest}
         />
-        {!inputValue && !isFocused && (
-          <div
-            style={{
-              ...placeholderStyle,
-              position: "absolute",
-              padding: `0 ${tokens.spacing[5]}`,
-              display: "flex",
-              alignItems: "center",
-              height: "64px",
-            }}
-          >
-            {placeholder}
-          </div>
-        )}
+        <div style={floatingLabelStyle}>{placeholder}</div>
       </div>
-      {error && <div style={errorStyle}>{error}</div>}
+
+      {error && (
+        <div id={`${uniqueId}-error`} style={errorStyle} role="alert">
+          {error}
+        </div>
+      )}
     </div>
   )
 }
@@ -157,6 +185,11 @@ addPropertyControls(InputField, {
     title: "Label",
     defaultValue: "Label",
   },
+  description: {
+    type: ControlType.String,
+    title: "Description",
+    defaultValue: "",
+  },
   placeholder: {
     type: ControlType.String,
     title: "Placeholder",
@@ -165,7 +198,17 @@ addPropertyControls(InputField, {
   type: {
     type: ControlType.Enum,
     title: "Type",
-    options: ["text", "email", "password", "number", "tel", "url"],
+    options: [
+      "text",
+      "email",
+      "password",
+      "number",
+      "tel",
+      "url",
+      "date",
+      "time",
+      "search",
+    ],
     defaultValue: "text",
   },
   value: {
@@ -188,6 +231,26 @@ addPropertyControls(InputField, {
     title: "Disabled",
     defaultValue: false,
   },
+  readOnly: {
+    type: ControlType.Boolean,
+    title: "Read Only",
+    defaultValue: false,
+  },
+  autoFocus: {
+    type: ControlType.Boolean,
+    title: "Auto Focus",
+    defaultValue: false,
+  },
+  maxLength: {
+    type: ControlType.Number,
+    title: "Max Length",
+    defaultValue: null,
+  },
+  minLength: {
+    type: ControlType.Number,
+    title: "Min Length",
+    defaultValue: null,
+  },
   borderColor: {
     type: ControlType.Color,
     title: "Border Color",
@@ -207,5 +270,20 @@ addPropertyControls(InputField, {
     type: ControlType.Color,
     title: "Background Color",
     defaultValue: "#FAFAFA",
+  },
+  id: {
+    type: ControlType.String,
+    title: "ID",
+    defaultValue: "",
+  },
+  name: {
+    type: ControlType.String,
+    title: "Name",
+    defaultValue: "",
+  },
+  autocomplete: {
+    type: ControlType.String,
+    title: "Autocomplete",
+    defaultValue: "",
   },
 })

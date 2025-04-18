@@ -370,10 +370,10 @@ export function LocationField({
           borderRadius: "10px",
           backgroundColor: tokens.colors.neutral[50],
           border: `0.5px solid ${error && showError
-              ? tokens.colors.red[500]
-              : focusedField === "location"
-                ? tokens.colors.blue[500]
-                : tokens.colors.neutral[700]
+            ? tokens.colors.red[500]
+            : focusedField === "location"
+              ? tokens.colors.blue[500]
+              : tokens.colors.neutral[700]
             }`,
           boxShadow:
             focusedField === "location"

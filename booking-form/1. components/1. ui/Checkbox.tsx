@@ -1,4 +1,4 @@
-// Checkbox component for terms/conditions acceptance
+// Checkbox component with ShadCN styling and improved accessibility
 import { useState, useEffect } from "react"
 import { addPropertyControls, ControlType } from "framer"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
@@ -10,6 +10,7 @@ import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 export default function Checkbox(props) {
   const {
     label = "I agree to the terms and conditions",
+    description = "",
     checked = false,
     onChange,
     error = "",
@@ -18,20 +19,24 @@ export default function Checkbox(props) {
     checkboxColor = tokens.colors.blue[600],
     borderColor = tokens.colors.neutral[300],
     errorColor = tokens.colors.red[600],
+    id,
+    name,
     style,
     ...rest
   } = props
 
   const [isChecked, setIsChecked] = useState(checked)
+  const uniqueId =
+    id || `checkbox-${Math.random().toString(36).substring(2, 9)}`
 
   useEffect(() => {
     setIsChecked(checked)
   }, [checked])
 
-  const handleChange = () => {
+  const handleChange = (e) => {
     if (disabled) return
 
-    const newValue = !isChecked
+    const newValue = e.target.checked
     setIsChecked(newValue)
 
     if (onChange) {
@@ -43,8 +48,6 @@ export default function Checkbox(props) {
     display: "flex",
     alignItems: "flex-start",
     marginBottom: tokens.spacing[4],
-    cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.7 : 1,
     ...style,
   }
 
@@ -57,7 +60,15 @@ export default function Checkbox(props) {
     flexShrink: 0,
   }
 
-  const checkboxStyle = {
+  const innerCheckboxStyle = {
+    position: "absolute",
+    width: "20px",
+    height: "20px",
+    opacity: 0,
+    cursor: disabled ? "not-allowed" : "pointer",
+  }
+
+  const customCheckboxStyle = {
     width: "20px",
     height: "20px",
     border: `1.5px solid ${error ? errorColor : borderColor}`,
@@ -67,13 +78,27 @@ export default function Checkbox(props) {
     alignItems: "center",
     justifyContent: "center",
     transition: "all 0.2s ease",
+    pointerEvents: "none", // Makes the custom checkbox non-interactive
+  }
+
+  const labelContainerStyle = {
+    display: "flex",
+    flexDirection: "column",
   }
 
   const labelStyle = {
     fontSize: tokens.fontSize.sm,
     fontFamily: "Geist, sans-serif",
     color: tokens.colors.neutral[900],
-    lineHeight: "1.4",
+    lineHeight: "1.8",
+    fontWeight: tokens.fontWeight.light,
+  }
+
+  const descriptionStyle = {
+    fontSize: tokens.fontSize.xs,
+    fontFamily: "Geist, sans-serif",
+    color: tokens.colors.neutral[500],
+    marginTop: tokens.spacing[1],
   }
 
   const errorStyle = {
@@ -81,7 +106,6 @@ export default function Checkbox(props) {
     fontSize: tokens.fontSize.xs,
     fontFamily: "Geist, sans-serif",
     marginTop: tokens.spacing[1],
-    marginLeft: "28px", // Align with label text
   }
 
   // Checkmark icon
@@ -105,16 +129,43 @@ export default function Checkbox(props) {
 
   return (
     <div {...rest}>
-      <div style={containerStyle} onClick={handleChange}>
+      <div style={containerStyle}>
         <div style={checkboxContainerStyle}>
-          <div style={checkboxStyle}>{checkmarkIcon}</div>
+          <input
+            type="checkbox"
+            id={uniqueId}
+            name={name || uniqueId}
+            checked={isChecked}
+            onChange={handleChange}
+            disabled={disabled}
+            aria-invalid={!!error}
+            required={required}
+            aria-describedby={
+              error ? `${uniqueId}-error` : undefined
+            }
+            style={innerCheckboxStyle}
+          />
+          <div style={customCheckboxStyle} aria-hidden="true">
+            {checkmarkIcon}
+          </div>
         </div>
-        <div style={labelStyle}>
-          {label}{" "}
-          {required && <span style={{ color: errorColor }}>*</span>}
+        <div style={labelContainerStyle}>
+          <label htmlFor={uniqueId} style={labelStyle}>
+            {label}{" "}
+            {required && (
+              <span style={{ color: errorColor }}>*</span>
+            )}
+          </label>
+          {description && (
+            <div style={descriptionStyle}>{description}</div>
+          )}
         </div>
       </div>
-      {error && <div style={errorStyle}>{error}</div>}
+      {error && (
+        <div id={`${uniqueId}-error`} style={errorStyle} role="alert">
+          {error}
+        </div>
+      )}
     </div>
   )
 }
@@ -124,6 +175,11 @@ addPropertyControls(Checkbox, {
     type: ControlType.String,
     title: "Label",
     defaultValue: "I agree to the terms and conditions",
+  },
+  description: {
+    type: ControlType.String,
+    title: "Description",
+    defaultValue: "",
   },
   checked: {
     type: ControlType.Boolean,
@@ -159,5 +215,15 @@ addPropertyControls(Checkbox, {
     type: ControlType.Color,
     title: "Error Color",
     defaultValue: tokens.colors.red[600],
+  },
+  name: {
+    type: ControlType.String,
+    title: "Input Name",
+    defaultValue: "",
+  },
+  id: {
+    type: ControlType.String,
+    title: "Input ID",
+    defaultValue: "",
   },
 })
