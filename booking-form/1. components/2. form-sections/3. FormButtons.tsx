@@ -1,7 +1,8 @@
 // Form navigation buttons component
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import Button from "../ui/Button";
+// Replace imports with:
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import Button from "https://framer.com/m/Button-FXtj.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -21,14 +22,14 @@ export default function FormButtons(props) {
     gap = tokens.spacing[4],
     style,
     ...rest
-  } = props;
+  } = props
 
   const containerStyle = {
     display: "flex",
     gap,
     width: "100%",
     ...style,
-  };
+  }
 
   return (
     <div style={containerStyle} {...rest}>
@@ -53,7 +54,7 @@ export default function FormButtons(props) {
         />
       )}
     </div>
-  );
+  )
 }
 
 addPropertyControls(FormButtons, {
@@ -100,4 +101,4 @@ addPropertyControls(FormButtons, {
     max: 32,
     step: 4,
   },
-});
+})

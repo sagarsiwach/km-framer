@@ -1,6 +1,6 @@
 // Price display component for showing prices
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -16,7 +16,7 @@ export default function PriceDisplay(props) {
     showDecimal = false,
     style,
     ...rest
-  } = props;
+  } = props
 
   // Format price
   const formatPrice = (value) => {
@@ -24,40 +24,40 @@ export default function PriceDisplay(props) {
       return value.toLocaleString("en-IN", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      });
+      })
     }
-    return value.toLocaleString("en-IN");
-  };
+    return value.toLocaleString("en-IN")
+  }
 
   // Get font size based on size prop
   const getFontSize = () => {
     switch (size) {
       case "small":
-        return tokens.fontSize.base;
+        return tokens.fontSize.base
       case "medium":
-        return tokens.fontSize.xl;
+        return tokens.fontSize.xl
       case "large":
-        return tokens.fontSize["2xl"];
+        return tokens.fontSize["2xl"]
       default:
-        return tokens.fontSize.xl;
+        return tokens.fontSize.xl
     }
-  };
+  }
 
   // Get font weight based on fontWeight prop
   const getFontWeight = () => {
     switch (fontWeight) {
       case "normal":
-        return tokens.fontWeight.normal;
+        return tokens.fontWeight.normal
       case "medium":
-        return tokens.fontWeight.medium;
+        return tokens.fontWeight.medium
       case "semibold":
-        return tokens.fontWeight.semibold;
+        return tokens.fontWeight.semibold
       case "bold":
-        return tokens.fontWeight.bold;
+        return tokens.fontWeight.bold
       default:
-        return tokens.fontWeight.semibold;
+        return tokens.fontWeight.semibold
     }
-  };
+  }
 
   const priceStyle = {
     fontSize: getFontSize(),
@@ -66,14 +66,14 @@ export default function PriceDisplay(props) {
     letterSpacing: "-0.03em",
     color: tokens.colors.neutral[900],
     ...style,
-  };
+  }
 
   return (
     <div style={priceStyle} {...rest}>
       {showPrefix && prefix}
       {formatPrice(price)}
     </div>
-  );
+  )
 }
 
 addPropertyControls(PriceDisplay, {
@@ -109,4 +109,4 @@ addPropertyControls(PriceDisplay, {
     title: "Show Decimal",
     defaultValue: false,
   },
-});
+})

@@ -1,7 +1,7 @@
 // Checkbox component for terms/conditions acceptance
-import { useState, useEffect } from "react";
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { useState, useEffect } from "react"
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -20,24 +20,24 @@ export default function Checkbox(props) {
     errorColor = tokens.colors.red[600],
     style,
     ...rest
-  } = props;
+  } = props
 
-  const [isChecked, setIsChecked] = useState(checked);
+  const [isChecked, setIsChecked] = useState(checked)
 
   useEffect(() => {
-    setIsChecked(checked);
-  }, [checked]);
+    setIsChecked(checked)
+  }, [checked])
 
   const handleChange = () => {
-    if (disabled) return;
+    if (disabled) return
 
-    const newValue = !isChecked;
-    setIsChecked(newValue);
+    const newValue = !isChecked
+    setIsChecked(newValue)
 
     if (onChange) {
-      onChange(newValue);
+      onChange(newValue)
     }
-  };
+  }
 
   const containerStyle = {
     display: "flex",
@@ -46,7 +46,7 @@ export default function Checkbox(props) {
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.7 : 1,
     ...style,
-  };
+  }
 
   const checkboxContainerStyle = {
     position: "relative",
@@ -55,7 +55,7 @@ export default function Checkbox(props) {
     marginRight: tokens.spacing[3],
     marginTop: "2px", // Align with text
     flexShrink: 0,
-  };
+  }
 
   const checkboxStyle = {
     width: "20px",
@@ -67,14 +67,14 @@ export default function Checkbox(props) {
     alignItems: "center",
     justifyContent: "center",
     transition: "all 0.2s ease",
-  };
+  }
 
   const labelStyle = {
     fontSize: tokens.fontSize.sm,
     fontFamily: "Geist, sans-serif",
     color: tokens.colors.neutral[900],
     lineHeight: "1.4",
-  };
+  }
 
   const errorStyle = {
     color: errorColor,
@@ -82,7 +82,7 @@ export default function Checkbox(props) {
     fontFamily: "Geist, sans-serif",
     marginTop: tokens.spacing[1],
     marginLeft: "28px", // Align with label text
-  };
+  }
 
   // Checkmark icon
   const checkmarkIcon = isChecked && (
@@ -101,7 +101,7 @@ export default function Checkbox(props) {
         strokeLinejoin="round"
       />
     </svg>
-  );
+  )
 
   return (
     <div {...rest}>
@@ -110,12 +110,13 @@ export default function Checkbox(props) {
           <div style={checkboxStyle}>{checkmarkIcon}</div>
         </div>
         <div style={labelStyle}>
-          {label} {required && <span style={{ color: errorColor }}>*</span>}
+          {label}{" "}
+          {required && <span style={{ color: errorColor }}>*</span>}
         </div>
       </div>
       {error && <div style={errorStyle}>{error}</div>}
     </div>
-  );
+  )
 }
 
 addPropertyControls(Checkbox, {
@@ -159,4 +160,4 @@ addPropertyControls(Checkbox, {
     title: "Error Color",
     defaultValue: tokens.colors.red[600],
   },
-});
+})

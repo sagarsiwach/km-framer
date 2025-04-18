@@ -1,23 +1,26 @@
 // containers/BookingContainer.jsx
-import { useState, useEffect } from "react";
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import { KMCircleLogo } from "https://framer.com/m/Logo-exuM.js";
-import { BookingProvider } from "../context/BookingContext";
-import useStepNavigation from "../hooks/useStepNavigation";
-import LoadingIndicator from "../components/form-sections/LoadingIndicator";
-import ErrorDisplay from "../components/form-sections/ErrorDisplay";
-import VehicleSummary from "../components/form-sections/VehicleSummary";
+import { useState, useEffect } from "react"
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import { KMCircleLogo } from "https://framer.com/m/Logo-exuM.js"
+import BookingContext, {
+  BookingProvider,
+  useBooking,
+} from "https://framer.com/m/BookingContext-EFWo.js"
+import UseStepNavigation from "https://framer.com/m/useStepNavigation-xwZU.js"
+import LoadingIndicator from "https://framer.com/m/LoadingIndicator-7vLo.js"
+import ErrorDisplay from "https://framer.com/m/ErrorDisplay-PmC2.js"
+import VehicleSummary from "https://framer.com/m/VehicleSummary-GFVo.js"
 
 // Import Step Components
-import VehicleConfiguration from "../steps/1. VehicleConfiguration";
-import InsuranceSelection from "../steps/InsuranceSelection";
-import FinancingOptions from "../steps/3. FinancingOptions";
-import UserInformation from "../steps/UserInformation";
-import OTPVerification from "../steps/OTPVerification";
-import PaymentOverlay from "../steps/PaymentOverlay";
-import SuccessState from "../steps/SuccessState";
-import FailureState from "../steps/FailureState";
+import VehicleConfiguration from "https://framer.com/m/VehicleConfiguration-rPPa.js"
+import InsuranceSelection from "https://framer.com/m/InsuranceSelection-SIY2.js"
+import FinancingOptions from "https://framer.com/m/FinancingOptions-wNCm.js"
+import UserInformation from "https://framer.com/m/UserInformation-2F6M.js"
+import OTPVerification from "https://framer.com/m/OTPVerification-vY2g.js"
+import PaymentOverlay from "https://framer.com/m/PaymentOverlay-A9xm.js"
+import SuccessState from "https://framer.com/m/SuccessState-f2Qo.js"
+import FailureState from "https://framer.com/m/FailureState-ZmfY.js"
 
 /**
  * @framerSupportedLayoutWidth any
@@ -37,61 +40,72 @@ export default function BookingContainer(props) {
     onFormSubmit,
     style,
     ...rest
-  } = props;
+  } = props
 
   // State for payment overlay
-  const [showPaymentOverlay, setShowPaymentOverlay] = useState(false);
+  const [showPaymentOverlay, setShowPaymentOverlay] = useState(false)
 
   // Step navigation
-  const { currentStep, nextStep, prevStep, goToStep, resetSteps } = useStepNavigation(
-    initialStep,
-    8,
-    onStepChange
-  );
+  const { currentStep, nextStep, prevStep, goToStep, resetSteps } =
+    useStepNavigation(initialStep, 8, onStepChange)
 
   // Get step title and description
   const getStepTitle = () => {
     switch (currentStep) {
-      case 1: return "Configure your Vehicle";
-      case 2: return "Vehicle Insurance";
-      case 3: return "Financing and Payment";
-      case 4: return "Your Information";
-      case 5: return "Verification";
-      case 7: return "Booking Confirmed";
-      case 8: return "Payment Failed";
-      default: return "Book your Ride";
+      case 1:
+        return "Configure your Vehicle"
+      case 2:
+        return "Vehicle Insurance"
+      case 3:
+        return "Financing and Payment"
+      case 4:
+        return "Your Information"
+      case 5:
+        return "Verification"
+      case 7:
+        return "Booking Confirmed"
+      case 8:
+        return "Payment Failed"
+      default:
+        return "Book your Ride"
     }
-  };
+  }
 
   const getStepDescription = () => {
     switch (currentStep) {
-      case 1: return "Get a personalised Feel and Experience of your Bike at your Nearest Kabira Mobility, Showroom.";
-      case 2: return "Choose the right insurance coverage for your new electric vehicle.";
-      case 3: return "Select your preferred payment method and financing options.";
-      case 4: return "Please provide your details for delivery and contact information.";
-      case 5: return "Verify your contact information to proceed with payment.";
-      default: return "";
+      case 1:
+        return "Get a personalised Feel and Experience of your Bike at your Nearest Kabira Mobility, Showroom."
+      case 2:
+        return "Choose the right insurance coverage for your new electric vehicle."
+      case 3:
+        return "Select your preferred payment method and financing options."
+      case 4:
+        return "Please provide your details for delivery and contact information."
+      case 5:
+        return "Verify your contact information to proceed with payment."
+      default:
+        return ""
     }
-  };
+  }
 
   // Payment handlers
   const handlePaymentSuccess = () => {
-    setShowPaymentOverlay(false);
-    goToStep(7); // Success state
+    setShowPaymentOverlay(false)
+    goToStep(7) // Success state
 
     if (onFormSubmit) {
-      onFormSubmit();
+      onFormSubmit()
     }
-  };
+  }
 
   const handlePaymentFailure = () => {
-    setShowPaymentOverlay(false);
-    goToStep(8); // Failure state
-  };
+    setShowPaymentOverlay(false)
+    goToStep(8) // Failure state
+  }
 
   const handlePaymentCancel = () => {
-    setShowPaymentOverlay(false);
-  };
+    setShowPaymentOverlay(false)
+  }
 
   // Styles
   const containerStyle = {
@@ -100,7 +114,7 @@ export default function BookingContainer(props) {
     height: "100%",
     fontFamily: tokens.fontFamily.sans,
     ...style,
-  };
+  }
 
   const imageContainerStyle = {
     flex: "7", // 70% of available space
@@ -110,7 +124,7 @@ export default function BookingContainer(props) {
     justifyContent: "center",
     overflow: "hidden",
     position: "relative",
-  };
+  }
 
   const formContainerStyle = {
     flex: "3", // 30% of available space
@@ -118,42 +132,42 @@ export default function BookingContainer(props) {
     padding: tokens.spacing[4],
     overflowY: "auto",
     boxSizing: "border-box",
-  };
+  }
 
   const headerStyle = {
     marginBottom: tokens.spacing[4],
-  };
+  }
 
   const tagStyle = {
     fontSize: tokens.fontSize.sm,
     color: tokens.colors.neutral[500],
     marginBottom: tokens.spacing[1],
-  };
+  }
 
   const headingStyle = {
     fontSize: tokens.fontSize["2xl"],
     fontWeight: tokens.fontWeight.bold,
     marginBottom: tokens.spacing[1],
     margin: 0,
-  };
+  }
 
   const subheadingStyle = {
     fontSize: tokens.fontSize.sm,
     lineHeight: tokens.lineHeight.relaxed,
     color: tokens.colors.neutral[600],
     marginBottom: tokens.spacing[0],
-  };
+  }
 
   const dividerStyle = {
     height: 1,
     backgroundColor: tokens.colors.neutral[200],
     marginTop: tokens.spacing[4],
     marginBottom: tokens.spacing[4],
-  };
+  }
 
   const contentStyle = {
     flex: 1,
-  };
+  }
 
   const watermarkStyle = {
     position: "absolute",
@@ -161,18 +175,27 @@ export default function BookingContainer(props) {
     fontWeight: "bold",
     color: "rgba(255, 255, 255, 0.15)",
     zIndex: 1,
-  };
+  }
 
   const logoContainerStyle = {
     position: "absolute",
     top: tokens.spacing[4],
     left: tokens.spacing[4],
     zIndex: 2,
-  };
+  }
 
   return (
     <BookingProvider apiBaseUrl={apiBaseUrl}>
-      {({ formData, updateFormData, errors, setErrors, vehicleData, loading, apiError, calculateTotalPrice }) => (
+      {({
+        formData,
+        updateFormData,
+        errors,
+        setErrors,
+        vehicleData,
+        loading,
+        apiError,
+        calculateTotalPrice,
+      }) => (
         <div style={containerStyle} {...rest}>
           {/* Left side - Product Image with watermark */}
           <div style={imageContainerStyle}>
@@ -196,14 +219,19 @@ export default function BookingContainer(props) {
             <div style={headerStyle}>
               <div style={tagStyle}>{headingText}</div>
               <h1 style={headingStyle}>{getStepTitle()}</h1>
-              <p style={subheadingStyle}>{getStepDescription()}</p>
+              <p style={subheadingStyle}>
+                {getStepDescription()}
+              </p>
               <div style={dividerStyle} />
             </div>
 
             <div style={contentStyle}>
               {/* Loading and error states */}
               {loading && currentStep === 1 ? (
-                <LoadingIndicator text="Loading vehicle information..." size="large" />
+                <LoadingIndicator
+                  text="Loading vehicle information..."
+                  size="large"
+                />
               ) : apiError && currentStep === 1 ? (
                 <ErrorDisplay
                   error={apiError}
@@ -217,11 +245,21 @@ export default function BookingContainer(props) {
                   {currentStep === 1 && (
                     <VehicleConfiguration
                       location={formData.location}
-                      selectedVehicleId={formData.selectedVehicle}
-                      selectedVariantId={formData.selectedVariant}
-                      selectedColorId={formData.selectedColor}
-                      selectedComponents={formData.optionalComponents}
-                      onFormDataChange={(data) => updateFormData(data)}
+                      selectedVehicleId={
+                        formData.selectedVehicle
+                      }
+                      selectedVariantId={
+                        formData.selectedVariant
+                      }
+                      selectedColorId={
+                        formData.selectedColor
+                      }
+                      selectedComponents={
+                        formData.optionalComponents
+                      }
+                      onFormDataChange={(data) =>
+                        updateFormData(data)
+                      }
                       onNextStep={nextStep}
                       errors={errors}
                       primaryColor={primaryColor}
@@ -233,11 +271,21 @@ export default function BookingContainer(props) {
 
                   {currentStep === 2 && (
                     <InsuranceSelection
-                      selectedTenureId={formData.selectedTenure}
-                      selectedProviderId={formData.selectedProvider}
-                      selectedCoreInsuranceIds={formData.selectedCoreInsurance}
-                      selectedAdditionalCoverageIds={formData.selectedAdditionalCoverage}
-                      onFormDataChange={(data) => updateFormData(data)}
+                      selectedTenureId={
+                        formData.selectedTenure
+                      }
+                      selectedProviderId={
+                        formData.selectedProvider
+                      }
+                      selectedCoreInsuranceIds={
+                        formData.selectedCoreInsurance
+                      }
+                      selectedAdditionalCoverageIds={
+                        formData.selectedAdditionalCoverage
+                      }
+                      onFormDataChange={(data) =>
+                        updateFormData(data)
+                      }
                       onPreviousStep={prevStep}
                       onNextStep={nextStep}
                       primaryColor={primaryColor}
@@ -249,13 +297,23 @@ export default function BookingContainer(props) {
 
                   {currentStep === 3 && (
                     <FinancingOptions
-                      selectedPaymentMethod={formData.paymentMethod}
+                      selectedPaymentMethod={
+                        formData.paymentMethod
+                      }
                       loanTenure={formData.loanTenure}
-                      downPaymentAmount={formData.downPaymentAmount}
-                      selectedVehicleId={formData.selectedVehicle}
-                      selectedVariantId={formData.selectedVariant}
+                      downPaymentAmount={
+                        formData.downPaymentAmount
+                      }
+                      selectedVehicleId={
+                        formData.selectedVehicle
+                      }
+                      selectedVariantId={
+                        formData.selectedVariant
+                      }
                       selectedLocation={formData.location}
-                      onFormDataChange={(data) => updateFormData(data)}
+                      onFormDataChange={(data) =>
+                        updateFormData(data)
+                      }
                       onPreviousStep={prevStep}
                       onNextStep={nextStep}
                       primaryColor={primaryColor}
@@ -274,7 +332,9 @@ export default function BookingContainer(props) {
                       city={formData.city}
                       state={formData.state}
                       pincode={formData.pincode}
-                      onFormDataChange={(data) => updateFormData(data)}
+                      onFormDataChange={(data) =>
+                        updateFormData(data)
+                      }
                       onPreviousStep={prevStep}
                       onNextStep={nextStep}
                       primaryColor={primaryColor}
@@ -286,15 +346,20 @@ export default function BookingContainer(props) {
                   {currentStep === 5 && (
                     <OTPVerification
                       phoneNumber={`+91 ${formData.phone || "9876543210"}`}
-                      email={formData.email || "user@example.com"}
+                      email={
+                        formData.email ||
+                        "user@example.com"
+                      }
                       onPreviousStep={prevStep}
                       onVerificationSuccess={() => {
-                        nextStep();
-                        setShowPaymentOverlay(true);
+                        nextStep()
+                        setShowPaymentOverlay(true)
                       }}
-                      onVerificationFailure={() => setErrors({
-                        otp: "Verification failed. Please try again."
-                      })}
+                      onVerificationFailure={() =>
+                        setErrors({
+                          otp: "Verification failed. Please try again.",
+                        })
+                      }
                       primaryColor={primaryColor}
                       borderColor={borderColor}
                       backgroundColor={backgroundColor}
@@ -305,11 +370,19 @@ export default function BookingContainer(props) {
                   {currentStep === 7 && (
                     <SuccessState
                       bookingId={`KM-${Math.floor(Math.random() * 9000000) + 1000000}`}
-                      customerName={formData.fullName || "Customer"}
+                      customerName={
+                        formData.fullName || "Customer"
+                      }
                       vehicleName={formData.vehicleName}
                       estimatedDelivery="15 May, 2025"
-                      onViewBookingDetails={() => console.log("View booking details")}
-                      onTrackOrder={() => console.log("Track order")}
+                      onViewBookingDetails={() =>
+                        console.log(
+                          "View booking details"
+                        )
+                      }
+                      onTrackOrder={() =>
+                        console.log("Track order")
+                      }
                       onStartOver={resetSteps}
                       primaryColor={primaryColor}
                     />
@@ -319,8 +392,12 @@ export default function BookingContainer(props) {
                     <FailureState
                       errorMessage="Your payment could not be processed at this time."
                       errorCode="ERR-PAYMENT-3042"
-                      onTryAgain={() => setShowPaymentOverlay(true)}
-                      onContactSupport={() => console.log("Contact support")}
+                      onTryAgain={() =>
+                        setShowPaymentOverlay(true)
+                      }
+                      onContactSupport={() =>
+                        console.log("Contact support")
+                      }
                       onStartOver={resetSteps}
                       primaryColor={primaryColor}
                     />
@@ -334,10 +411,12 @@ export default function BookingContainer(props) {
               <VehicleSummary
                 vehicleName={formData.vehicleName}
                 vehicleCode={formData.vehicleCode}
-                location={formData.location ||
+                location={
+                  formData.location ||
                   (formData.city && formData.state
                     ? `${formData.city}, ${formData.state}`
-                    : "Select Location")}
+                    : "Select Location")
+                }
                 pincode={formData.pincode}
                 totalPrice={calculateTotalPrice()}
                 showEmiInfo={true}
@@ -358,7 +437,7 @@ export default function BookingContainer(props) {
         </div>
       )}
     </BookingProvider>
-  );
+  )
 }
 
 addPropertyControls(BookingContainer, {
@@ -405,4 +484,4 @@ addPropertyControls(BookingContainer, {
     type: ControlType.Image,
     title: "Default Product Image",
   },
-});
+})

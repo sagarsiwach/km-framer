@@ -1,7 +1,7 @@
 // Loading indicator component
-import { addPropertyControls, ControlType } from "framer";
-import { motion } from "framer-motion";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { addPropertyControls, ControlType } from "framer"
+import { motion } from "framer-motion"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -15,23 +15,23 @@ export default function LoadingIndicator(props) {
     size = "medium", // small, medium, large
     style,
     ...rest
-  } = props;
+  } = props
 
   // Get spinner size based on size prop
   const getSpinnerSize = () => {
     switch (size) {
       case "small":
-        return 24;
+        return 24
       case "medium":
-        return 32;
+        return 32
       case "large":
-        return 48;
+        return 48
       default:
-        return 32;
+        return 32
     }
-  };
+  }
 
-  const spinnerSize = getSpinnerSize();
+  const spinnerSize = getSpinnerSize()
 
   const containerStyle = {
     display: "flex",
@@ -40,14 +40,14 @@ export default function LoadingIndicator(props) {
     justifyContent: "center",
     padding: tokens.spacing[4],
     ...style,
-  };
+  }
 
   const textStyle = {
     marginTop: tokens.spacing[3],
     color: tokens.colors.neutral[600],
     fontSize: tokens.fontSize.sm,
     fontFamily: "Geist, sans-serif",
-  };
+  }
 
   return (
     <div style={containerStyle} {...rest}>
@@ -64,7 +64,7 @@ export default function LoadingIndicator(props) {
       />
       {showText && <div style={textStyle}>{text}</div>}
     </div>
-  );
+  )
 }
 
 addPropertyControls(LoadingIndicator, {
@@ -89,4 +89,4 @@ addPropertyControls(LoadingIndicator, {
     options: ["small", "medium", "large"],
     defaultValue: "medium",
   },
-});
+})

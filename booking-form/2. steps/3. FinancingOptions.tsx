@@ -1,12 +1,13 @@
 // booking-form/steps/3. FinancingOptions.tsx
+// Replace imports with:
 import { addPropertyControls, ControlType } from "framer"
 import { useState, useEffect } from "react"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
-import Button from "../components/ui/1. Button"
-import InputField from "../components/ui/2. InputField"
-import FormButtons from "../components/form-sections/3. FormButtons"
-import SectionTitle from "../components/form-sections/1. SectionTitle"
-import PaymentMethodSelector from "../components/step-components/4. PaymentMethodSelector"
+import Button from "https://framer.com/m/Button-FXtj.js"
+import InputField from "https://framer.com/m/InputField-oLfO.js"
+import FormButtons from "https://framer.com/m/FormButtons-yqfJ.js"
+import SectionTitle from "https://framer.com/m/SectionTitle-OVrp.js"
+import PaymentMethodSelector from "https://framer.com/m/PaymentMethodSelector-oi31.js"
 
 /**
  * @framerSupportedLayoutWidth any

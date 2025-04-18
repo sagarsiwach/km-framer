@@ -1,7 +1,8 @@
 // booking-form/steps/7. SuccessState.tsx
+// Replace imports with:
 import { addPropertyControls, ControlType } from "framer"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
-import Button from "../components/ui/1. Button"
+import Button from "https://framer.com/m/Button-FXtj.js"
 
 /**
  * @framerSupportedLayoutWidth any

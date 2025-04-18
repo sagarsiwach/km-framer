@@ -1,9 +1,9 @@
 // Color picker section component
-import { useState, useEffect } from "react";
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import ColorSelector from "../ui/ColorSelector";
-import SectionTitle from "../form-sections/SectionTitle";
+import { useState, useEffect } from "react"
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import ColorSelector from "https://framer.com/m/ColorSelector-P1Up.js"
+import SectionTitle from "https://framer.com/m/SectionTitle-OVrp.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -17,21 +17,21 @@ export default function ColorPickerSection(props) {
     onSelect,
     style,
     ...rest
-  } = props;
+  } = props
 
   // Transform colors data for ColorSelector component
   const transformedColors = colors.map((color) => {
-    let colorValue = "#f00027"; // Default fallback
-    let endValue = "#d00020"; // Default fallback end
+    let colorValue = "#f00027" // Default fallback
+    let endValue = "#d00020" // Default fallback end
 
     try {
       if (color.color_value) {
-        const parsed = JSON.parse(color.color_value);
-        colorValue = parsed.colorStart || colorValue;
-        endValue = parsed.colorEnd || endValue;
+        const parsed = JSON.parse(color.color_value)
+        colorValue = parsed.colorStart || colorValue
+        endValue = parsed.colorEnd || endValue
       }
     } catch (e) {
-      console.error("Error parsing color value:", e);
+      console.error("Error parsing color value:", e)
     }
 
     return {
@@ -39,12 +39,12 @@ export default function ColorPickerSection(props) {
       name: color.name,
       value: colorValue,
       endValue: endValue,
-    };
-  });
+    }
+  })
 
   // Get selected color name for display
-  const selectedColor = colors.find((c) => c.id === selectedColorId);
-  const selectedColorName = selectedColor ? selectedColor.name : "";
+  const selectedColor = colors.find((c) => c.id === selectedColorId)
+  const selectedColorName = selectedColor ? selectedColor.name : ""
 
   return (
     <div style={style} {...rest}>
@@ -82,7 +82,7 @@ export default function ColorPickerSection(props) {
         </div>
       )}
     </div>
-  );
+  )
 }
 
 addPropertyControls(ColorPickerSection, {
@@ -109,4 +109,4 @@ addPropertyControls(ColorPickerSection, {
     title: "Selected Color ID",
     defaultValue: "",
   },
-});
+})

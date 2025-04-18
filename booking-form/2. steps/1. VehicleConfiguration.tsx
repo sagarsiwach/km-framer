@@ -1,17 +1,18 @@
 // booking-form/steps/1. VehicleConfiguration.tsx
+// Replace imports with:
 import { addPropertyControls, ControlType } from "framer"
 import { useState, useEffect, useRef } from "react"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
-import { LocationField } from "../components/ui/7. LocationSearch"
-import VehicleSelector from "../components/step-components/1. VehicleSelector"
-import VariantSelector from "../components/step-components/2. VariantSelector"
-import ColorPickerSection from "../components/step-components/5. ColorPickerSection"
-import ComponentsSection from "../components/step-components/6. ComponentsSection"
-import Button from "../components/ui/1. Button"
-import SectionTitle from "../components/form-sections/1. SectionTitle"
-import FormButtons from "../components/form-sections/3. FormButtons"
-import ErrorDisplay from "../components/form-sections/4. ErrorDisplay"
-import LoadingIndicator from "../components/form-sections/5. LoadingIndicator"
+import { LocationField } from "https://framer.com/m/LocationSearch-VHyR.js"
+import VehicleSelector from "https://framer.com/m/VehicleSelector-5dho.js"
+import VariantSelector from "https://framer.com/m/VariantSelector-qEP7.js"
+import ColorPickerSection from "https://framer.com/m/ColorPickerSection-tXdu.js"
+import ComponentsSection from "https://framer.com/m/ComponentsSection-t3pD.js"
+import Button from "https://framer.com/m/Button-FXtj.js"
+import SectionTitle from "https://framer.com/m/SectionTitle-OVrp.js"
+import FormButtons from "https://framer.com/m/FormButtons-yqfJ.js"
+import ErrorDisplay from "https://framer.com/m/ErrorDisplay-PmC2.js"
+import LoadingIndicator from "https://framer.com/m/LoadingIndicator-7vLo.js"
 
 /**
  * @framerSupportedLayoutWidth auto

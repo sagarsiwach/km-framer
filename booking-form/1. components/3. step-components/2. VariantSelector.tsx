@@ -1,9 +1,9 @@
 // Variant selector component
-import { useState, useEffect } from "react";
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import VariantCard from "../ui/VariantCard";
-import SectionTitle from "../form-sections/SectionTitle";
+import { useState, useEffect } from "react"
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import VariantCard from "https://framer.com/m/VariantCard-jgTj.js"
+import SectionTitle from "https://framer.com/m/SectionTitle-OVrp.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -19,7 +19,7 @@ export default function VariantSelector(props) {
     selectedBorderColor = tokens.colors.blue[600],
     style,
     ...rest
-  } = props;
+  } = props
 
   return (
     <div style={style} {...rest}>
@@ -57,7 +57,7 @@ export default function VariantSelector(props) {
         </div>
       )}
     </div>
-  );
+  )
 }
 
 addPropertyControls(VariantSelector, {
@@ -97,4 +97,4 @@ addPropertyControls(VariantSelector, {
     title: "Selected Border Color",
     defaultValue: tokens.colors.blue[600],
   },
-});
+})

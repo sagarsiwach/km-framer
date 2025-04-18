@@ -1,9 +1,9 @@
 // Components and accessories section
-import { useState, useEffect } from "react";
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import VariantCard from "../ui/VariantCard";
-import SectionTitle from "../form-sections/SectionTitle";
+import { useState, useEffect } from "react"
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import SectionTitle from "https://framer.com/m/SectionTitle-OVrp.js"
+import VariantCard from "https://framer.com/m/VariantCard-jgTj.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -18,40 +18,45 @@ export default function ComponentsSection(props) {
     selectedBorderColor = tokens.colors.blue[600],
     style,
     ...rest
-  } = props;
+  } = props
 
   // Group components by type
-  const componentTypes = [...new Set(components.map((c) => c.component_type))];
+  const componentTypes = [...new Set(components.map((c) => c.component_type))]
 
   // Map component types to human-readable names
   const getComponentTypeName = (type) => {
     switch (type) {
       case "ACCESSORY":
-        return "Accessories";
+        return "Accessories"
       case "PACKAGE":
-        return "Packages";
+        return "Packages"
       case "WARRANTY":
-        return "Warranty";
+        return "Warranty"
       case "SERVICE":
-        return "Servicing";
+        return "Servicing"
       default:
-        return "Optional Components";
+        return "Optional Components"
     }
-  };
+  }
 
   return (
     <div style={style} {...rest}>
       {componentTypes.map((componentType) => {
         // Filter components for this type
         const componentsOfType = components.filter(
-          (c) => c.component_type === componentType,
-        );
+          (c) => c.component_type === componentType
+        )
 
-        if (componentsOfType.length === 0) return null;
+        if (componentsOfType.length === 0) return null
 
         return (
-          <div key={componentType} style={{ marginBottom: tokens.spacing[8] }}>
-            <SectionTitle title={getComponentTypeName(componentType)} />
+          <div
+            key={componentType}
+            style={{ marginBottom: tokens.spacing[8] }}
+          >
+            <SectionTitle
+              title={getComponentTypeName(componentType)}
+            />
 
             {componentsOfType.map((component) => (
               <VariantCard
@@ -64,14 +69,22 @@ export default function ComponentsSection(props) {
                     ? `₹${component.price.toLocaleString("en-IN")}`
                     : ""
                 }
-                includedText={component.is_required ? "Mandatory" : ""}
-                isSelected={selectedComponentIds.includes(component.id)}
+                includedText={
+                  component.is_required ? "Mandatory" : ""
+                }
+                isSelected={selectedComponentIds.includes(
+                  component.id
+                )}
                 onClick={() => {
                   if (onSelect) {
-                    const isCurrentlySelected = selectedComponentIds.includes(
+                    const isCurrentlySelected =
+                      selectedComponentIds.includes(
+                        component.id
+                      )
+                    onSelect(
                       component.id,
-                    );
-                    onSelect(component.id, !isCurrentlySelected);
+                      !isCurrentlySelected
+                    )
                   }
                 }}
                 borderColor={borderColor}
@@ -82,7 +95,7 @@ export default function ComponentsSection(props) {
               />
             ))}
           </div>
-        );
+        )
       })}
 
       {components.length === 0 && (
@@ -98,7 +111,7 @@ export default function ComponentsSection(props) {
         </div>
       )}
     </div>
-  );
+  )
 }
 
 addPropertyControls(ComponentsSection, {
@@ -137,4 +150,4 @@ addPropertyControls(ComponentsSection, {
     title: "Selected Border Color",
     defaultValue: tokens.colors.blue[600],
   },
-});
+})

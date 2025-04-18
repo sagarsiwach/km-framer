@@ -1,8 +1,8 @@
 // Provider selector component
-import { useState, useEffect } from "react";
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import SectionTitle from "../form-sections/1. SectionTitle";
+import { useState, useEffect } from "react"
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import SectionTitle from "https://framer.com/m/SectionTitle-OVrp.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -18,14 +18,14 @@ export default function ProviderSelector(props) {
     selectedColor = tokens.colors.blue[600],
     style,
     ...rest
-  } = props;
+  } = props
 
   const optionsContainerStyle = {
     display: "flex",
     flexWrap: "wrap",
     gap: tokens.spacing[3],
     marginBottom: tokens.spacing[4],
-  };
+  }
 
   const optionButtonStyle = (isSelected) => ({
     flex: 1,
@@ -40,7 +40,7 @@ export default function ProviderSelector(props) {
     textAlign: "center",
     cursor: "pointer",
     transition: "all 0.2s ease",
-  });
+  })
 
   return (
     <div style={style} {...rest}>
@@ -50,7 +50,9 @@ export default function ProviderSelector(props) {
         {providers.map((provider) => (
           <div
             key={provider.id}
-            style={optionButtonStyle(provider.id === selectedProviderId)}
+            style={optionButtonStyle(
+              provider.id === selectedProviderId
+            )}
             onClick={() => onSelect && onSelect(provider.id)}
           >
             {provider.name}
@@ -71,7 +73,7 @@ export default function ProviderSelector(props) {
         </div>
       )}
     </div>
-  );
+  )
 }
 
 addPropertyControls(ProviderSelector, {
@@ -107,4 +109,4 @@ addPropertyControls(ProviderSelector, {
     title: "Selected Color",
     defaultValue: tokens.colors.blue[600],
   },
-});
+})

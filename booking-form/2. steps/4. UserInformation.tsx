@@ -1,12 +1,13 @@
 // booking-form/steps/4. UserInformation.tsx
+// Replace imports with:
 import { addPropertyControls, ControlType } from "framer"
 import { useState, useEffect } from "react"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
-import InputField from "../components/ui/2. InputField"
-import PhoneInput from "../components/ui/4. PhoneInput"
-import FormButtons from "../components/form-sections/3. FormButtons"
-import Checkbox from "../components/ui/9. Checkbox"
-import { validateUserInfo } from "../utils/2. validation"
+import InputField from "https://framer.com/m/InputField-oLfO.js"
+import PhoneInput from "https://framer.com/m/PhoneInput-HEez.js"
+import FormButtons from "https://framer.com/m/FormButtons-yqfJ.js"
+import Checkbox from "https://framer.com/m/Checkbox-eHcJ.js"
+import { validateUserInfo } from "https://framer.com/m/validation-cYtD.js"
 
 /**
  * @framerSupportedLayoutWidth any
@@ -81,7 +82,8 @@ export default function UserInformation(props) {
 
     // Add terms validation (not in the utility function)
     if (!formData.termsAccepted) {
-      validationErrors.termsAccepted = "You must accept the terms and conditions"
+      validationErrors.termsAccepted =
+        "You must accept the terms and conditions"
     }
 
     setErrors(validationErrors)
@@ -226,7 +228,11 @@ export default function UserInformation(props) {
           label="I agree to the Terms of Service and Privacy Policy, and consent to the processing of my personal information."
           checked={formData.termsAccepted}
           onChange={(value) => handleChange("termsAccepted", value)}
-          error={submitted && errors.termsAccepted ? errors.termsAccepted : ""}
+          error={
+            submitted && errors.termsAccepted
+              ? errors.termsAccepted
+              : ""
+          }
           required={true}
           checkboxColor={primaryColor}
         />

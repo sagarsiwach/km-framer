@@ -1,8 +1,9 @@
 // booking-form/steps/6. PaymentOverlay.tsx
+// Replace imports with:
 import { addPropertyControls, ControlType } from "framer"
 import { useState, useEffect } from "react"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
-import Button from "../components/ui/1. Button"
+import Button from "https://framer.com/m/Button-FXtj.js"
 
 /**
  * @framerSupportedLayoutWidth any

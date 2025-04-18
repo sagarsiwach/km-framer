@@ -1,11 +1,12 @@
 // booking-form/steps/5. OTPVerification.tsx
+// Replace imports with:
 import { addPropertyControls, ControlType } from "framer"
 import { useState, useEffect } from "react"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
-import OTPInputGroup from "../components/step-components/7. OTPInputGroup"
-import FormButtons from "../components/form-sections/3. FormButtons"
-import { isValidOTP } from "../utils/2. validation"
-import { sendOTP, verifyOTP } from "../utils/3. api"
+import OTPInputGroup from "https://framer.com/m/OTPInputGroup-MaEj.js"
+import FormButtons from "https://framer.com/m/FormButtons-yqfJ.js"
+import { isValidOTP } from "https://framer.com/m/validation-cYtD.js"
+import { sendOTP, verifyOTP } from "https://framer.com/m/api-A6AK.js"
 
 /**
  * @framerSupportedLayoutWidth any
@@ -248,7 +249,9 @@ export default function OTPVerification(props) {
       <FormButtons
         onBack={onPreviousStep}
         onNext={verifyOTPCode}
-        nextButtonText={isVerifying ? "Verifying..." : "Verify & Proceed"}
+        nextButtonText={
+          isVerifying ? "Verifying..." : "Verify & Proceed"
+        }
         rightIcon={!isVerifying}
         isNextDisabled={isVerifying || otp.length !== 6}
         primaryColor={primaryColor}

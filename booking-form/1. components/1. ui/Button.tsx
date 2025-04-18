@@ -1,7 +1,7 @@
 // Button component from original Button.tsx file
-import { addPropertyControls, ControlType } from "framer";
-import { useState } from "react";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { addPropertyControls, ControlType } from "framer"
+import { useState } from "react"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -21,7 +21,7 @@ export default function Button(props) {
     onClick,
     style,
     ...rest
-  } = props;
+  } = props
 
   // Determine the button style based on the variant
   const getButtonStyle = () => {
@@ -40,7 +40,7 @@ export default function Button(props) {
       width,
       height,
       opacity: disabled ? 0.7 : 1,
-    };
+    }
 
     switch (variant) {
       case "primary":
@@ -49,25 +49,25 @@ export default function Button(props) {
           backgroundColor: primaryColor,
           color: textColor,
           border: "none",
-        };
+        }
       case "secondary":
         return {
           ...baseStyle,
           backgroundColor: tokens.colors.neutral[100],
           color: tokens.colors.neutral[900],
           border: "none",
-        };
+        }
       case "outline":
         return {
           ...baseStyle,
           backgroundColor: "transparent",
           color: primaryColor,
           border: `1px solid ${primaryColor}`,
-        };
+        }
       default:
-        return baseStyle;
+        return baseStyle
     }
-  };
+  }
 
   return (
     <button
@@ -105,7 +105,7 @@ export default function Button(props) {
         </span>
       )}
     </button>
-  );
+  )
 }
 
 addPropertyControls(Button, {
@@ -155,4 +155,4 @@ addPropertyControls(Button, {
     options: ["primary", "secondary", "outline"],
     defaultValue: "primary",
   },
-});
+})

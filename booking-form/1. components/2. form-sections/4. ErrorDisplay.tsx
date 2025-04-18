@@ -1,6 +1,6 @@
 // Error display component for forms
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -14,9 +14,9 @@ export default function ErrorDisplay(props) {
     onRetry,
     style,
     ...rest
-  } = props;
+  } = props
 
-  if (!error) return null;
+  if (!error) return null
 
   const containerStyle = {
     padding: tokens.spacing[4],
@@ -26,7 +26,7 @@ export default function ErrorDisplay(props) {
     borderRadius: tokens.borderRadius.DEFAULT,
     fontSize: tokens.fontSize.sm,
     ...style,
-  };
+  }
 
   const buttonStyle = {
     marginTop: tokens.spacing[3],
@@ -38,7 +38,7 @@ export default function ErrorDisplay(props) {
     cursor: "pointer",
     fontSize: tokens.fontSize.sm,
     fontWeight: tokens.fontWeight.medium,
-  };
+  }
 
   return (
     <div style={containerStyle} {...rest}>
@@ -49,7 +49,7 @@ export default function ErrorDisplay(props) {
         </button>
       )}
     </div>
-  );
+  )
 }
 
 addPropertyControls(ErrorDisplay, {
@@ -68,4 +68,4 @@ addPropertyControls(ErrorDisplay, {
     title: "Retry Button Text",
     defaultValue: "Retry",
   },
-});
+})

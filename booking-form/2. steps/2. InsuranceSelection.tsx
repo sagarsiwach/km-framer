@@ -1,12 +1,13 @@
 // booking-form/steps/2. InsuranceSelection.tsx
+// Replace imports with:
 import { addPropertyControls, ControlType } from "framer"
 import { useState, useEffect } from "react"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
-import Button from "../components/ui/1. Button"
-import VariantCard from "../components/ui/5. VariantCard"
-import SectionTitle from "../components/form-sections/1. SectionTitle"
-import FormButtons from "../components/form-sections/3. FormButtons"
-import ProviderSelector from "../components/step-components/3. ProviderSelector"
+import Button from "https://framer.com/m/Button-FXtj.js"
+import VariantCard from "https://framer.com/m/VariantCard-jgTj.js"
+import SectionTitle from "https://framer.com/m/SectionTitle-OVrp.js"
+import FormButtons from "https://framer.com/m/FormButtons-yqfJ.js"
+import ProviderSelector from "https://framer.com/m/ProviderSelector-bmRT.js"
 
 /**
  * @framerSupportedLayoutWidth any
@@ -43,7 +44,7 @@ export default function InsuranceSelection(props) {
   const [error, setError] = useState(null)
   const [insuranceData, setInsuranceData] = useState({
     providers: [],
-    plans: []
+    plans: [],
   })
 
   const [tenureValue, setTenureValue] = useState(selectedTenureId)
@@ -115,7 +116,8 @@ export default function InsuranceSelection(props) {
               provider_name: "TURTLEMINT",
               plan_type: "CORE",
               title: "PERSONAL ACCIDENT COVER",
-              subtitle: "STANDARD LINE FOR PERSONAL ACCIDENT COVER",
+              subtitle:
+                "STANDARD LINE FOR PERSONAL ACCIDENT COVER",
               description: "Coverage for personal injuries",
               price: 9942,
               is_required: true,

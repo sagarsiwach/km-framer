@@ -1,7 +1,7 @@
 // Vehicle summary component that appears at bottom
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import PriceDisplay from "./PriceDisplay";
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import PriceDisplay from "https://framer.com/m/PriceDisplay-Q1nh.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -19,71 +19,71 @@ export default function VehicleSummary(props) {
     zeroDownpayment = true,
     style,
     ...rest
-  } = props;
+  } = props
 
   const containerStyle = {
     marginTop: tokens.spacing[4],
     borderTop: `1px solid ${tokens.colors.neutral[200]}`,
     paddingTop: tokens.spacing[3],
     ...style,
-  };
+  }
 
   const headerStyle = {
     display: "flex",
     justifyContent: "space-between",
     marginBottom: tokens.spacing[1],
-  };
+  }
 
   const vehicleNameStyle = {
     fontSize: tokens.fontSize.xl,
     fontWeight: tokens.fontWeight.bold,
     fontFamily: "Geist, sans-serif",
     color: tokens.colors.neutral[900],
-  };
+  }
 
   const vehicleCodeStyle = {
     fontSize: tokens.fontSize.xs,
     color: tokens.colors.neutral[600],
     fontFamily: "JetBrains Mono, monospace",
-  };
+  }
 
   const contentStyle = {
     display: "flex",
     justifyContent: "space-between",
     marginBottom: tokens.spacing[2],
-  };
+  }
 
   const locationContainerStyle = {
     display: "flex",
     flexDirection: "column",
-  };
+  }
 
   const locationLabelStyle = {
     fontSize: tokens.fontSize.sm,
     color: tokens.colors.neutral[600],
-  };
+  }
 
   const locationValueStyle = {
     fontSize: tokens.fontSize.base,
     color: tokens.colors.neutral[900],
-  };
+  }
 
   const pincodeStyle = {
     fontSize: tokens.fontSize.xs,
     color: tokens.colors.neutral[600],
-  };
+  }
 
   const priceContainerStyle = {
     display: "flex",
     flexDirection: "column",
     alignItems: "flex-end",
-  };
+  }
 
   const emiTextStyle = {
     fontSize: tokens.fontSize.xs,
     color: tokens.colors.neutral[600],
     marginTop: tokens.spacing[1],
-  };
+  }
 
   return (
     <div style={containerStyle} {...rest}>
@@ -100,7 +100,11 @@ export default function VehicleSummary(props) {
         </div>
 
         <div style={priceContainerStyle}>
-          <PriceDisplay price={totalPrice} size="large" fontWeight="bold" />
+          <PriceDisplay
+            price={totalPrice}
+            size="large"
+            fontWeight="bold"
+          />
 
           {showEmiInfo && (
             <>
@@ -108,14 +112,16 @@ export default function VehicleSummary(props) {
                 EMI Starting from ₹{emiStartingFrom}/mo
               </div>
               {zeroDownpayment && (
-                <div style={emiTextStyle}>Available with Zero Downpayment</div>
+                <div style={emiTextStyle}>
+                  Available with Zero Downpayment
+                </div>
               )}
             </>
           )}
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 addPropertyControls(VehicleSummary, {
@@ -159,4 +165,4 @@ addPropertyControls(VehicleSummary, {
     title: "Zero Downpayment",
     defaultValue: true,
   },
-});
+})

@@ -1,6 +1,6 @@
 // Section title component for form sections
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -13,7 +13,7 @@ export default function SectionTitle(props) {
     uppercase = true,
     style,
     ...rest
-  } = props;
+  } = props
 
   const titleStyle = {
     fontSize: tokens.fontSize.sm,
@@ -22,13 +22,13 @@ export default function SectionTitle(props) {
     textTransform: uppercase ? "uppercase" : "none",
     marginBottom: tokens.spacing[3],
     ...style,
-  };
+  }
 
   return (
     <div style={titleStyle} {...rest}>
       {title}
     </div>
-  );
+  )
 }
 
 addPropertyControls(SectionTitle, {
@@ -47,4 +47,4 @@ addPropertyControls(SectionTitle, {
     title: "Uppercase",
     defaultValue: true,
   },
-});
+})

@@ -1,7 +1,7 @@
 // InputField component from original InputField.tsx file
-import { addPropertyControls, ControlType } from "framer";
-import { useState, useEffect } from "react";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { addPropertyControls, ControlType } from "framer"
+import { useState, useEffect } from "react"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -25,21 +25,21 @@ export default function InputField(props) {
     backgroundColor = "#FAFAFA",
     style,
     ...rest
-  } = props;
+  } = props
 
-  const [isFocused, setIsFocused] = useState(false);
-  const [inputValue, setInputValue] = useState(value);
+  const [isFocused, setIsFocused] = useState(false)
+  const [inputValue, setInputValue] = useState(value)
 
   useEffect(() => {
-    setInputValue(value);
-  }, [value]);
+    setInputValue(value)
+  }, [value])
 
   const handleChange = (e) => {
-    setInputValue(e.target.value);
+    setInputValue(e.target.value)
     if (onChange) {
-      onChange(e.target.value);
+      onChange(e.target.value)
     }
-  };
+  }
 
   const containerStyle = {
     display: "flex",
@@ -47,7 +47,7 @@ export default function InputField(props) {
     marginBottom: tokens.spacing[4],
     width: "100%",
     ...style,
-  };
+  }
 
   const labelStyle = {
     marginBottom: tokens.spacing[2],
@@ -57,16 +57,19 @@ export default function InputField(props) {
     letterSpacing: "0.72px",
     textTransform: "uppercase",
     color: labelColor,
-  };
+  }
 
   const inputContainerStyle = {
     display: "flex",
     height: "64px",
     borderRadius: tokens.borderRadius.lg,
     overflow: "hidden",
-    border: `0.5px solid ${
-      error ? errorBorderColor : isFocused ? focusBorderColor : borderColor
-    }`,
+    border: `0.5px solid ${error
+        ? errorBorderColor
+        : isFocused
+          ? focusBorderColor
+          : borderColor
+      }`,
     outline: error
       ? `0.5px solid ${errorBorderColor}`
       : isFocused
@@ -77,7 +80,7 @@ export default function InputField(props) {
       : "none",
     opacity: disabled ? 0.7 : 1,
     backgroundColor,
-  };
+  }
 
   const inputStyle = {
     flex: 1,
@@ -89,7 +92,7 @@ export default function InputField(props) {
     outline: "none",
     backgroundColor,
     color: tokens.colors.neutral[900],
-  };
+  }
 
   const placeholderStyle = {
     color: placeholderColor,
@@ -97,21 +100,23 @@ export default function InputField(props) {
     fontFamily: "Geist, sans-serif",
     fontWeight: 400,
     lineHeight: "18px",
-  };
+  }
 
   const errorStyle = {
     color: errorBorderColor,
     fontSize: tokens.fontSize.xs,
     fontFamily: "Geist, sans-serif",
     marginTop: tokens.spacing[1],
-  };
+  }
 
   return (
     <div style={containerStyle}>
       {label && (
         <label style={labelStyle}>
           {label}{" "}
-          {required && <span style={{ color: errorBorderColor }}>*</span>}
+          {required && (
+            <span style={{ color: errorBorderColor }}>*</span>
+          )}
         </label>
       )}
       <div style={inputContainerStyle}>
@@ -143,7 +148,7 @@ export default function InputField(props) {
       </div>
       {error && <div style={errorStyle}>{error}</div>}
     </div>
-  );
+  )
 }
 
 addPropertyControls(InputField, {
@@ -203,4 +208,4 @@ addPropertyControls(InputField, {
     title: "Background Color",
     defaultValue: "#FAFAFA",
   },
-});
+})

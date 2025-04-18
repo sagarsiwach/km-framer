@@ -1,6 +1,6 @@
 // VariantCard component from original VariantCard.tsx file
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -21,7 +21,7 @@ export default function VariantCard(props) {
     backgroundColor = "#FFFFFF",
     style,
     ...rest
-  } = props;
+  } = props
 
   const containerStyle = {
     display: "flex",
@@ -36,34 +36,36 @@ export default function VariantCard(props) {
     marginBottom: "5px",
     boxShadow: isSelected ? `0 0 0 3px ${tokens.colors.blue[400]}` : "none",
     ...style,
-  };
+  }
 
   const contentStyle = {
     display: "flex",
     flexDirection: "column",
     gap: "20px",
-  };
+  }
 
   const titleContainerStyle = {
     display: "flex",
     flexDirection: "column",
     gap: "10px",
-  };
+  }
 
   const titleStyle = {
     fontSize: "24px",
     fontFamily: "Geist, sans-serif",
     fontWeight: tokens.fontWeight.semibold,
     letterSpacing: "-0.03em",
-    color: isSelected ? tokens.colors.blue[700] : tokens.colors.neutral[900],
+    color: isSelected
+      ? tokens.colors.blue[700]
+      : tokens.colors.neutral[900],
     marginBottom: tokens.spacing[1],
-  };
+  }
 
   const subtitleContainerStyle = {
     display: "flex",
     flexDirection: "column",
     gap: "10px",
-  };
+  }
 
   const subtitleStyle = {
     fontSize: "16px",
@@ -71,7 +73,7 @@ export default function VariantCard(props) {
     fontWeight: tokens.fontWeight.medium,
     letterSpacing: "-0.03em",
     color: tokens.colors.neutral[500],
-  };
+  }
 
   const descriptionStyle = {
     fontSize: "16px",
@@ -79,7 +81,7 @@ export default function VariantCard(props) {
     fontWeight: tokens.fontWeight.normal,
     letterSpacing: "-0.03em",
     color: tokens.colors.neutral[500],
-  };
+  }
 
   const priceStyle = {
     display: "flex",
@@ -90,7 +92,7 @@ export default function VariantCard(props) {
     fontWeight: tokens.fontWeight.normal,
     letterSpacing: "-0.03em",
     color: tokens.colors.neutral[500],
-  };
+  }
 
   return (
     <div style={containerStyle} onClick={onClick} {...rest}>
@@ -116,7 +118,7 @@ export default function VariantCard(props) {
         )}
       </div>
     </div>
-  );
+  )
 }
 
 addPropertyControls(VariantCard, {
@@ -170,4 +172,4 @@ addPropertyControls(VariantCard, {
     title: "Background Color",
     defaultValue: "#FFFFFF",
   },
-});
+})

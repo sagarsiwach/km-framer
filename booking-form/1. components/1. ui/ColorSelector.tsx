@@ -1,6 +1,6 @@
 // ColorSelector component from original ColorSelector.tsx file
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -27,12 +27,12 @@ export default function ColorSelector(props) {
     onChange,
     style,
     ...rest
-  } = props;
+  } = props
 
   const containerStyle = {
     marginBottom: tokens.spacing[6],
     ...style,
-  };
+  }
 
   const labelStyle = {
     fontSize: tokens.fontSize.sm,
@@ -41,7 +41,7 @@ export default function ColorSelector(props) {
     letterSpacing: "-0.03em",
     color: tokens.colors.neutral[900],
     marginBottom: tokens.spacing[3],
-  };
+  }
 
   const titleStyle = {
     fontFamily: "Geist, sans-serif",
@@ -50,18 +50,18 @@ export default function ColorSelector(props) {
     letterSpacing: "-0.03em",
     color: tokens.colors.neutral[900],
     marginBottom: tokens.spacing[4],
-  };
+  }
 
   const colorsContainerStyle = {
     display: "flex",
     flexDirection: "column",
     gap: tokens.spacing[4],
-  };
+  }
 
   const colorRowStyle = {
     display: "flex",
     gap: tokens.spacing[3],
-  };
+  }
 
   const getColorStyle = (color, endValue, isSelected) => {
     // Replace the existing gradient with your specific gradient
@@ -69,7 +69,7 @@ export default function ColorSelector(props) {
         ${endValue || "#0A0A0A"} -179.01deg,
         ${color || "#737373"} 180deg,
         ${endValue || "#0A0A0A"} 180.99deg,
-        ${color || "#737373"} 540deg)`;
+        ${color || "#737373"} 540deg)`
 
     return {
       width: 100,
@@ -77,20 +77,24 @@ export default function ColorSelector(props) {
       borderRadius: tokens.borderRadius.lg,
       background: colorGradient,
       cursor: "pointer",
-      boxShadow: isSelected ? `0 0 0 3px ${tokens.colors.blue[400]}` : "none",
+      boxShadow: isSelected
+        ? `0 0 0 3px ${tokens.colors.blue[400]}`
+        : "none",
       transition: "all 0.2s ease",
-    };
-  };
+    }
+  }
 
   // Find selected color name for display
-  const selectedColor = colors.find((color) => color.id === selectedColorId);
-  const selectedColorName = selectedColor ? selectedColor.name : "";
+  const selectedColor = colors.find((color) => color.id === selectedColorId)
+  const selectedColorName = selectedColor ? selectedColor.name : ""
 
   return (
     <div style={containerStyle} {...rest}>
       {label && <div style={labelStyle}>{label}</div>}
 
-      {selectedColorId && <div style={titleStyle}>{selectedColorName}</div>}
+      {selectedColorId && (
+        <div style={titleStyle}>{selectedColorName}</div>
+      )}
 
       <div style={colorsContainerStyle}>
         <div style={colorRowStyle}>
@@ -100,7 +104,7 @@ export default function ColorSelector(props) {
               style={getColorStyle(
                 color.value,
                 color.endValue,
-                color.id === selectedColorId,
+                color.id === selectedColorId
               )}
               onClick={() => onChange && onChange(color.id)}
               title={color.name}
@@ -109,7 +113,7 @@ export default function ColorSelector(props) {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 addPropertyControls(ColorSelector, {
@@ -150,4 +154,4 @@ addPropertyControls(ColorSelector, {
     title: "Selected Color ID",
     defaultValue: "",
   },
-});
+})

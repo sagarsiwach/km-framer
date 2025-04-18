@@ -1,7 +1,7 @@
 // OTP input group component
-import { useState, useEffect, useRef } from "react";
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { useState, useEffect, useRef } from "react"
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -19,99 +19,103 @@ export default function OTPInputGroup(props) {
     errorBorderColor = tokens.colors.red[600],
     style,
     ...rest
-  } = props;
+  } = props
 
   // Convert string value to array of characters
   const [otpValues, setOtpValues] = useState(
     value.split("").length > 0
       ? value.split("").slice(0, length)
-      : Array(length).fill(""),
-  );
+      : Array(length).fill("")
+  )
 
   // Refs for OTP inputs
-  const inputRefs = useRef([]);
+  const inputRefs = useRef([])
 
   // Update OTP values when value prop changes
   useEffect(() => {
-    const newOtpValues = value.split("").slice(0, length);
+    const newOtpValues = value.split("").slice(0, length)
     if (newOtpValues.length < length) {
-      newOtpValues.push(...Array(length - newOtpValues.length).fill(""));
+      newOtpValues.push(...Array(length - newOtpValues.length).fill(""))
     }
-    setOtpValues(newOtpValues);
-  }, [value, length]);
+    setOtpValues(newOtpValues)
+  }, [value, length])
 
   // Focus first input on mount if autoFocus is true
   useEffect(() => {
     if (autoFocus && inputRefs.current[0]) {
-      inputRefs.current[0].focus();
+      inputRefs.current[0].focus()
     }
-  }, [autoFocus]);
+  }, [autoFocus])
 
   // Handle OTP input change
   const handleChange = (index, newValue) => {
     // Only allow digits
-    if (!/^\d*$/.test(newValue)) return;
+    if (!/^\d*$/.test(newValue)) return
 
-    const newOtpValues = [...otpValues];
-    newOtpValues[index] = newValue.slice(0, 1);
-    setOtpValues(newOtpValues);
+    const newOtpValues = [...otpValues]
+    newOtpValues[index] = newValue.slice(0, 1)
+    setOtpValues(newOtpValues)
 
     // Auto-move to next input
     if (newValue && index < length - 1 && inputRefs.current[index + 1]) {
-      inputRefs.current[index + 1].focus();
+      inputRefs.current[index + 1].focus()
     }
 
     // Notify parent of change
     if (onChange) {
-      onChange(newOtpValues.join(""));
+      onChange(newOtpValues.join(""))
     }
-  };
+  }
 
   // Handle key down events for backspace
   const handleKeyDown = (index, e) => {
     if (e.key === "Backspace") {
-      if (!otpValues[index] && index > 0 && inputRefs.current[index - 1]) {
-        inputRefs.current[index - 1].focus();
+      if (
+        !otpValues[index] &&
+        index > 0 &&
+        inputRefs.current[index - 1]
+      ) {
+        inputRefs.current[index - 1].focus()
       }
     }
-  };
+  }
 
   // Handle paste event
   const handlePaste = (e) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData("text/plain").trim();
+    e.preventDefault()
+    const pastedData = e.clipboardData.getData("text/plain").trim()
 
     if (/^\d+$/.test(pastedData)) {
-      const digits = pastedData.slice(0, length).split("");
-      const newOtpValues = [...otpValues];
+      const digits = pastedData.slice(0, length).split("")
+      const newOtpValues = [...otpValues]
 
       digits.forEach((digit, index) => {
         if (index < length) {
-          newOtpValues[index] = digit;
+          newOtpValues[index] = digit
         }
-      });
+      })
 
-      setOtpValues(newOtpValues);
+      setOtpValues(newOtpValues)
 
       // Focus last filled input or next empty one
-      const lastIndex = Math.min(digits.length, length - 1);
+      const lastIndex = Math.min(digits.length, length - 1)
       if (inputRefs.current[lastIndex]) {
-        inputRefs.current[lastIndex].focus();
+        inputRefs.current[lastIndex].focus()
       }
 
       // Notify parent of change
       if (onChange) {
-        onChange(newOtpValues.join(""));
+        onChange(newOtpValues.join(""))
       }
     }
-  };
+  }
 
   const containerStyle = {
     display: "flex",
     gap: tokens.spacing[2],
     justifyContent: "center",
     ...style,
-  };
+  }
 
   const inputStyle = {
     width: "40px",
@@ -121,14 +125,14 @@ export default function OTPInputGroup(props) {
     border: `1px solid ${error ? errorBorderColor : borderColor}`,
     borderRadius: tokens.borderRadius.DEFAULT,
     outline: "none",
-  };
+  }
 
   const errorStyle = {
     color: errorBorderColor,
     fontSize: tokens.fontSize.sm,
     marginTop: tokens.spacing[2],
     textAlign: "center",
-  };
+  }
 
   return (
     <div {...rest}>
@@ -149,7 +153,7 @@ export default function OTPInputGroup(props) {
 
       {error && <div style={errorStyle}>{error}</div>}
     </div>
-  );
+  )
 }
 
 addPropertyControls(OTPInputGroup, {
@@ -191,4 +195,4 @@ addPropertyControls(OTPInputGroup, {
     title: "Error Border Color",
     defaultValue: tokens.colors.red[600],
   },
-});
+})

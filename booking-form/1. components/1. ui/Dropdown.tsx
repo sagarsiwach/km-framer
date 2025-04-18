@@ -1,7 +1,7 @@
 // Dropdown component for form selections
-import { useState, useRef, useEffect } from "react";
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
+import { useState, useRef, useEffect } from "react"
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -23,35 +23,38 @@ export default function Dropdown(props) {
     labelColor = tokens.colors.neutral[700],
     style,
     ...rest
-  } = props;
+  } = props
 
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef(null)
 
   // Find the selected option for display
-  const selectedOption = options.find(option => option.value === value);
-  const displayText = selectedOption ? selectedOption.label : placeholder;
+  const selectedOption = options.find((option) => option.value === value)
+  const displayText = selectedOption ? selectedOption.label : placeholder
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+        setIsOpen(false)
       }
-    };
+    }
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside)
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
 
   const handleOptionClick = (optionValue) => {
     if (onChange) {
-      onChange(optionValue);
+      onChange(optionValue)
     }
-    setIsOpen(false);
-  };
+    setIsOpen(false)
+  }
 
   const containerStyle = {
     display: "flex",
@@ -60,7 +63,7 @@ export default function Dropdown(props) {
     width: "100%",
     position: "relative",
     ...style,
-  };
+  }
 
   const labelStyle = {
     marginBottom: tokens.spacing[2],
@@ -70,7 +73,7 @@ export default function Dropdown(props) {
     letterSpacing: "0.72px",
     textTransform: "uppercase",
     color: labelColor,
-  };
+  }
 
   const dropdownTriggerStyle = {
     display: "flex",
@@ -83,15 +86,19 @@ export default function Dropdown(props) {
     backgroundColor: "#FAFAFA",
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.7 : 1,
-    boxShadow: isOpen ? `0px 0px 0px 3px ${tokens.colors.blue[400]}` : "none",
-  };
+    boxShadow: isOpen
+      ? `0px 0px 0px 3px ${tokens.colors.blue[400]}`
+      : "none",
+  }
 
   const dropdownValueStyle = {
     fontSize: "18px",
     fontFamily: "Geist, sans-serif",
     letterSpacing: "-0.03em",
-    color: selectedOption ? tokens.colors.neutral[900] : tokens.colors.neutral[400],
-  };
+    color: selectedOption
+      ? tokens.colors.neutral[900]
+      : tokens.colors.neutral[400],
+  }
 
   const dropdownMenuStyle = {
     position: "absolute",
@@ -106,27 +113,29 @@ export default function Dropdown(props) {
     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
     zIndex: 10,
     display: isOpen ? "block" : "none",
-  };
+  }
 
   const optionStyle = (isSelected) => ({
     padding: tokens.spacing[4],
     fontSize: tokens.fontSize.base,
     fontFamily: "Geist, sans-serif",
     cursor: "pointer",
-    backgroundColor: isSelected ? tokens.colors.neutral[100] : "transparent",
+    backgroundColor: isSelected
+      ? tokens.colors.neutral[100]
+      : "transparent",
     color: tokens.colors.neutral[900],
     borderBottom: `1px solid ${tokens.colors.neutral[100]}`,
     ":hover": {
       backgroundColor: tokens.colors.neutral[50],
     },
-  });
+  })
 
   const errorStyle = {
     color: errorBorderColor,
     fontSize: tokens.fontSize.xs,
     fontFamily: "Geist, sans-serif",
     marginTop: tokens.spacing[1],
-  };
+  }
 
   // Chevron icon
   const chevronIcon = (
@@ -138,7 +147,7 @@ export default function Dropdown(props) {
       xmlns="http://www.w3.org/2000/svg"
       style={{
         transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-        transition: "transform 0.2s ease"
+        transition: "transform 0.2s ease",
       }}
     >
       <path
@@ -149,13 +158,16 @@ export default function Dropdown(props) {
         strokeLinejoin="round"
       />
     </svg>
-  );
+  )
 
   return (
     <div style={containerStyle} ref={dropdownRef} {...rest}>
       {label && (
         <label style={labelStyle}>
-          {label} {required && <span style={{ color: errorBorderColor }}>*</span>}
+          {label}{" "}
+          {required && (
+            <span style={{ color: errorBorderColor }}>*</span>
+          )}
         </label>
       )}
 
@@ -181,7 +193,7 @@ export default function Dropdown(props) {
 
       {error && <div style={errorStyle}>{error}</div>}
     </div>
-  );
+  )
 }
 
 addPropertyControls(Dropdown, {
@@ -246,4 +258,4 @@ addPropertyControls(Dropdown, {
     title: "Error Border Color",
     defaultValue: tokens.colors.red[600],
   },
-});
+})

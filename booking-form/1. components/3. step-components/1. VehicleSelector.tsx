@@ -1,9 +1,9 @@
 // Vehicle selector component
-import { useState, useEffect } from "react";
-import { addPropertyControls, ControlType } from "framer";
-import tokens from "https://framer.com/m/DesignTokens-itkJ.js";
-import VehicleCard from "../ui/VehicleCard";
-import SectionTitle from "../form-sections/SectionTitle";
+import { useState, useEffect } from "react"
+import { addPropertyControls, ControlType } from "framer"
+import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
+import VehicleCards from "https://framer.com/m/VehicleCards-mBCf.js"
+import SectionTitle from "https://framer.com/m/SectionTitle-OVrp.js"
 
 /**
  * @framerSupportedLayoutWidth auto
@@ -19,14 +19,14 @@ export default function VehicleSelector(props) {
     selectedBorderColor = tokens.colors.blue[600],
     style,
     ...rest
-  } = props;
+  } = props
 
   return (
     <div style={style} {...rest}>
       <SectionTitle title={title} />
 
       {vehicles.map((vehicle) => (
-        <VehicleCard
+        <VehicleCards
           key={vehicle.id}
           vehicleName={vehicle.name}
           vehicleImage={
@@ -55,7 +55,7 @@ export default function VehicleSelector(props) {
         </div>
       )}
     </div>
-  );
+  )
 }
 
 addPropertyControls(VehicleSelector, {
@@ -94,4 +94,4 @@ addPropertyControls(VehicleSelector, {
     title: "Selected Border Color",
     defaultValue: tokens.colors.blue[600],
   },
-});
+})
