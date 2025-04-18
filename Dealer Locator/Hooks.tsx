@@ -8,8 +8,8 @@ import {
   type Dealer,
   type Location,
   type MapProvider,
-  type Coordinates, // Ensure Coordinates type is available
-} from "https://framer.com/m/Lib-8AS5.js@OT7MrLyxrSeMBPdmFx17"; // <-- Make sure this URL points to your Lib.tsx file
+  type Coordinates,
+} from "https://framer.com/m/Lib-8AS5.js@OT7MrLyxrSeMBPdmFx17";
 
 // --- Hook to manage dealer data fetching and state ---
 export const useDealerData = (
@@ -57,56 +57,18 @@ export const useDealerData = (
 
       const data = await response.json();
       // Adapt based on your actual API response structure
-      // Assuming the API returns an array of dealers directly or an object like { dealers: [...] }
-      const rawDealers = Array.isArray(data) ? data : data.dealers || [];
-      console.log(`Received ${rawDealers.length} raw dealers`);
-
-      // Normalize and Validate Data
-      const normalizedData: Dealer[] = rawDealers
-        .map((d: any, index: number) => {
-          // Basic validation for coordinates
-          const lat = d.coordinates?.lat ?? d.location?.lat ?? d.lat ?? null;
-          const lng = d.coordinates?.lng ?? d.location?.lng ?? d.lng ?? null;
-
-          if (
-            typeof lat !== "number" ||
-            typeof lng !== "number" ||
-            isNaN(lat) ||
-            isNaN(lng)
-          ) {
-            console.warn(
-              `Dealer index ${index} (${d.name || "N/A"}) skipped due to invalid coordinates:`,
-              { lat, lng },
-            );
-            return null; // Skip dealers with invalid coordinates
-          }
-
-          return {
-            id:
-              d.id ||
-              `dealer-${lat}-${lng}-${Math.random()
-                .toString(36)
-                .substring(2, 7)}`, // Generate a more unique fallback ID
-            name: d.name || "Unnamed Dealer",
-            address: d.address || {
-              formatted: "No address provided",
-            }, // Ensure address object exists
-            coordinates: { lat, lng },
-            contact: d.contact || {}, // Ensure contact object exists
-            hours: d.hours || [], // Default to empty array
-            services: d.services || [], // Default to empty array
-            rating: typeof d.rating === "number" ? d.rating : undefined,
-            imageUrl: d.imageUrl || undefined, // Include imageUrl if provided by API
-            distance: undefined, // Calculated later
-          };
-        })
-        .filter((d): d is Dealer => d !== null); // Filter out null values (skipped dealers)
-
-      console.log(`Normalized ${normalizedData.length} valid dealers.`);
-      setDealers(normalizedData);
+      // Assuming the API returns { status: "success", dealers: [...] }
+      if (data.status === "success" && Array.isArray(data.dealers)) {
+        console.log(`Received ${data.dealers.length} dealers from API`);
+        setDealers(data.dealers);
+      } else {
+        // Handle unexpected data format
+        console.error("Invalid API response format:", data);
+        throw new Error("Invalid data format received from API");
+      }
     } catch (err: any) {
-      setError(`Failed to fetch dealers: ${err.message}`);
       console.error("Error fetching or processing dealer data:", err);
+      setError(`Failed to fetch dealers: ${err.message}`);
       // Fallback to static data on error if available
       if (staticData && staticData.length > 0) {
         console.log("Falling back to static data due to API error.");
@@ -180,7 +142,7 @@ export const useGeolocation = () => {
         setIsLocating(false);
       },
       {
-        enableHighAccuracy: false, // More reliable, less battery drain
+        enableHighAccuracy: true, // Better accuracy for mobile devices
         timeout: 10000, // 10 seconds timeout
         maximumAge: 60000, // Allow cached position up to 1 minute old
       },

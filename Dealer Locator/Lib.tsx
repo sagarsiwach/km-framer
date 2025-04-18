@@ -390,3 +390,33 @@ export const getInitialCenter = (
 ): Coordinates | [number, number] => {
   return provider === "google" ? DEFAULT_CENTER_GOOGLE : DEFAULT_CENTER_MAPBOX;
 };
+
+export const MAP_MARKER_SVG = `
+<svg width="34" height="48" viewBox="0 0 34 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M17 0C7.611 0 0 7.597 0 16.966C0 27.447 14.976 46.642 15.618 47.308C16.302 48 17.698 48 18.382 47.308C19.024 46.642 34 27.447 34 16.966C34 7.597 26.389 0 17 0Z" fill="currentColor"/>
+</svg>
+`;
+
+// Enhanced createMapboxPopupContent function for better-looking popups
+export const createEnhancedPopupContent = (
+  dealer: Dealer,
+  theme: any,
+  distanceUnit: string,
+): string => `
+  <div style="font-family: ${theme.typography.fontFamily || "Geist, sans-serif"}; color: ${theme.colors.onSurface}; max-width: 220px; padding: 8px 12px; border-radius: 6px;">
+    <h3 style="margin: 0 0 6px; font-size: 14px; font-weight: 600; line-height: 1.3;">${dealer.name}</h3>
+    <p style="margin: 0 0 6px; font-size: 12px; color: ${theme.colors.neutral[600]}; line-height: 1.4;">${dealer.address.formatted}</p>
+    ${
+      dealer.distance !== undefined && dealer.distance >= 0
+        ? `<div style="display: flex; align-items: center; margin-top: 8px;">
+        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${theme.colors.success}; margin-right: 6px;"></span>
+        <span style="font-size: 12px; color: ${theme.colors.neutral[600]}; font-weight: 500;">${dealer.distance} ${distanceUnit} away</span>
+      </div>`
+        : ""
+    }
+    ${
+      dealer.services && dealer.services.includes("charging")
+        ? `<div style="margin-top: 6px; display: inline-block; padding: 2px 8px; background-color: ${hexToRgba(theme.colors.success, 0.1)}; color: ${theme.colors.success}; border-radius: 4px; font-size: 11px; font-weight: 500;">Charging Available</div>`
+        : ""
+    }
+  </div>`;
