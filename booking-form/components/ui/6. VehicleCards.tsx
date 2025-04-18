@@ -118,4 +118,16 @@ addPropertyControls(VehicleCard, {
   borderColor: {
     type: ControlType.Color,
     title: "Border Color",
-    defaultValue
+    defaultValue: tokens.colors.neutral[300],
+  },
+  selectedBorderColor: {
+    type: ControlType.Color,
+    title: "Selected Border Color",
+    defaultValue: tokens.colors.blue[600],
+  },
+  backgroundColor: {
+    type: ControlType.Color,
+    title: "Background Color",
+    defaultValue: "#FFFFFF",
+  },
+})
