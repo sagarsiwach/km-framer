@@ -10,7 +10,7 @@ import VehicleSummary from "./components/form-sections/VehicleSummary";
 import { KMCircleLogo } from "https://framer.com/m/Logo-exuM.js";
 
 // Import Step Components
-import VehicleConfigStep from "./steps/VehicleConfigStep";
+import VehicleConfigStep from "./steps/1. VehicleConfiguration";
 import InsuranceStep from "./steps/InsuranceStep";
 import FinancingStep from "./steps/FinancingStep";
 import UserInfoStep from "./steps/UserInfoStep";

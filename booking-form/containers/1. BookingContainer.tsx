@@ -10,9 +10,9 @@ import ErrorDisplay from "../components/form-sections/ErrorDisplay";
 import VehicleSummary from "../components/form-sections/VehicleSummary";
 
 // Import Step Components
-import VehicleConfiguration from "../steps/VehicleConfiguration";
+import VehicleConfiguration from "../steps/1. VehicleConfiguration";
 import InsuranceSelection from "../steps/InsuranceSelection";
-import FinancingOptions from "../steps/FinancingOptions";
+import FinancingOptions from "../steps/3. FinancingOptions";
 import UserInformation from "../steps/UserInformation";
 import OTPVerification from "../steps/OTPVerification";
 import PaymentOverlay from "../steps/PaymentOverlay";
