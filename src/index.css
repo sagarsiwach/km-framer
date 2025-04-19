@@ -1,0 +1,9 @@
+/* Add Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional: Add base styles or overrides here */
+body {
+  font-family: 'Geist', sans-serif; /* Example: Set default font */
+}
