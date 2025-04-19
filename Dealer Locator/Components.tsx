@@ -1,6 +1,6 @@
 // Components.tsx
-import React, { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useState, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 
 // Import types and utility functions from Lib.tsx
 import {
@@ -23,7 +23,7 @@ import {
   getDirectionsUrl,
   getInitialCenter,
   hexToRgba,
-} from "https://framer.com/m/Lib-8AS5.js@vS7d5YP2fjGyqMnH5L1D";
+} from "https://framer.com/m/Lib-8AS5.js@vS7d5YP2fjGyqMnH5L1D"
 
 // --- DealerCard (Enhanced with better styling and animations) ---
 export const DealerCard = ({
@@ -34,13 +34,13 @@ export const DealerCard = ({
   theme,
   styles,
 }) => {
-  const baseStyle = styles.dealerCardStyleBase(isSelected);
+  const baseStyle = styles.dealerCardStyleBase(isSelected)
 
   // Determine icon based on services
   const hasCharging = dealer.services?.some((s) =>
-    s.toLowerCase().includes("charging"),
-  );
-  const iconName = hasCharging ? "bolt" : "store";
+    s.toLowerCase().includes("charging")
+  )
+  const iconName = hasCharging ? "bolt" : "store"
 
   // Animation variants
   const cardVariants = {
@@ -53,7 +53,7 @@ export const DealerCard = ({
       y: -2,
       backgroundColor: theme.colors.surfaceVariant,
     },
-  };
+  }
 
   return (
     <motion.div
@@ -70,14 +70,18 @@ export const DealerCard = ({
       tabIndex={0}
       aria-selected={isSelected}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") onSelect(dealer);
+        if (e.key === "Enter" || e.key === " ") onSelect(dealer)
       }}
     >
       <div style={styles.dealerCardIconStyle}>
         <Icon
           name={iconName}
           size={20}
-          color={isSelected ? theme.colors.primary : theme.colors.onSurface}
+          color={
+            isSelected
+              ? theme.colors.primary
+              : theme.colors.onSurface
+          }
         />
       </div>
       <div style={styles.dealerCardContentStyle}>
@@ -104,7 +108,10 @@ export const DealerCard = ({
                     padding: "2px 6px",
                     backgroundColor:
                       service.toLowerCase() === "charging"
-                        ? hexToRgba(theme.colors.success, 0.1)
+                        ? hexToRgba(
+                          theme.colors.success,
+                          0.1
+                        )
                         : theme.colors.surfaceVariant,
                     color:
                       service.toLowerCase() === "charging"
@@ -136,8 +143,8 @@ export const DealerCard = ({
         </motion.div>
       </div>
     </motion.div>
-  );
-};
+  )
+}
 
 // --- DealerDetailPanel (Complete rewrite with overlay and responsive support) ---
 export const DealerDetailPanel = ({
@@ -155,34 +162,34 @@ export const DealerDetailPanel = ({
   mapProvider,
 }) => {
   // Don't render anything if no dealer
-  if (!dealer) return null;
+  if (!dealer) return null
 
   // Get today's hours for highlighting
-  const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
+  const today = new Date().toLocaleDateString("en-US", { weekday: "long" })
 
   // Create navigation URL for directions
-  const directionsUrl = getDirectionsUrl(dealer, mapProvider);
+  const directionsUrl = getDirectionsUrl(dealer, mapProvider)
 
   // Create phone call URL if phone is available
   const callUrl = dealer.contact?.phone
     ? `tel:${dealer.contact.phone}`
-    : undefined;
+    : undefined
 
   // Determine if an image is available
-  const imageUrl = dealer.imageUrl || null;
+  const imageUrl = dealer.imageUrl || null
 
   // Animation variants based on mobile or desktop
   const panelVariants = isMobile
     ? {
-        hidden: { y: "100%" },
-        visible: { y: 0 },
-        exit: { y: "100%" },
-      }
+      hidden: { y: "100%" },
+      visible: { y: 0 },
+      exit: { y: "100%" },
+    }
     : {
-        hidden: { x: "100%" },
-        visible: { x: 0 },
-        exit: { x: "100%" },
-      };
+      hidden: { x: "100%" },
+      visible: { x: 0 },
+      exit: { x: "100%" },
+    }
 
   return (
     <AnimatePresence>
@@ -207,20 +214,20 @@ export const DealerDetailPanel = ({
             boxShadow: theme.shadows[3],
             ...(isMobile
               ? {
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  maxHeight: "75vh",
-                  borderTopLeftRadius: theme.spacing(2),
-                  borderTopRightRadius: theme.spacing(2),
-                }
+                bottom: 0,
+                left: 0,
+                right: 0,
+                maxHeight: "75vh",
+                borderTopLeftRadius: theme.spacing(2),
+                borderTopRightRadius: theme.spacing(2),
+              }
               : {
-                  top: 0,
-                  right: 0,
-                  bottom: 0,
-                  width: `${styles.detailPanelWidth || 400}px`,
-                  borderLeft: `1px solid ${theme.colors.outline}`,
-                }),
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: `${styles.detailPanelWidth || 400}px`,
+                borderLeft: `1px solid ${theme.colors.outline}`,
+              }),
             overflow: "hidden",
           }}
         >
@@ -312,7 +319,7 @@ export const DealerDetailPanel = ({
                     objectPosition: "center",
                   }}
                   onError={(e) => {
-                    e.target.style.display = "none";
+                    e.target.style.display = "none"
                   }}
                 />
               </div>
@@ -357,7 +364,8 @@ export const DealerDetailPanel = ({
                       <br />
                     </>
                   )}
-                  {dealer.address.city}, {dealer.address.state}{" "}
+                  {dealer.address.city},{" "}
+                  {dealer.address.state}{" "}
                   {dealer.address.pincode}
                   <br />
                   {dealer.address.country}
@@ -369,7 +377,8 @@ export const DealerDetailPanel = ({
                       fontSize: "14px",
                       color: theme.colors.neutral[500],
                       margin: "8px 0 0 0",
-                      fontFamily: theme.typography.fontFamily,
+                      fontFamily:
+                        theme.typography.fontFamily,
                     }}
                   >
                     {dealer.distance} {distanceUnit} away
@@ -381,121 +390,159 @@ export const DealerDetailPanel = ({
               {(dealer.contact?.phone ||
                 dealer.contact?.email ||
                 dealer.contact?.website) && (
-                <section style={{ marginBottom: theme.spacing(3) }}>
-                  <h3
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.72px",
-                      color: theme.colors.neutral[700],
-                      margin: "0 0 10px 0",
-                      fontFamily: theme.typography.fontFamily,
-                    }}
+                  <section
+                    style={{ marginBottom: theme.spacing(3) }}
                   >
-                    {contactLabel}
-                  </h3>
+                    <h3
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.72px",
+                        color: theme.colors.neutral[700],
+                        margin: "0 0 10px 0",
+                        fontFamily:
+                          theme.typography.fontFamily,
+                      }}
+                    >
+                      {contactLabel}
+                    </h3>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                    }}
-                  >
-                    {dealer.contact.phone && (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
-                        <Icon
-                          name="call"
-                          size={18}
-                          color={theme.colors.onSurfaceVariant}
-                        />
-                        <a
-                          href={`tel:${dealer.contact.phone}`}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
+                      {dealer.contact.phone && (
+                        <div
                           style={{
-                            color: theme.colors.neutral[600],
-                            textDecoration: "none",
-                            fontSize: "16px",
-                            fontFamily: theme.typography.fontFamily,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
                           }}
                         >
-                          {formatPhone(dealer.contact.phone)}
-                        </a>
-                      </div>
-                    )}
+                          <Icon
+                            name="call"
+                            size={18}
+                            color={
+                              theme.colors
+                                .onSurfaceVariant
+                            }
+                          />
+                          <a
+                            href={`tel:${dealer.contact.phone}`}
+                            style={{
+                              color: theme.colors
+                                .neutral[600],
+                              textDecoration: "none",
+                              fontSize: "16px",
+                              fontFamily:
+                                theme.typography
+                                  .fontFamily,
+                            }}
+                          >
+                            {formatPhone(
+                              dealer.contact.phone
+                            )}
+                          </a>
+                        </div>
+                      )}
 
-                    {dealer.contact.email && (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
-                        <Icon
-                          name="language"
-                          size={18}
-                          color={theme.colors.onSurfaceVariant}
-                        />
-                        <a
-                          href={`mailto:${dealer.contact.email}`}
+                      {dealer.contact.email && (
+                        <div
                           style={{
-                            color: theme.colors.neutral[600],
-                            textDecoration: "none",
-                            fontSize: "16px",
-                            fontFamily: theme.typography.fontFamily,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
                           }}
-                          onMouseEnter={styles.handleLinkEnter}
-                          onMouseLeave={styles.handleLinkLeave}
                         >
-                          {dealer.contact.email}
-                        </a>
-                      </div>
-                    )}
+                          <Icon
+                            name="language"
+                            size={18}
+                            color={
+                              theme.colors
+                                .onSurfaceVariant
+                            }
+                          />
+                          <a
+                            href={`mailto:${dealer.contact.email}`}
+                            style={{
+                              color: theme.colors
+                                .neutral[600],
+                              textDecoration: "none",
+                              fontSize: "16px",
+                              fontFamily:
+                                theme.typography
+                                  .fontFamily,
+                            }}
+                            onMouseEnter={
+                              styles.handleLinkEnter
+                            }
+                            onMouseLeave={
+                              styles.handleLinkLeave
+                            }
+                          >
+                            {dealer.contact.email}
+                          </a>
+                        </div>
+                      )}
 
-                    {dealer.contact.website && (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
-                        <Icon
-                          name="language"
-                          size={18}
-                          color={theme.colors.onSurfaceVariant}
-                        />
-                        <a
-                          href={formatUrl(dealer.contact.website)}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                      {dealer.contact.website && (
+                        <div
                           style={{
-                            color: theme.colors.neutral[600],
-                            textDecoration: "none",
-                            fontSize: "16px",
-                            fontFamily: theme.typography.fontFamily,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
                           }}
-                          onMouseEnter={styles.handleLinkEnter}
-                          onMouseLeave={styles.handleLinkLeave}
                         >
-                          {dealer.contact.website.replace(/^https?:\/\//, "")}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </section>
-              )}
+                          <Icon
+                            name="language"
+                            size={18}
+                            color={
+                              theme.colors
+                                .onSurfaceVariant
+                            }
+                          />
+                          <a
+                            href={formatUrl(
+                              dealer.contact.website
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: theme.colors
+                                .neutral[600],
+                              textDecoration: "none",
+                              fontSize: "16px",
+                              fontFamily:
+                                theme.typography
+                                  .fontFamily,
+                            }}
+                            onMouseEnter={
+                              styles.handleLinkEnter
+                            }
+                            onMouseLeave={
+                              styles.handleLinkLeave
+                            }
+                          >
+                            {dealer.contact.website.replace(
+                              /^https?:\/\//,
+                              ""
+                            )}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                )}
 
               {/* Hours */}
               {dealer.hours && dealer.hours.length > 0 && (
-                <section style={{ marginBottom: theme.spacing(3) }}>
+                <section
+                  style={{ marginBottom: theme.spacing(3) }}
+                >
                   <h3
                     style={{
                       fontSize: "12px",
@@ -504,7 +551,8 @@ export const DealerDetailPanel = ({
                       letterSpacing: "0.72px",
                       color: theme.colors.neutral[700],
                       margin: "0 0 10px 0",
-                      fontFamily: theme.typography.fontFamily,
+                      fontFamily:
+                        theme.typography.fontFamily,
                     }}
                   >
                     {hoursLabel}
@@ -516,31 +564,45 @@ export const DealerDetailPanel = ({
                       gridTemplateColumns: "120px 1fr",
                       gap: "8px",
                       fontSize: "14px",
-                      fontFamily: theme.typography.fontFamily,
+                      fontFamily:
+                        theme.typography.fontFamily,
                     }}
                   >
                     {dealer.hours.map((hour) => (
                       <React.Fragment key={hour.day}>
                         <div
                           style={{
-                            fontWeight: hour.day === today ? 500 : 400,
+                            fontWeight:
+                              hour.day === today
+                                ? 500
+                                : 400,
                             color:
                               hour.day === today
-                                ? theme.colors.primary
-                                : theme.colors.neutral[700],
+                                ? theme.colors
+                                  .primary
+                                : theme.colors
+                                  .neutral[700],
                           }}
                         >
                           {hour.day}
                         </div>
                         <div
                           style={{
-                            fontWeight: hour.day === today ? 500 : 400,
+                            fontWeight:
+                              hour.day === today
+                                ? 500
+                                : 400,
                             color:
-                              hour.open === "Closed"
-                                ? theme.colors.neutral[400]
-                                : hour.day === today
-                                  ? theme.colors.primary
-                                  : theme.colors.neutral[700],
+                              hour.open ===
+                                "Closed"
+                                ? theme.colors
+                                  .neutral[400]
+                                : hour.day ===
+                                  today
+                                  ? theme.colors
+                                    .primary
+                                  : theme.colors
+                                    .neutral[700],
                           }}
                         >
                           {hour.open === "Closed"
@@ -555,7 +617,9 @@ export const DealerDetailPanel = ({
 
               {/* Services */}
               {dealer.services && dealer.services.length > 0 && (
-                <section style={{ marginBottom: theme.spacing(3) }}>
+                <section
+                  style={{ marginBottom: theme.spacing(3) }}
+                >
                   <h3
                     style={{
                       fontSize: "12px",
@@ -564,7 +628,8 @@ export const DealerDetailPanel = ({
                       letterSpacing: "0.72px",
                       color: theme.colors.neutral[700],
                       margin: "0 0 10px 0",
-                      fontFamily: theme.typography.fontFamily,
+                      fontFamily:
+                        theme.typography.fontFamily,
                     }}
                   >
                     {servicesLabel}
@@ -577,42 +642,62 @@ export const DealerDetailPanel = ({
                       gap: "6px",
                     }}
                   >
-                    {["sales", "service", "charging"].map((service) => {
-                      const available = dealer.services.includes(service);
-                      return (
-                        <div
-                          key={service}
-                          style={{
-                            color: available
-                              ? theme.colors.success
-                              : theme.colors.neutral[400],
-                            fontSize: "16px",
-                            fontWeight: available ? 500 : 400,
-                            fontFamily: theme.typography.fontFamily,
-                            lineHeight: 1.2,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          {available && (
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 16 16"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M6.66667 10.1147L4.47133 7.91933L3.52867 8.86199L6.66667 12L13.1333 5.53333L12.1907 4.59067L6.66667 10.1147Z"
-                                fill={theme.colors.success}
-                              />
-                            </svg>
-                          )}
-                          {service.charAt(0).toUpperCase() + service.slice(1)}
-                        </div>
-                      );
-                    })}
+                    {["sales", "service", "charging"].map(
+                      (service) => {
+                        const available =
+                          dealer.services.includes(
+                            service
+                          )
+                        return (
+                          <div
+                            key={service}
+                            style={{
+                              color: available
+                                ? theme.colors
+                                  .success
+                                : theme.colors
+                                  .neutral[400],
+                              fontSize: "16px",
+                              fontWeight:
+                                available
+                                  ? 500
+                                  : 400,
+                              fontFamily:
+                                theme.typography
+                                  .fontFamily,
+                              lineHeight: 1.2,
+                              display: "flex",
+                              alignItems:
+                                "center",
+                              gap: "8px",
+                            }}
+                          >
+                            {available && (
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M6.66667 10.1147L4.47133 7.91933L3.52867 8.86199L6.66667 12L13.1333 5.53333L12.1907 4.59067L6.66667 10.1147Z"
+                                  fill={
+                                    theme
+                                      .colors
+                                      .success
+                                  }
+                                />
+                              </svg>
+                            )}
+                            {service
+                              .charAt(0)
+                              .toUpperCase() +
+                              service.slice(1)}
+                          </div>
+                        )
+                      }
+                    )}
                   </div>
                 </section>
               )}
@@ -653,7 +738,11 @@ export const DealerDetailPanel = ({
                 }}
               >
                 <span>Call</span>
-                <Icon name="call" size={16} color={theme.colors.white} />
+                <Icon
+                  name="call"
+                  size={16}
+                  color={theme.colors.white}
+                />
               </motion.a>
             )}
 
@@ -692,8 +781,8 @@ export const DealerDetailPanel = ({
         </motion.div>
       )}
     </AnimatePresence>
-  );
-};
+  )
+}
 
 // --- SearchBar (Enhanced version) ---
 export const SearchBar = ({
@@ -710,28 +799,28 @@ export const SearchBar = ({
   theme,
   styles,
 }) => {
-  const [inputValue, setInputValue] = useState(searchQuery);
-  const [isFocused, setIsFocused] = useState(false);
+  const [inputValue, setInputValue] = useState(searchQuery)
+  const [isFocused, setIsFocused] = useState(false)
 
   useEffect(() => {
-    setInputValue(searchQuery);
-  }, [searchQuery]);
+    setInputValue(searchQuery)
+  }, [searchQuery])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-    onSearchChange(e.target.value);
-  };
+    setInputValue(e.target.value)
+    onSearchChange(e.target.value)
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && inputValue.trim()) {
-      onSearchSubmit(inputValue.trim());
+      onSearchSubmit(inputValue.trim())
     }
-  };
+  }
 
   const handleClear = () => {
-    setInputValue("");
-    onClearSearch();
-  };
+    setInputValue("")
+    onClearSearch()
+  }
 
   // Adding animation to the search input
   const containerVariants = {
@@ -745,7 +834,7 @@ export const SearchBar = ({
     hover: {
       borderColor: theme.colors.neutral[400],
     },
-  };
+  }
 
   return (
     <motion.div
@@ -761,11 +850,15 @@ export const SearchBar = ({
         whileTap={{ scale: 0.95 }}
         style={styles.searchIconButtonStyle}
         onClick={() => {
-          if (inputValue.trim()) onSearchSubmit(inputValue.trim());
+          if (inputValue.trim()) onSearchSubmit(inputValue.trim())
         }}
         aria-label="Search"
       >
-        <Icon name="search" size={18} color={theme.colors.onSurfaceVariant} />
+        <Icon
+          name="search"
+          size={18}
+          color={theme.colors.onSurfaceVariant}
+        />
       </motion.button>
 
       <input
@@ -853,8 +946,8 @@ export const SearchBar = ({
         </motion.button>
       )}
     </motion.div>
-  );
-};
+  )
+}
 
 // --- PaginationControls (Enhanced version) ---
 export const PaginationControls = ({
@@ -864,13 +957,13 @@ export const PaginationControls = ({
   theme,
   styles,
 }) => {
-  if (totalPages <= 1) return null;
+  if (totalPages <= 1) return null
 
-  const handlePrev = () => onPageChange(currentPage - 1);
-  const handleNext = () => onPageChange(currentPage + 1);
+  const handlePrev = () => onPageChange(currentPage - 1)
+  const handleNext = () => onPageChange(currentPage + 1)
 
-  const prevDisabled = currentPage === 1;
-  const nextDisabled = currentPage === totalPages;
+  const prevDisabled = currentPage === 1
+  const nextDisabled = currentPage === totalPages
 
   // Enhanced styling and animations
   return (
@@ -879,9 +972,9 @@ export const PaginationControls = ({
         whileHover={
           !prevDisabled
             ? {
-                scale: 1.05,
-                backgroundColor: theme.colors.surfaceVariant,
-              }
+              scale: 1.05,
+              backgroundColor: theme.colors.surfaceVariant,
+            }
             : {}
         }
         whileTap={!prevDisabled ? { scale: 0.95 } : {}}
@@ -904,9 +997,9 @@ export const PaginationControls = ({
         whileHover={
           !nextDisabled
             ? {
-                scale: 1.05,
-                backgroundColor: theme.colors.surfaceVariant,
-              }
+              scale: 1.05,
+              backgroundColor: theme.colors.surfaceVariant,
+            }
             : {}
         }
         whileTap={!nextDisabled ? { scale: 0.95 } : {}}
@@ -921,8 +1014,8 @@ export const PaginationControls = ({
         <Icon name="arrow_forward" size={18} />
       </motion.button>
     </div>
-  );
-};
+  )
+}
 
 // --- LoadingOverlay (Enhanced with better animation) ---
 export const LoadingOverlay = ({
@@ -959,7 +1052,7 @@ export const LoadingOverlay = ({
       {loadingText}
     </motion.p>
   </motion.div>
-);
+)
 
 // --- ErrorDisplay (Enhanced with better visuals) ---
 export const ErrorDisplay = ({ message, onRetry, theme, styles }) => {
@@ -1007,8 +1100,8 @@ export const ErrorDisplay = ({ message, onRetry, theme, styles }) => {
         </motion.button>
       )}
     </motion.div>
-  );
-};
+  )
+}
 
 // --- MapPlaceholder (Enhanced with animation) ---
 export const MapPlaceholder = ({ message, subtext, theme, styles }) => (
@@ -1051,7 +1144,7 @@ export const MapPlaceholder = ({ message, subtext, theme, styles }) => (
       </motion.div>
     )}
   </motion.div>
-);
+)
 
 // --- Custom FilterButton Component ---
 export const FilterButton = ({ label, isActive, onClick, icon, theme }) => {
@@ -1069,7 +1162,9 @@ export const FilterButton = ({ label, isActive, onClick, icon, theme }) => {
         alignItems: "center",
         gap: "6px",
         padding: "6px 12px",
-        backgroundColor: isActive ? theme.colors.surfaceVariant : "transparent",
+        backgroundColor: isActive
+          ? theme.colors.surfaceVariant
+          : "transparent",
         border: `1px solid ${isActive ? theme.colors.outline : "transparent"}`,
         borderRadius: theme.shape.small,
         color: theme.colors.onSurface,
@@ -1084,5 +1179,5 @@ export const FilterButton = ({ label, isActive, onClick, icon, theme }) => {
       {icon}
       {label}
     </motion.button>
-  );
-};
+  )
+}
