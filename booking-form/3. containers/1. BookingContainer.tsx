@@ -44,12 +44,13 @@ export default function BookingContainer(props) {
   // Refs for scrollable content
   const contentRef = useRef(null)
 
+  // Simplify the loading state management
+  const [isLoading, setIsLoading] = useState(true)
+
   // State for payment overlay and responsive layout
   const [showPaymentOverlay, setShowPaymentOverlay] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [viewportHeight, setViewportHeight] = useState("100vh")
-  const [initialLoading, setInitialLoading] = useState(true)
-  const [apiDataLoaded, setApiDataLoaded] = useState(false)
 
   // Debug logging
   const debugLog = (...args) => {
@@ -167,26 +168,6 @@ export default function BookingContainer(props) {
     }
   }, [currentStep, enableDebug])
 
-  // Simulate initial loading for demonstration
-  useEffect(() => {
-    // Show loading for at least 1.5 seconds
-    debugLog("Starting initial loading timer (1.5s)")
-    const timer = setTimeout(() => {
-      if (apiDataLoaded) {
-        setInitialLoading(false)
-        debugLog("Initial loading complete")
-      }
-    }, 1500)
-
-    return () => clearTimeout(timer)
-  }, [apiDataLoaded, enableDebug])
-
-  // Handle API data loaded
-  const handleApiDataLoaded = () => {
-    setApiDataLoaded(true)
-    debugLog("API data loaded, waiting for loading timer to complete")
-  }
-
   // Styles for desktop layout
   const containerStyle = {
     display: "flex",
@@ -292,26 +273,13 @@ export default function BookingContainer(props) {
     zIndex: 2,
   }
 
-  // Show full-screen loader during initial loading
-  if (initialLoading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh", // Use full viewport height for loading screen
-          width: "100%",
-          backgroundColor: backgroundColor,
-        }}
-      >
-        <LoadingIndicator
-          text="Loading booking interface..."
-          size="large"
-          color={primaryColor}
-        />
-      </div>
-    )
+  const loadingContainerStyle = {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
+    width: "100%",
+    backgroundColor: backgroundColor,
   }
 
   return (
@@ -326,10 +294,42 @@ export default function BookingContainer(props) {
         apiError,
         calculateTotalPrice,
       }) => {
-        // Notify parent when API data is loaded
-        if (vehicleData && !apiDataLoaded) {
-          handleApiDataLoaded()
-          debugLog("Vehicle data loaded from API", vehicleData)
+        // Replace the complicated effect with a simpler one
+        useEffect(() => {
+          if (vehicleData) {
+            // If we have vehicle data, set a timer to show loading for min 1.5s
+            const timer = setTimeout(() => {
+              setIsLoading(false)
+              debugLog("Loading complete, vehicle data available")
+            }, 1500)
+
+            return () => clearTimeout(timer)
+          }
+
+          // Add a failsafe to prevent infinite loading
+          const failsafe = setTimeout(() => {
+            if (isLoading) {
+              debugLog(
+                "Failsafe: Forcing loading to complete after timeout"
+              )
+              setIsLoading(false)
+            }
+          }, 10000) // 10 seconds max
+
+          return () => clearTimeout(failsafe)
+        }, [vehicleData, isLoading])
+
+        // Show loading screen while loading
+        if (isLoading) {
+          return (
+            <div style={loadingContainerStyle}>
+              <LoadingIndicator
+                text="Loading booking interface..."
+                size="large"
+                color={primaryColor}
+              />
+            </div>
+          )
         }
 
         return (
