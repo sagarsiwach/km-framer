@@ -1,21 +1,24 @@
 // Lib.tsx
-import React from "react"
+import React from "react";
 
 // ========== CONSTANTS ==========
 // Default center remains useful, even if provider is Mapbox
-export const DEFAULT_CENTER_GOOGLE = { lat: 15.2993, lng: 74.124 } // Goa, India
-export const DEFAULT_CENTER_MAPBOX = [74.124, 15.2993] // Lng, Lat for Mapbox
-export const DEFAULT_ZOOM = 11 // Adjusted default zoom
-export const MAX_ZOOM = 18
-export const MIN_ZOOM = 4
-export const DEFAULT_SEARCH_RADIUS = 50 // km - Example
+export const DEFAULT_CENTER_GOOGLE = { lat: 15.2993, lng: 74.124 }; // Goa, India
+export const DEFAULT_CENTER_MAPBOX = [78.962, 21.3271]; // Lng, Lat for Mapbox
+export const DEFAULT_ZOOM = 11; // Adjusted default zoom
+export const MAX_ZOOM = 18;
+export const MIN_ZOOM = 4;
+export const DEFAULT_SEARCH_RADIUS = 50; // km - Example
 
 // SVG Icons - Ensure you have these named correctly
 export const ICONS = {
-  store: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.551 5.035C5.509 5.052 5.465 5.082 5.453 5.102C5.44 5.122 5.205 5.797 4.93 6.603L4.43 8.069L4.448 8.459C4.477 9.076 4.63 9.42 5.048 9.807L5.255 9.998V12.728C5.255 15.363 5.257 15.46 5.322 15.541L5.39 15.625H9.987H14.583L14.664 15.544L14.744 15.463L14.756 12.706L14.767 9.949L14.937 9.82L15.152 9.655C15.38 9.478 15.63 9.135 15.708 8.843C15.781 8.566 15.827 8.046 15.791 7.853C15.772 7.777 15.555 7.097 15.299 6.345C14.935 5.277 14.814 4.962 14.744 4.9C14.653 4.82 10.015 4.822 7.602 4.824C6.293 4.825 5.593 4.838 5.551 5.035ZM14.472 6.694C14.673 7.294 14.836 7.797 14.835 7.811C14.833 7.841 5.148 7.849 5.148 7.82C5.148 7.805 5.814 5.616 5.875 5.447C5.888 5.412 6.744 5.403 10.003 5.403L14.106 5.404L14.472 6.694ZM14.966 8.61C14.917 9.156 14.486 9.574 13.94 9.606C13.464 9.633 13.12 9.418 12.9 9.0L12.774 8.687L12.657 8.687C12.552 8.687 12.433 8.77 12.35 9.0C12.101 9.671 11.189 9.893 10.65 9.439C10.511 9.321 10.328 9.048 10.328 8.958C10.328 8.924 10.286 8.848 10.236 8.788C10.167 8.706 10.114 8.687 10.027 8.687C9.867 8.687 9.778 8.767 9.706 9.0C9.661 9.143 9.597 9.239 9.461 9.374C9.135 9.693 8.712 9.763 8.313 9.564C8.054 9.434 7.902 9.27 7.768 8.974C7.661 8.738 7.592 8.687 7.427 8.687C7.299 8.687 7.2 8.784 7.117 9.008C7.038 9.22 6.816 9.474 6.625 9.573C6.407 9.687 6.004 9.701 5.744 9.592C5.504 9.492 5.266 9.286 5.157 9.068C5.081 8.914 5 8.46 5.035 8.424C5.045 8.414 7.288 8.406 10.019 8.406H14.985L14.966 8.61ZM10.989 10.015C11.599 10.348 12.325 10.252 12.821 9.772L13.008 9.591L13.204 9.776C13.844 10.381 14.86 10.354 15.437 9.717L15.563 9.577L15.689 9.717C15.981 10.039 16.435 10.227 16.882 10.209L17.159 10.197L17.159 12.618L17.159 15.04H16.148H15.137V13.21V11.381L15.05 11.291L14.963 11.208H12.507H10.051L9.948 11.311L9.845 11.416V13.228V15.04H8.857H7.868L7.859 12.627L7.85 10.215H8.09C8.572 10.215 8.976 10.052 9.268 9.739L9.436 9.558L9.615 9.73C9.714 9.834 9.879 9.959 9.989 10.015Z" fill="currentColor"/></svg>',
+  store:
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.551 5.035C5.509 5.052 5.465 5.082 5.453 5.102C5.44 5.122 5.205 5.797 4.93 6.603L4.43 8.069L4.448 8.459C4.477 9.076 4.63 9.42 5.048 9.807L5.255 9.998V12.728C5.255 15.363 5.257 15.46 5.322 15.541L5.39 15.625H9.987H14.583L14.664 15.544L14.744 15.463L14.756 12.706L14.767 9.949L14.937 9.82L15.152 9.655C15.38 9.478 15.63 9.135 15.708 8.843C15.781 8.566 15.827 8.046 15.791 7.853C15.772 7.777 15.555 7.097 15.299 6.345C14.935 5.277 14.814 4.962 14.744 4.9C14.653 4.82 10.015 4.822 7.602 4.824C6.293 4.825 5.593 4.838 5.551 5.035ZM14.472 6.694C14.673 7.294 14.836 7.797 14.835 7.811C14.833 7.841 5.148 7.849 5.148 7.82C5.148 7.805 5.814 5.616 5.875 5.447C5.888 5.412 6.744 5.403 10.003 5.403L14.106 5.404L14.472 6.694ZM14.966 8.61C14.917 9.156 14.486 9.574 13.94 9.606C13.464 9.633 13.12 9.418 12.9 9.0L12.774 8.687L12.657 8.687C12.552 8.687 12.433 8.77 12.35 9.0C12.101 9.671 11.189 9.893 10.65 9.439C10.511 9.321 10.328 9.048 10.328 8.958C10.328 8.924 10.286 8.848 10.236 8.788C10.167 8.706 10.114 8.687 10.027 8.687C9.867 8.687 9.778 8.767 9.706 9.0C9.661 9.143 9.597 9.239 9.461 9.374C9.135 9.693 8.712 9.763 8.313 9.564C8.054 9.434 7.902 9.27 7.768 8.974C7.661 8.738 7.592 8.687 7.427 8.687C7.299 8.687 7.2 8.784 7.117 9.008C7.038 9.22 6.816 9.474 6.625 9.573C6.407 9.687 6.004 9.701 5.744 9.592C5.504 9.492 5.266 9.286 5.157 9.068C5.081 8.914 5 8.46 5.035 8.424C5.045 8.414 7.288 8.406 10.019 8.406H14.985L14.966 8.61ZM10.989 10.015C11.599 10.348 12.325 10.252 12.821 9.772L13.008 9.591L13.204 9.776C13.844 10.381 14.86 10.354 15.437 9.717L15.563 9.577L15.689 9.717C15.981 10.039 16.435 10.227 16.882 10.209L17.159 10.197L17.159 12.618L17.159 15.04H16.148H15.137V13.21V11.381L15.05 11.291L14.963 11.208H12.507H10.051L9.948 11.311L9.845 11.416V13.228V15.04H8.857H7.868L7.859 12.627L7.85 10.215H8.09C8.572 10.215 8.976 10.052 9.268 9.739L9.436 9.558L9.615 9.73C9.714 9.834 9.879 9.959 9.989 10.015Z" fill="currentColor"/></svg>',
   bolt: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.333 18.333V12.5H5.833C5.462 12.5 5.19 12.228 5.19 11.857C5.19 11.486 5.462 11.214 5.833 11.214H8.333V5.857C8.333 5.486 8.605 5.214 8.976 5.214C9.186 5.214 9.375 5.32 9.488 5.503L14.488 11.932C14.678 12.235 14.608 12.613 14.305 12.803C14.208 12.867 14.102 12.898 14 12.898H11.667V18.333C11.667 18.704 11.395 18.976 11.024 18.976C10.653 18.976 10.381 18.704 10.381 18.333V18.143L10.464 17.964L13.464 12.08H11.807L8.333 18.333Z" fill="currentColor"/></svg>',
-  search: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.209 13.466C15.473 12.03 16.25 10.11 16.25 8.005C16.25 3.998 13.002 0.75 8.995 0.75C4.988 0.75 1.74 3.998 1.74 8.005C1.74 12.012 4.988 15.26 8.995 15.26C10.737 15.26 12.32 14.695 13.59 13.788L17.844 18.041C18.234 18.431 18.867 18.431 19.257 18.041C19.647 17.651 19.647 17.018 19.257 16.628L14.998 12.37C14.76 12.669 14.49 12.948 14.209 13.213V13.466ZM8.995 13.24C6.102 13.24 3.76 10.898 3.76 8.005C3.76 5.112 6.102 2.77 8.995 2.77C11.888 2.77 14.23 5.112 14.23 8.005C14.23 10.898 11.888 13.24 8.995 13.24Z" fill="currentColor"/></svg>',
-  close: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M2.944 2.944C3.334 2.553 3.967 2.553 4.357 2.944L10 8.586L15.643 2.944C16.033 2.553 16.666 2.553 17.056 2.944C17.447 3.334 17.447 3.967 17.056 4.357L11.414 10L17.056 15.643C17.447 16.033 17.447 16.666 17.056 17.056C16.666 17.447 16.033 17.447 15.643 17.056L10 11.414L4.357 17.056C3.967 17.447 3.334 17.447 2.944 17.056C2.553 16.666 2.553 16.033 2.944 15.643L8.586 10L2.944 4.357C2.553 3.967 2.553 3.334 2.944 2.944Z" fill="currentColor"/></svg>',
+  search:
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.209 13.466C15.473 12.03 16.25 10.11 16.25 8.005C16.25 3.998 13.002 0.75 8.995 0.75C4.988 0.75 1.74 3.998 1.74 8.005C1.74 12.012 4.988 15.26 8.995 15.26C10.737 15.26 12.32 14.695 13.59 13.788L17.844 18.041C18.234 18.431 18.867 18.431 19.257 18.041C19.647 17.651 19.647 17.018 19.257 16.628L14.998 12.37C14.76 12.669 14.49 12.948 14.209 13.213V13.466ZM8.995 13.24C6.102 13.24 3.76 10.898 3.76 8.005C3.76 5.112 6.102 2.77 8.995 2.77C11.888 2.77 14.23 5.112 14.23 8.005C14.23 10.898 11.888 13.24 8.995 13.24Z" fill="currentColor"/></svg>',
+  close:
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M2.944 2.944C3.334 2.553 3.967 2.553 4.357 2.944L10 8.586L15.643 2.944C16.033 2.553 16.666 2.553 17.056 2.944C17.447 3.334 17.447 3.967 17.056 4.357L11.414 10L17.056 15.643C17.447 16.033 17.447 16.666 17.056 17.056C16.666 17.447 16.033 17.447 15.643 17.056L10 11.414L4.357 17.056C3.967 17.447 3.334 17.447 2.944 17.056C2.553 16.666 2.553 16.033 2.944 15.643L8.586 10L2.944 4.357C2.553 3.967 2.553 3.334 2.944 2.944Z" fill="currentColor"/></svg>',
   my_location:
     '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_1_1)"><path d="M9.167 19.125V17.458C7.431 17.264 5.941 16.545 4.698 15.302C3.455 14.059 2.736 12.569 2.542 10.833H0.875V9.167H2.542C2.736 7.431 3.455 5.941 4.698 4.698C5.941 3.455 7.431 2.736 9.167 2.542V0.875H10.833V2.542C12.569 2.736 14.059 3.455 15.302 4.698C16.545 5.941 17.264 7.431 17.458 9.167H19.125V10.833H17.458C17.264 12.569 16.545 14.059 15.302 15.302C14.059 16.545 12.569 17.264 10.833 17.458V19.125H9.167ZM10 15.833C11.611 15.833 12.986 15.264 14.125 14.125C15.264 12.986 15.833 11.611 15.833 10C15.833 8.389 15.264 7.014 14.125 5.875C12.986 4.736 11.611 4.167 10 4.167C8.389 4.167 7.014 4.736 5.875 5.875C4.736 7.014 4.167 8.389 4.167 10C4.167 11.611 4.736 12.986 5.875 14.125C7.014 15.264 8.389 15.833 10 15.833ZM10 13.333C9.083 13.333 8.299 13.007 7.646 12.354C6.993 11.701 6.667 10.917 6.667 10C6.667 9.083 6.993 8.299 7.646 7.646C8.299 6.993 9.083 6.667 10 6.667C10.917 6.667 11.701 6.993 12.354 7.646C13.007 8.299 13.333 9.083 13.333 10C13.333 10.917 13.007 11.701 12.354 12.354C11.701 13.007 10.917 13.333 10 13.333Z" fill="currentColor"/></g><defs><clipPath id="clip0_1_1"><rect width="20" height="20" fill="white"/></clipPath></defs></svg>',
   arrow_back:
@@ -29,8 +32,9 @@ export const ICONS = {
     '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M15.769 4.195C15.468 4.131 15.145 4.153 14.88 4.25L10.07 6.056C9.99 6.085 9.916 6.127 9.85 6.18L6.18 9.85C6.127 9.916 6.085 9.99 6.056 10.07L4.25 14.88C4.153 15.145 4.131 15.468 4.195 15.769C4.258 16.07 4.421 16.338 4.659 16.534L4.66 16.535C4.94 16.76 5.29 16.854 5.633 16.791L10.82 15.886C10.906 15.872 10.989 15.842 11.063 15.798L15.798 11.063C15.842 10.989 15.872 10.906 15.886 10.82L16.791 5.633C16.854 5.29 16.76 4.94 16.535 4.66L16.534 4.659C16.338 4.421 16.07 4.258 15.769 4.195ZM14.667 6.195L10.475 7.041L12.959 9.525L13.805 5.333L14.667 6.195ZM5.333 13.805L6.195 14.667L10.387 13.821L7.903 11.337L5.333 13.805ZM13.542 10.625L10.625 13.542L9.375 12.292L12.292 9.375L13.542 10.625Z" fill="currentColor"/></svg>',
   map_pin:
     '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 17.5C10 17.5 15 12.5 15 8.75C15 6.134 12.761 4.167 10 4.167C7.239 4.167 5 6.134 5 8.75C5 12.5 10 17.5 10 17.5ZM10 10.833C11.15 10.833 12.083 9.9 12.083 8.75C12.083 7.6 11.15 6.667 10 6.667C8.85 6.667 7.917 7.6 7.917 8.75C7.917 9.9 8.85 10.833 10 10.833Z" fill="currentColor"/></svg>',
-  error: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 18.333C14.602 18.333 18.333 14.602 18.333 10C18.333 5.398 14.602 1.667 10 1.667C5.398 1.667 1.667 5.398 1.667 10C1.667 14.602 5.398 18.333 10 18.333ZM9.167 14.167V12.5H10.833V14.167H9.167ZM9.167 10.833V5.833H10.833V10.833H9.167Z" fill="currentColor"/></svg>',
-}
+  error:
+    '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 18.333C14.602 18.333 18.333 14.602 18.333 10C18.333 5.398 14.602 1.667 10 1.667C5.398 1.667 1.667 5.398 1.667 10C1.667 14.602 5.398 18.333 10 18.333ZM9.167 14.167V12.5H10.833V14.167H9.167ZM9.167 10.833V5.833H10.833V10.833H9.167Z" fill="currentColor"/></svg>',
+};
 
 // Google Map Styles - Keep available even if default is Mapbox
 // Includes the monochrome style added previously
@@ -105,7 +109,7 @@ export const GOOGLE_MAP_STYLES = [
       },
     ],
   },
-]
+];
 
 // Sample dealer data (Keep for canvas preview)
 export const SAMPLE_DEALERS = [
@@ -187,59 +191,59 @@ export const SAMPLE_DEALERS = [
     imageUrl:
       "https://via.placeholder.com/400x200/e2e8f0/cccccc?text=Store+Image+5",
   },
-]
+];
 
 // ========== TYPESCRIPT TYPES ==========
 export interface Coordinates {
-  lat: number
-  lng: number
+  lat: number;
+  lng: number;
 }
 export interface Address {
-  street?: string
-  city?: string
-  state?: string
-  zip?: string
-  country?: string
-  formatted: string // Ensure this is always present
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+  formatted: string; // Ensure this is always present
 }
 export interface Contact {
-  phone?: string
-  email?: string
-  website?: string
+  phone?: string;
+  email?: string;
+  website?: string;
 }
 export interface Hours {
-  day: string
-  open: string
-  close: string
+  day: string;
+  open: string;
+  close: string;
 }
 export interface Dealer {
-  id: string
-  name: string
-  address: Address
-  coordinates: Coordinates
-  contact?: Contact
-  hours?: Hours[]
-  services?: string[] // e.g., ["sales", "service", "charging"]
-  rating?: number
-  distance?: number // Calculated dynamically
-  imageUrl?: string // Optional image URL for detail view
+  id: string;
+  name: string;
+  address: Address;
+  coordinates: Coordinates;
+  contact?: Contact;
+  hours?: Hours[];
+  services?: string[]; // e.g., ["sales", "service", "charging"]
+  rating?: number;
+  distance?: number; // Calculated dynamically
+  imageUrl?: string; // Optional image URL for detail view
 }
-export type MapProvider = "google" | "mapbox"
-export type Location = Coordinates | null
+export type MapProvider = "google" | "mapbox";
+export type Location = Coordinates | null;
 
 // ========== UTILITY FUNCTIONS ==========
 
 // hexToRgba (Keep as is)
 export const hexToRgba = (hex, alpha) => {
-  hex = hex.replace("#", "")
-  const r = parseInt(hex.substring(0, 2), 16)
-  const g = parseInt(hex.substring(2, 4), 16)
-  const b = parseInt(hex.substring(4, 6), 16)
+  hex = hex.replace("#", "");
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
   if (isNaN(r) || isNaN(g) || isNaN(b)) {
-    return `rgba(0,0,0,${alpha})`
+    return `rgba(0,0,0,${alpha})`;
   } // Fallback for invalid hex
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
 
 // calculateDistance (Keep as is)
 export const calculateDistance = (
@@ -256,78 +260,75 @@ export const calculateDistance = (
     isNaN(loc2.lat) ||
     isNaN(loc2.lng)
   )
-    return undefined
-  const rad = (n) => (n * Math.PI) / 180
-  const R = unit === "miles" ? 3958.8 : 6371 // Earth radius in km or miles
-  const dLat = rad(loc2.lat - loc1.lat)
-  const dLng = rad(loc2.lng - loc1.lng)
+    return undefined;
+  const rad = (n) => (n * Math.PI) / 180;
+  const R = unit === "miles" ? 3958.8 : 6371; // Earth radius in km or miles
+  const dLat = rad(loc2.lat - loc1.lat);
+  const dLng = rad(loc2.lng - loc1.lng);
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(rad(loc1.lat)) *
-    Math.cos(rad(loc2.lat)) *
-    Math.sin(dLng / 2) *
-    Math.sin(dLng / 2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  const distance = R * c
-  return Math.round(distance * 10) / 10 // Round to one decimal place
-}
+      Math.cos(rad(loc2.lat)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+  return Math.round(distance * 10) / 10; // Round to one decimal place
+};
 
 // formatPhone (Keep as is)
 export const formatPhone = (phone?: string): string => {
   // Add more sophisticated formatting if needed
-  return phone || ""
-}
+  return phone || "";
+};
 
 // formatAddress (Keep as is, rely on 'formatted')
 export const formatAddress = (address?: Address): string => {
-  if (!address) return "Address not available"
-  return address.formatted
-}
+  if (!address) return "Address not available";
+  return address.formatted;
+};
 
 // formatUrl (Keep as is)
 export const formatUrl = (url?: string): string => {
-  if (!url) return ""
+  if (!url) return "";
   if (!url.match(/^https?:\/\//i)) {
-    return `https://${url}`
+    return `https://${url}`;
   }
-  return url
-}
+  return url;
+};
 
 // getDirectionsUrl (Keep as is)
 export const getDirectionsUrl = (
   destination: Dealer | string | Coordinates | null,
   provider: MapProvider = "google" // Default to google for fallback
 ): string => {
-  if (!destination) return "#"
+  if (!destination) return "#";
 
-  let destinationParam = ""
-  let baseUrl = ""
+  let destinationParam = "";
+  let baseUrl = "";
 
   if (provider === "google") {
-    baseUrl = "https://www.google.com/maps/dir/?api=1&destination="
+    baseUrl = "https://www.google.com/maps/dir/?api=1&destination=";
     if (typeof destination === "string") {
-      destinationParam = encodeURIComponent(destination)
+      destinationParam = encodeURIComponent(destination);
     } else if (
       typeof destination === "object" &&
       "coordinates" in destination
     ) {
-      destinationParam = `${destination.coordinates.lat},${destination.coordinates.lng}`
+      destinationParam = `${destination.coordinates.lat},${destination.coordinates.lng}`;
     } else if (typeof destination === "object" && "lat" in destination) {
-      destinationParam = `${destination.lat},${destination.lng}`
-    } else if (
-      typeof destination === "object" &&
-      "address" in destination
-    ) {
-      destinationParam = encodeURIComponent(destination.address.formatted)
+      destinationParam = `${destination.lat},${destination.lng}`;
+    } else if (typeof destination === "object" && "address" in destination) {
+      destinationParam = encodeURIComponent(destination.address.formatted);
     } else {
-      return "#"
+      return "#";
     } // Invalid destination object
   } else {
     // mapbox
     // Use search link for simplicity, focuses map on the location
-    baseUrl = "https://search.mapbox.com/search/"
+    baseUrl = "https://search.mapbox.com/search/";
     if (typeof destination === "string") {
-      destinationParam = encodeURIComponent(destination)
+      destinationParam = encodeURIComponent(destination);
     } else if (
       typeof destination === "object" &&
       "coordinates" in destination
@@ -336,24 +337,21 @@ export const getDirectionsUrl = (
       // destinationParam = encodeURIComponent(`${destination.coordinates.lng},${destination.coordinates.lat}`)
       destinationParam = encodeURIComponent(
         destination.address?.formatted ||
-        `${destination.coordinates.lng},${destination.coordinates.lat}`
-      )
+          `${destination.coordinates.lng},${destination.coordinates.lat}`
+      );
     } else if (typeof destination === "object" && "lat" in destination) {
       destinationParam = encodeURIComponent(
         `${destination.lng},${destination.lat}`
-      )
-    } else if (
-      typeof destination === "object" &&
-      "address" in destination
-    ) {
-      destinationParam = encodeURIComponent(destination.address.formatted)
+      );
+    } else if (typeof destination === "object" && "address" in destination) {
+      destinationParam = encodeURIComponent(destination.address.formatted);
     } else {
-      return "#"
+      return "#";
     } // Invalid destination object
-    return `${baseUrl}${destinationParam}?source=framer` // Added source param
+    return `${baseUrl}${destinationParam}?source=framer`; // Added source param
   }
-  return `${baseUrl}${destinationParam}`
-}
+  return `${baseUrl}${destinationParam}`;
+};
 
 // Simple Icon Component (Keep as is, ensure SVG content is correct)
 export const Icon = ({
@@ -362,9 +360,9 @@ export const Icon = ({
   size = 20, // Default size updated
   style = {},
 }) => {
-  const svgContent = ICONS[name] || ""
+  const svgContent = ICONS[name] || "";
   // Basic color replacement, might need refinement for complex SVGs
-  const coloredSvg = svgContent.replace(/currentColor/g, color)
+  const coloredSvg = svgContent.replace(/currentColor/g, color);
 
   const iconStyle: React.CSSProperties = {
     display: "inline-flex",
@@ -376,28 +374,28 @@ export const Icon = ({
     flexShrink: 0, // Prevent icon shrinking in flex layouts
     verticalAlign: "middle", // Align better with text
     ...style,
-  }
+  };
   return (
     <div
       style={iconStyle}
       dangerouslySetInnerHTML={{ __html: coloredSvg }}
       aria-hidden="true" // Hide decorative icons from screen readers
     />
-  )
-}
+  );
+};
 
 // getInitialCenter (Keep as is)
 export const getInitialCenter = (
   provider: MapProvider
 ): Coordinates | [number, number] => {
-  return provider === "google" ? DEFAULT_CENTER_GOOGLE : DEFAULT_CENTER_MAPBOX
-}
+  return provider === "google" ? DEFAULT_CENTER_GOOGLE : DEFAULT_CENTER_MAPBOX;
+};
 
 export const MAP_MARKER_SVG = `
 <svg width="34" height="48" viewBox="0 0 34 48" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path d="M17 0C7.611 0 0 7.597 0 16.966C0 27.447 14.976 46.642 15.618 47.308C16.302 48 17.698 48 18.382 47.308C19.024 46.642 34 27.447 34 16.966C34 7.597 26.389 0 17 0Z" fill="currentColor"/>
 </svg>
-`
+`;
 
 // Enhanced createMapboxPopupContent function for better-looking popups
 export const createEnhancedPopupContent = (
@@ -405,18 +403,33 @@ export const createEnhancedPopupContent = (
   theme: any,
   distanceUnit: string
 ): string => `
-  <div style="font-family: ${theme.typography.fontFamily || "Geist, sans-serif"}; color: ${theme.colors.onSurface}; max-width: 220px; padding: 8px 12px; border-radius: 6px;">
-    <h3 style="margin: 0 0 6px; font-size: 14px; font-weight: 600; line-height: 1.3;">${dealer.name}</h3>
-    <p style="margin: 0 0 6px; font-size: 12px; color: ${theme.colors.neutral[600]}; line-height: 1.4;">${dealer.address.formatted}</p>
-    ${dealer.distance !== undefined && dealer.distance >= 0
-    ? `<div style="display: flex; align-items: center; margin-top: 8px;">
+  <div style="font-family: ${
+    theme.typography.fontFamily || "Geist, sans-serif"
+  }; color: ${
+  theme.colors.onSurface
+}; max-width: 220px; padding: 8px 12px; border-radius: 6px;">
+    <h3 style="margin: 0 0 6px; font-size: 14px; font-weight: 600; line-height: 1.3;">${
+      dealer.name
+    }</h3>
+    <p style="margin: 0 0 6px; font-size: 12px; color: ${
+      theme.colors.neutral[600]
+    }; line-height: 1.4;">${dealer.address.formatted}</p>
+    ${
+      dealer.distance !== undefined && dealer.distance >= 0
+        ? `<div style="display: flex; align-items: center; margin-top: 8px;">
         <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${theme.colors.success}; margin-right: 6px;"></span>
         <span style="font-size: 12px; color: ${theme.colors.neutral[600]}; font-weight: 500;">${dealer.distance} ${distanceUnit} away</span>
       </div>`
-    : ""
-  }
-    ${dealer.services && dealer.services.includes("charging")
-    ? `<div style="margin-top: 6px; display: inline-block; padding: 2px 8px; background-color: ${hexToRgba(theme.colors.success, 0.1)}; color: ${theme.colors.success}; border-radius: 4px; font-size: 11px; font-weight: 500;">Charging Available</div>`
-    : ""
-  }
-  </div>`
+        : ""
+    }
+    ${
+      dealer.services && dealer.services.includes("charging")
+        ? `<div style="margin-top: 6px; display: inline-block; padding: 2px 8px; background-color: ${hexToRgba(
+            theme.colors.success,
+            0.1
+          )}; color: ${
+            theme.colors.success
+          }; border-radius: 4px; font-size: 11px; font-weight: 500;">Charging Available</div>`
+        : ""
+    }
+  </div>`;
