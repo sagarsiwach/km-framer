@@ -2,10 +2,10 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}", // Configure content sources
+    "./src/**/*.{js,ts,jsx,tsx}", // Make sure this line includes jsx/tsx
   ],
   theme: {
-    extend: {}, // You can extend the default theme here
+    extend: {},
   },
   plugins: [],
 }
