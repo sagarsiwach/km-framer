@@ -1,19 +1,17 @@
-// containers/BookingContainer.jsx
-import { useState, useEffect } from "react"
+// booking-form/3. containers/1. BookingContainer.tsx
+import { useState, useEffect, useRef } from "react"
 import { addPropertyControls, ControlType } from "framer"
 import tokens from "https://framer.com/m/DesignTokens-itkJ.js"
 import { KMCircleLogo } from "https://framer.com/m/Logo-exuM.js"
-import BookingContext, {
-  BookingProvider,
-  useBooking,
-} from "https://framer.com/m/BookingContext-EFWo.js"
-import UseStepNavigation from "https://framer.com/m/useStepNavigation-xwZU.js"
+import { BookingProvider } from "https://framer.com/m/BookingContext-EFWo.js"
+import useStepNavigation from "https://framer.com/m/useStepNavigation-xwZU.js"
 import LoadingIndicator from "https://framer.com/m/LoadingIndicator-7vLo.js"
 import ErrorDisplay from "https://framer.com/m/ErrorDisplay-PmC2.js"
 import VehicleSummary from "https://framer.com/m/VehicleSummary-GFVo.js"
+import Button from "https://framer.com/m/Button-FXtj.js"
 
 // Import Step Components
-import VehicleConfiguration from "https://framer.com/m/VehicleConfiguration-rPPa.js"
+import VehicleConfiguration from "https://framer.com/m/VehicleConfiguration-rPPa.js@aphQnhW7QEZqgulxnSzZ"
 import InsuranceSelection from "https://framer.com/m/InsuranceSelection-SIY2.js"
 import FinancingOptions from "https://framer.com/m/FinancingOptions-wNCm.js"
 import UserInformation from "https://framer.com/m/UserInformation-2F6M.js"
@@ -36,14 +34,65 @@ export default function BookingContainer(props) {
     logoColor = "#404040",
     headingText = "Book your Ride",
     productImage = "https://framerusercontent.com/images/kGiQohfz1kTljpgxcUnUxGNSE.png",
+    enableDebug = false,
     onStepChange,
     onFormSubmit,
     style,
     ...rest
   } = props
 
-  // State for payment overlay
+  // Refs for scrollable content
+  const contentRef = useRef(null)
+
+  // State for payment overlay and responsive layout
   const [showPaymentOverlay, setShowPaymentOverlay] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const [viewportHeight, setViewportHeight] = useState("100vh")
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [apiDataLoaded, setApiDataLoaded] = useState(false)
+
+  // Debug logging
+  const debugLog = (...args) => {
+    if (enableDebug) {
+      console.log("BookingForm:", ...args)
+    }
+  }
+
+  // Check for mobile viewport and set dynamic viewport height
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+      debugLog("Mobile view:", window.innerWidth < 768)
+    }
+
+    const updateViewportHeight = () => {
+      // Calculate 100dvh - 81px (nav bar height)
+      let height
+      try {
+        // Modern approach with dvh
+        height = `calc(100dvh - 81px)`
+      } catch {
+        // Fallback to window.innerHeight
+        height = `${window.innerHeight - 81}px`
+      }
+      setViewportHeight(height)
+      debugLog("Updated viewport height:", height)
+    }
+
+    // Initial checks
+    checkMobile()
+    updateViewportHeight()
+
+    // Setup listeners for resize
+    window.addEventListener("resize", checkMobile)
+    window.addEventListener("resize", updateViewportHeight)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("resize", checkMobile)
+      window.removeEventListener("resize", updateViewportHeight)
+    }
+  }, [enableDebug])
 
   // Step navigation
   const { currentStep, nextStep, prevStep, goToStep, resetSteps } =
@@ -92,6 +141,7 @@ export default function BookingContainer(props) {
   const handlePaymentSuccess = () => {
     setShowPaymentOverlay(false)
     goToStep(7) // Success state
+    debugLog("Payment success, navigating to step 7")
 
     if (onFormSubmit) {
       onFormSubmit()
@@ -101,23 +151,54 @@ export default function BookingContainer(props) {
   const handlePaymentFailure = () => {
     setShowPaymentOverlay(false)
     goToStep(8) // Failure state
+    debugLog("Payment failure, navigating to step 8")
   }
 
   const handlePaymentCancel = () => {
     setShowPaymentOverlay(false)
+    debugLog("Payment cancelled")
   }
 
-  // Styles
+  // Scroll content to top when step changes
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0
+      debugLog("Scrolled content to top for step", currentStep)
+    }
+  }, [currentStep, enableDebug])
+
+  // Simulate initial loading for demonstration
+  useEffect(() => {
+    // Show loading for at least 1.5 seconds
+    debugLog("Starting initial loading timer (1.5s)")
+    const timer = setTimeout(() => {
+      if (apiDataLoaded) {
+        setInitialLoading(false)
+        debugLog("Initial loading complete")
+      }
+    }, 1500)
+
+    return () => clearTimeout(timer)
+  }, [apiDataLoaded, enableDebug])
+
+  // Handle API data loaded
+  const handleApiDataLoaded = () => {
+    setApiDataLoaded(true)
+    debugLog("API data loaded, waiting for loading timer to complete")
+  }
+
+  // Styles for desktop layout
   const containerStyle = {
     display: "flex",
     width: "100%",
-    height: "100%",
+    height: viewportHeight,
     fontFamily: tokens.fontFamily.sans,
     ...style,
   }
 
   const imageContainerStyle = {
-    flex: "7", // 70% of available space
+    flex: isMobile ? "none" : "7", // 70% of available space on desktop
+    height: isMobile ? "200px" : "100%",
     backgroundColor: "#1F2937", // Dark background
     display: "flex",
     alignItems: "center",
@@ -127,15 +208,22 @@ export default function BookingContainer(props) {
   }
 
   const formContainerStyle = {
-    flex: "3", // 30% of available space
+    flex: isMobile ? 1 : "3", // Full width on mobile, 30% on desktop
+    display: "flex",
+    flexDirection: "column",
+    height: isMobile ? `calc(${viewportHeight} - 200px)` : "100%", // Adjust for image height on mobile
     backgroundColor: backgroundColor,
-    padding: tokens.spacing[4],
-    overflowY: "auto",
     boxSizing: "border-box",
+    position: "relative",
   }
 
   const headerStyle = {
-    marginBottom: tokens.spacing[4],
+    padding: isMobile ? "40px 40px 16px" : tokens.spacing[4],
+    borderBottom: `1px solid ${borderColor}`,
+    backgroundColor: backgroundColor,
+    position: "sticky",
+    top: 0,
+    zIndex: 10,
   }
 
   const tagStyle = {
@@ -158,15 +246,35 @@ export default function BookingContainer(props) {
     marginBottom: tokens.spacing[0],
   }
 
-  const dividerStyle = {
-    height: 1,
-    backgroundColor: tokens.colors.neutral[200],
-    marginTop: tokens.spacing[4],
-    marginBottom: tokens.spacing[4],
-  }
-
   const contentStyle = {
     flex: 1,
+    overflowY: "auto",
+    padding: isMobile ? "20px 40px 160px" : tokens.spacing[4],
+    paddingBottom: "160px", // Space for the footer
+  }
+
+  const footerStyle = {
+    position: "sticky",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "white",
+    borderTop: `1px solid ${borderColor}`,
+    zIndex: 10,
+    width: "100%",
+  }
+
+  const summaryStyle = {
+    borderTop: `1px solid ${borderColor}`,
+    padding: `${tokens.spacing[3]}px ${isMobile ? "40px" : tokens.spacing[4]}px`,
+    marginTop: tokens.spacing[4],
+  }
+
+  const buttonContainerStyle = {
+    padding: isMobile ? "0 40px 16px" : `0 ${tokens.spacing[4]}px 16px`,
+    display: "flex",
+    justifyContent: "space-between",
+    gap: tokens.spacing[3],
   }
 
   const watermarkStyle = {
@@ -184,6 +292,28 @@ export default function BookingContainer(props) {
     zIndex: 2,
   }
 
+  // Show full-screen loader during initial loading
+  if (initialLoading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh", // Use full viewport height for loading screen
+          width: "100%",
+          backgroundColor: backgroundColor,
+        }}
+      >
+        <LoadingIndicator
+          text="Loading booking interface..."
+          size="large"
+          color={primaryColor}
+        />
+      </div>
+    )
+  }
+
   return (
     <BookingProvider apiBaseUrl={apiBaseUrl}>
       {({
@@ -195,247 +325,366 @@ export default function BookingContainer(props) {
         loading,
         apiError,
         calculateTotalPrice,
-      }) => (
-        <div style={containerStyle} {...rest}>
-          {/* Left side - Product Image with watermark */}
-          <div style={imageContainerStyle}>
-            <div style={logoContainerStyle}>
-              <KMCircleLogo size={40} color="#FFFFFF" />
+      }) => {
+        // Notify parent when API data is loaded
+        if (vehicleData && !apiDataLoaded) {
+          handleApiDataLoaded()
+          debugLog("Vehicle data loaded from API", vehicleData)
+        }
+
+        return (
+          <div
+            style={
+              isMobile
+                ? { flexDirection: "column", ...containerStyle }
+                : containerStyle
+            }
+            {...rest}
+          >
+            {/* Left side or Top (mobile) - Product Image with watermark */}
+            <div style={imageContainerStyle}>
+              <div style={logoContainerStyle}>
+                <KMCircleLogo size={40} color="#FFFFFF" />
+              </div>
+              <div style={watermarkStyle}>0</div>
+              <img
+                src={productImage}
+                alt="Kabira Mobility Bike"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
             </div>
-            <div style={watermarkStyle}>0</div>
-            <img
-              src={productImage}
-              alt="Kabira Mobility Bike"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
-            />
-          </div>
 
-          {/* Right side - Form Content */}
-          <div style={formContainerStyle}>
-            <div style={headerStyle}>
-              <div style={tagStyle}>{headingText}</div>
-              <h1 style={headingStyle}>{getStepTitle()}</h1>
-              <p style={subheadingStyle}>
-                {getStepDescription()}
-              </p>
-              <div style={dividerStyle} />
-            </div>
+            {/* Right side - Form Content */}
+            <div style={formContainerStyle}>
+              <div style={headerStyle}>
+                <div style={tagStyle}>{headingText}</div>
+                <h1 style={headingStyle}>{getStepTitle()}</h1>
+                <p style={subheadingStyle}>
+                  {getStepDescription()}
+                </p>
+              </div>
 
-            <div style={contentStyle}>
-              {/* Loading and error states */}
-              {loading && currentStep === 1 ? (
-                <LoadingIndicator
-                  text="Loading vehicle information..."
-                  size="large"
-                />
-              ) : apiError && currentStep === 1 ? (
-                <ErrorDisplay
-                  error={apiError}
-                  showRetry={true}
-                  retryText="Retry"
-                  onRetry={() => window.location.reload()}
-                />
-              ) : (
-                // Render current step
-                <>
-                  {currentStep === 1 && (
-                    <VehicleConfiguration
-                      location={formData.location}
-                      selectedVehicleId={
-                        formData.selectedVehicle
-                      }
-                      selectedVariantId={
-                        formData.selectedVariant
-                      }
-                      selectedColorId={
-                        formData.selectedColor
-                      }
-                      selectedComponents={
-                        formData.optionalComponents
-                      }
-                      onFormDataChange={(data) =>
-                        updateFormData(data)
-                      }
-                      onNextStep={nextStep}
-                      errors={errors}
-                      primaryColor={primaryColor}
-                      borderColor={borderColor}
-                      backgroundColor={backgroundColor}
-                      dataEndpoint={apiBaseUrl}
-                    />
-                  )}
+              <div style={contentStyle} ref={contentRef}>
+                {/* Loading and error states - show in-place, not full screen */}
+                {loading && currentStep === 1 ? (
+                  <LoadingIndicator
+                    text="Loading vehicle information..."
+                    size="large"
+                  />
+                ) : apiError && currentStep === 1 ? (
+                  <ErrorDisplay
+                    error={apiError}
+                    showRetry={true}
+                    retryText="Retry"
+                    onRetry={() => window.location.reload()}
+                  />
+                ) : (
+                  // Render current step
+                  <>
+                    {currentStep === 1 && (
+                      <VehicleConfiguration
+                        location={formData.location}
+                        selectedVehicleId={
+                          formData.selectedVehicle
+                        }
+                        selectedVariantId={
+                          formData.selectedVariant
+                        }
+                        selectedColorId={
+                          formData.selectedColor
+                        }
+                        selectedComponents={
+                          formData.optionalComponents
+                        }
+                        onFormDataChange={(data) =>
+                          updateFormData(data)
+                        }
+                        onNextStep={nextStep}
+                        errors={errors}
+                        primaryColor={primaryColor}
+                        borderColor={borderColor}
+                        backgroundColor={
+                          backgroundColor
+                        }
+                        dataEndpoint={apiBaseUrl}
+                        showFixedButton={false} // Disable fixed button in the component
+                      />
+                    )}
 
-                  {currentStep === 2 && (
-                    <InsuranceSelection
-                      selectedTenureId={
-                        formData.selectedTenure
-                      }
-                      selectedProviderId={
-                        formData.selectedProvider
-                      }
-                      selectedCoreInsuranceIds={
-                        formData.selectedCoreInsurance
-                      }
-                      selectedAdditionalCoverageIds={
-                        formData.selectedAdditionalCoverage
-                      }
-                      onFormDataChange={(data) =>
-                        updateFormData(data)
-                      }
-                      onPreviousStep={prevStep}
-                      onNextStep={nextStep}
-                      primaryColor={primaryColor}
-                      borderColor={borderColor}
-                      backgroundColor={backgroundColor}
-                      dataEndpoint={apiBaseUrl}
-                    />
-                  )}
+                    {currentStep === 2 && (
+                      <InsuranceSelection
+                        selectedTenureId={
+                          formData.selectedTenure
+                        }
+                        selectedProviderId={
+                          formData.selectedProvider
+                        }
+                        selectedCoreInsuranceIds={
+                          formData.selectedCoreInsurance
+                        }
+                        selectedAdditionalCoverageIds={
+                          formData.selectedAdditionalCoverage
+                        }
+                        onFormDataChange={(data) =>
+                          updateFormData(data)
+                        }
+                        onPreviousStep={prevStep}
+                        onNextStep={nextStep}
+                        primaryColor={primaryColor}
+                        borderColor={borderColor}
+                        backgroundColor={
+                          backgroundColor
+                        }
+                        dataEndpoint={apiBaseUrl}
+                        showFixedButton={false}
+                      />
+                    )}
 
-                  {currentStep === 3 && (
-                    <FinancingOptions
-                      selectedPaymentMethod={
-                        formData.paymentMethod
-                      }
-                      loanTenure={formData.loanTenure}
-                      downPaymentAmount={
-                        formData.downPaymentAmount
-                      }
-                      selectedVehicleId={
-                        formData.selectedVehicle
-                      }
-                      selectedVariantId={
-                        formData.selectedVariant
-                      }
-                      selectedLocation={formData.location}
-                      onFormDataChange={(data) =>
-                        updateFormData(data)
-                      }
-                      onPreviousStep={prevStep}
-                      onNextStep={nextStep}
-                      primaryColor={primaryColor}
-                      borderColor={borderColor}
-                      backgroundColor={backgroundColor}
-                      dataEndpoint={apiBaseUrl}
-                    />
-                  )}
+                    {currentStep === 3 && (
+                      <FinancingOptions
+                        selectedPaymentMethod={
+                          formData.paymentMethod
+                        }
+                        loanTenure={formData.loanTenure}
+                        downPaymentAmount={
+                          formData.downPaymentAmount
+                        }
+                        selectedVehicleId={
+                          formData.selectedVehicle
+                        }
+                        selectedVariantId={
+                          formData.selectedVariant
+                        }
+                        selectedLocation={
+                          formData.location
+                        }
+                        onFormDataChange={(data) =>
+                          updateFormData(data)
+                        }
+                        onPreviousStep={prevStep}
+                        onNextStep={nextStep}
+                        primaryColor={primaryColor}
+                        borderColor={borderColor}
+                        backgroundColor={
+                          backgroundColor
+                        }
+                        dataEndpoint={apiBaseUrl}
+                        showFixedButton={false}
+                      />
+                    )}
 
-                  {currentStep === 4 && (
-                    <UserInformation
-                      fullName={formData.fullName}
-                      email={formData.email}
-                      phone={formData.phone}
-                      address={formData.address}
-                      city={formData.city}
-                      state={formData.state}
-                      pincode={formData.pincode}
-                      onFormDataChange={(data) =>
-                        updateFormData(data)
-                      }
-                      onPreviousStep={prevStep}
-                      onNextStep={nextStep}
-                      primaryColor={primaryColor}
-                      borderColor={borderColor}
-                      backgroundColor={backgroundColor}
-                    />
-                  )}
+                    {currentStep === 4 && (
+                      <UserInformation
+                        fullName={formData.fullName}
+                        email={formData.email}
+                        phone={formData.phone}
+                        address={formData.address}
+                        city={formData.city}
+                        state={formData.state}
+                        pincode={formData.pincode}
+                        onFormDataChange={(data) =>
+                          updateFormData(data)
+                        }
+                        onPreviousStep={prevStep}
+                        onNextStep={nextStep}
+                        primaryColor={primaryColor}
+                        borderColor={borderColor}
+                        backgroundColor={
+                          backgroundColor
+                        }
+                        showFixedButton={false}
+                      />
+                    )}
 
-                  {currentStep === 5 && (
-                    <OTPVerification
-                      phoneNumber={`+91 ${formData.phone || "9876543210"}`}
-                      email={
-                        formData.email ||
-                        "user@example.com"
-                      }
-                      onPreviousStep={prevStep}
-                      onVerificationSuccess={() => {
-                        nextStep()
-                        setShowPaymentOverlay(true)
-                      }}
-                      onVerificationFailure={() =>
-                        setErrors({
-                          otp: "Verification failed. Please try again.",
-                        })
-                      }
-                      primaryColor={primaryColor}
-                      borderColor={borderColor}
-                      backgroundColor={backgroundColor}
-                      autoFillOTP="123456" // For testing
-                    />
-                  )}
+                    {currentStep === 5 && (
+                      <OTPVerification
+                        phoneNumber={`+91 ${formData.phone || "9876543210"}`}
+                        email={
+                          formData.email ||
+                          "user@example.com"
+                        }
+                        onPreviousStep={prevStep}
+                        onVerificationSuccess={() => {
+                          nextStep()
+                          setShowPaymentOverlay(true)
+                        }}
+                        onVerificationFailure={() =>
+                          setErrors({
+                            otp: "Verification failed. Please try again.",
+                          })
+                        }
+                        primaryColor={primaryColor}
+                        borderColor={borderColor}
+                        backgroundColor={
+                          backgroundColor
+                        }
+                        autoFillOTP="123456" // For testing
+                        showFixedButton={false}
+                      />
+                    )}
 
-                  {currentStep === 7 && (
-                    <SuccessState
-                      bookingId={`KM-${Math.floor(Math.random() * 9000000) + 1000000}`}
-                      customerName={
-                        formData.fullName || "Customer"
-                      }
+                    {currentStep === 7 && (
+                      <SuccessState
+                        bookingId={`KM-${Math.floor(Math.random() * 9000000) + 1000000}`}
+                        customerName={
+                          formData.fullName ||
+                          "Customer"
+                        }
+                        vehicleName={
+                          formData.vehicleName
+                        }
+                        estimatedDelivery="15 May, 2025"
+                        onViewBookingDetails={() =>
+                          console.log(
+                            "View booking details"
+                          )
+                        }
+                        onTrackOrder={() =>
+                          console.log("Track order")
+                        }
+                        onStartOver={resetSteps}
+                        primaryColor={primaryColor}
+                      />
+                    )}
+
+                    {currentStep === 8 && (
+                      <FailureState
+                        errorMessage="Your payment could not be processed at this time."
+                        errorCode="ERR-PAYMENT-3042"
+                        onTryAgain={() =>
+                          setShowPaymentOverlay(true)
+                        }
+                        onContactSupport={() =>
+                          console.log(
+                            "Contact support"
+                          )
+                        }
+                        onStartOver={resetSteps}
+                        primaryColor={primaryColor}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Fixed footer with vehicle summary and action buttons */}
+              {currentStep < 7 && formData.selectedVehicle && (
+                <div style={footerStyle}>
+                  {/* Vehicle Summary */}
+                  <div style={summaryStyle}>
+                    <VehicleSummary
                       vehicleName={formData.vehicleName}
-                      estimatedDelivery="15 May, 2025"
-                      onViewBookingDetails={() =>
-                        console.log(
-                          "View booking details"
-                        )
+                      vehicleCode={formData.vehicleCode}
+                      location={
+                        formData.location ||
+                        (formData.city && formData.state
+                          ? `${formData.city}, ${formData.state}`
+                          : "Select Location")
                       }
-                      onTrackOrder={() =>
-                        console.log("Track order")
-                      }
-                      onStartOver={resetSteps}
-                      primaryColor={primaryColor}
+                      pincode={formData.pincode}
+                      totalPrice={calculateTotalPrice()}
+                      showEmiInfo={true}
                     />
-                  )}
+                  </div>
 
-                  {currentStep === 8 && (
-                    <FailureState
-                      errorMessage="Your payment could not be processed at this time."
-                      errorCode="ERR-PAYMENT-3042"
-                      onTryAgain={() =>
-                        setShowPaymentOverlay(true)
-                      }
-                      onContactSupport={() =>
-                        console.log("Contact support")
-                      }
-                      onStartOver={resetSteps}
-                      primaryColor={primaryColor}
-                    />
-                  )}
-                </>
+                  {/* Action buttons for each step */}
+                  <div style={buttonContainerStyle}>
+                    {currentStep > 1 && (
+                      <Button
+                        text="Back"
+                        variant="outline"
+                        onClick={prevStep}
+                        primaryColor={primaryColor}
+                        style={{ flex: 1 }}
+                      />
+                    )}
+
+                    {currentStep === 1 && (
+                      <Button
+                        text="Select Insurance"
+                        rightIcon={true}
+                        onClick={nextStep}
+                        disabled={
+                          !formData.location ||
+                          !formData.selectedVehicle
+                        }
+                        primaryColor={primaryColor}
+                        variant="primary"
+                        style={{
+                          flex:
+                            currentStep > 1 ? 2 : 1,
+                        }}
+                      />
+                    )}
+
+                    {currentStep === 2 && (
+                      <Button
+                        text="Continue to Financing"
+                        rightIcon={true}
+                        onClick={nextStep}
+                        primaryColor={primaryColor}
+                        variant="primary"
+                        style={{ flex: 2 }}
+                      />
+                    )}
+
+                    {currentStep === 3 && (
+                      <Button
+                        text="Continue to Personal Info"
+                        rightIcon={true}
+                        onClick={nextStep}
+                        primaryColor={primaryColor}
+                        variant="primary"
+                        style={{ flex: 2 }}
+                      />
+                    )}
+
+                    {currentStep === 4 && (
+                      <Button
+                        text="Continue to Verification"
+                        rightIcon={true}
+                        onClick={nextStep}
+                        primaryColor={primaryColor}
+                        variant="primary"
+                        style={{ flex: 2 }}
+                      />
+                    )}
+
+                    {currentStep === 5 && (
+                      <Button
+                        text="Verify & Proceed"
+                        rightIcon={true}
+                        onClick={() => {
+                          nextStep()
+                          setShowPaymentOverlay(true)
+                        }}
+                        primaryColor={primaryColor}
+                        variant="primary"
+                        style={{ flex: 2 }}
+                      />
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 
-            {/* Vehicle summary displayed at bottom */}
-            {currentStep < 7 && formData.selectedVehicle && (
-              <VehicleSummary
-                vehicleName={formData.vehicleName}
-                vehicleCode={formData.vehicleCode}
-                location={
-                  formData.location ||
-                  (formData.city && formData.state
-                    ? `${formData.city}, ${formData.state}`
-                    : "Select Location")
-                }
-                pincode={formData.pincode}
-                totalPrice={calculateTotalPrice()}
-                showEmiInfo={true}
+            {/* Payment overlay (shown conditionally) */}
+            {showPaymentOverlay && (
+              <PaymentOverlay
+                totalAmount={`₹${calculateTotalPrice().toLocaleString("en-IN")}`}
+                onPaymentSuccess={handlePaymentSuccess}
+                onPaymentFailure={handlePaymentFailure}
+                onCancel={handlePaymentCancel}
+                primaryColor={primaryColor}
               />
             )}
           </div>
-
-          {/* Payment overlay (shown conditionally) */}
-          {showPaymentOverlay && (
-            <PaymentOverlay
-              totalAmount={`₹${calculateTotalPrice().toLocaleString("en-IN")}`}
-              onPaymentSuccess={handlePaymentSuccess}
-              onPaymentFailure={handlePaymentFailure}
-              onCancel={handlePaymentCancel}
-              primaryColor={primaryColor}
-            />
-          )}
-        </div>
-      )}
+        )
+      }}
     </BookingProvider>
   )
 }
@@ -481,7 +730,13 @@ addPropertyControls(BookingContainer, {
     defaultValue: "Book your Ride",
   },
   productImage: {
-    type: ControlType.Image,
+    type: ControlType.ResponsiveImage,
     title: "Default Product Image",
+  },
+  enableDebug: {
+    type: ControlType.Boolean,
+    title: "Enable Debug Mode",
+    defaultValue: false,
+    description: "Show debug information and logs",
   },
 })
