@@ -1,4 +1,4 @@
-// Utility functions for form validation
+// Utility functions for form validation - Simplified without insurance and finance
 
 /**
  * Validate email address format
@@ -12,10 +12,10 @@ export const isValidEmail = (email) => {
 }
 
 /**
- * Validate phone number (10 digits for India)
- * @param {string} phone - Phone number to validate
- * @returns {boolean} Whether the phone is valid
- */
+* Validate phone number (10 digits for India)
+* @param {string} phone - Phone number to validate
+* @returns {boolean} Whether the phone is valid
+*/
 export const isValidPhone = (phone) => {
   if (!phone) return false
   const phoneRegex = /^\d{10}$/
@@ -23,10 +23,10 @@ export const isValidPhone = (phone) => {
 }
 
 /**
- * Validate pincode (6 digits for India)
- * @param {string} pincode - Pincode to validate
- * @returns {boolean} Whether the pincode is valid
- */
+* Validate pincode (6 digits for India)
+* @param {string} pincode - Pincode to validate
+* @returns {boolean} Whether the pincode is valid
+*/
 export const isValidPincode = (pincode) => {
   if (!pincode) return false
   const pincodeRegex = /^\d{6}$/
@@ -34,10 +34,10 @@ export const isValidPincode = (pincode) => {
 }
 
 /**
- * Validate full name (at least 2 words, only letters and spaces)
- * @param {string} name - Name to validate
- * @returns {boolean} Whether the name is valid
- */
+* Validate full name (at least 2 words, only letters and spaces)
+* @param {string} name - Name to validate
+* @returns {boolean} Whether the name is valid
+*/
 export const isValidName = (name) => {
   if (!name) return false
   const nameRegex = /^[A-Za-z]+(?: [A-Za-z]+)+$/
@@ -45,10 +45,10 @@ export const isValidName = (name) => {
 }
 
 /**
- * Check if a field has a value
- * @param {any} value - Value to check
- * @returns {boolean} Whether the field has a value
- */
+* Check if a field has a value
+* @param {any} value - Value to check
+* @returns {boolean} Whether the field has a value
+*/
 export const hasValue = (value) => {
   if (value === null || value === undefined) return false
   if (typeof value === "string") return value.trim() !== ""
@@ -58,84 +58,84 @@ export const hasValue = (value) => {
 }
 
 /**
- * Validate a user information form
- * @param {object} formData - Form data to validate
- * @returns {object} Object with validation errors, empty if valid
- */
+* Validate a user information form
+* @param {object} formData - Form data to validate
+* @returns {object} Object with validation errors, empty if valid
+*/
 export const validateUserInfo = (formData) => {
   const errors = {}
 
   if (!hasValue(formData.fullName)) {
-    errors.fullName = "Full name is required"
+      errors.fullName = "Full name is required"
   } else if (!isValidName(formData.fullName)) {
-    errors.fullName = "Please enter your first and last name"
+      errors.fullName = "Please enter your first and last name"
   }
 
   if (!hasValue(formData.email)) {
-    errors.email = "Email is required"
+      errors.email = "Email is required"
   } else if (!isValidEmail(formData.email)) {
-    errors.email = "Please enter a valid email address"
+      errors.email = "Please enter a valid email address"
   }
 
   if (!hasValue(formData.phone)) {
-    errors.phone = "Phone number is required"
+      errors.phone = "Phone number is required"
   } else if (!isValidPhone(formData.phone)) {
-    errors.phone = "Please enter a valid 10-digit phone number"
+      errors.phone = "Please enter a valid 10-digit phone number"
   }
 
   if (!hasValue(formData.address)) {
-    errors.address = "Address is required"
+      errors.address = "Address is required"
   }
 
   if (!hasValue(formData.city)) {
-    errors.city = "City is required"
+      errors.city = "City is required"
   }
 
   if (!hasValue(formData.state)) {
-    errors.state = "State is required"
+      errors.state = "State is required"
   }
 
   if (!hasValue(formData.pincode)) {
-    errors.pincode = "Pincode is required"
+      errors.pincode = "Pincode is required"
   } else if (!isValidPincode(formData.pincode)) {
-    errors.pincode = "Please enter a valid 6-digit pincode"
+      errors.pincode = "Please enter a valid 6-digit pincode"
   }
 
   return errors
 }
 
 /**
- * Validate vehicle configuration form
- * @param {object} formData - Form data to validate
- * @returns {object} Object with validation errors, empty if valid
- */
+* Validate vehicle configuration form
+* @param {object} formData - Form data to validate
+* @returns {object} Object with validation errors, empty if valid
+*/
 export const validateVehicleConfig = (formData) => {
   const errors = {}
 
   if (!hasValue(formData.location)) {
-    errors.location = "Please select a location"
+      errors.location = "Please select a location"
   }
 
   if (!hasValue(formData.selectedVehicle)) {
-    errors.selectedVehicle = "Please select a vehicle"
+      errors.selectedVehicle = "Please select a vehicle"
   }
 
   if (!hasValue(formData.selectedVariant)) {
-    errors.selectedVariant = "Please select a variant"
+      errors.selectedVariant = "Please select a variant"
   }
 
   if (!hasValue(formData.selectedColor)) {
-    errors.selectedColor = "Please select a color"
+      errors.selectedColor = "Please select a color"
   }
 
   return errors
 }
 
 /**
- * Validate OTP code
- * @param {string} otp - OTP to validate
- * @returns {boolean} Whether the OTP is valid
- */
+* Validate OTP code
+* @param {string} otp - OTP to validate
+* @returns {boolean} Whether the OTP is valid
+*/
 export const isValidOTP = (otp) => {
   if (!otp) return false
   const otpRegex = /^\d{6}$/

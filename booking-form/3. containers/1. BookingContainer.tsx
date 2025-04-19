@@ -93,7 +93,7 @@ export default function BookingContainer(props) {
         }
     }, [enableDebug])
 
-    // Simplified step navigation - now we only have 3 main steps (plus success/failure)
+    // Simplified step navigation with fewer steps (removed insurance and finance)
     // 1: Vehicle Configuration
     // 2: User Information
     // 3: OTP Verification
@@ -520,7 +520,7 @@ export default function BookingContainer(props) {
                                             }
                                             pincode={formData.pincode}
                                             totalPrice={calculateTotalPrice()}
-                                            showEmiInfo={true}
+                                            showEmiInfo={false}
                                         />
                                     </div>
 
