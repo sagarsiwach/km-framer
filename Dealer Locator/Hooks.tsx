@@ -14,7 +14,7 @@ import {
 // --- Hook to manage dealer data fetching and state ---
 export const useDealerData = (
   apiEndpoint?: string,
-  staticData: Dealer[] = SAMPLE_DEALERS // Use SAMPLE_DEALERS from Lib
+  staticData: Dealer[] = SAMPLE_DEALERS
 ) => {
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,8 +56,7 @@ export const useDealerData = (
       }
 
       const data = await response.json();
-      // Adapt based on your actual API response structure
-      // Assuming the API returns { status: "success", dealers: [...] }
+      // Updated API format checking
       if (data.status === "success" && Array.isArray(data.dealers)) {
         console.log(`Received ${data.dealers.length} dealers from API`);
         setDealers(data.dealers);
@@ -66,13 +65,13 @@ export const useDealerData = (
         console.error("Invalid API response format:", data);
         throw new Error("Invalid data format received from API");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error fetching or processing dealer data:", err);
       setError(`Failed to fetch dealers: ${err.message}`);
       // Fallback to static data on error if available
       if (staticData && staticData.length > 0) {
         console.log("Falling back to static data due to API error.");
-        setDealers(staticData); // Consider formatting static data here too
+        setDealers(staticData);
       } else {
         setDealers([]);
       }

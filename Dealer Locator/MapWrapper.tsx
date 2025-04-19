@@ -38,40 +38,39 @@ import {
 
 // --- Custom MapMarker Component ---
 const CustomMapMarker = ({ dealer, isSelected, onClick, theme }) => {
-  // Check if dealer has charging service
-  const hasCharging = dealer.services?.some((s) =>
-    s.toLowerCase().includes("charging")
-  );
+  // Determine service types for color coding
+  const services = dealer.services?.map((s) => s.toLowerCase()) || [];
+  const hasStore = services.includes("sales") || services.includes("store");
+  const hasService =
+    services.includes("service") || services.includes("repair");
+  const hasCharging = services.includes("charging");
 
-  // Generate marker colors based on status
-  const primaryColor = isSelected
-    ? theme.colors.primary
-    : theme.colors.neutral[700];
-  const secondaryColor = hasCharging
-    ? theme.colors.success
-    : theme.colors.neutral[500];
+  // Get primary badge color based on service priority
+  let primaryColor = theme.colors.skyBlue; // Default to sky blue (Sales)
+  if (hasService && !hasStore) primaryColor = theme.colors.redColor;
+  if (hasCharging && !hasStore && !hasService)
+    primaryColor = theme.colors.greenColor;
 
   return (
     <div
       onClick={onClick}
       style={{
         cursor: "pointer",
-        width: "34px",
-        height: "48px",
+        width: "32px",
+        height: "32px",
         position: "relative",
         transform: isSelected ? "scale(1.15)" : "scale(1)",
         transition: "transform 0.2s ease-out",
-        transformOrigin: "bottom center",
+        transformOrigin: "center bottom",
         filter: isSelected ? `drop-shadow(0 3px 3px rgba(0,0,0,0.25))` : "none",
       }}
     >
-      {/* Pin base */}
+      {/* Pin SVG */}
       <svg
-        width="34"
-        height="48"
-        viewBox="0 0 34 48"
-        fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        width="32"
+        height="32"
+        viewBox="0 0 32 32"
         style={{
           position: "absolute",
           top: 0,
@@ -79,57 +78,11 @@ const CustomMapMarker = ({ dealer, isSelected, onClick, theme }) => {
         }}
       >
         <path
-          d="M17 0C7.611 0 0 7.597 0 16.966C0 27.447 14.976 46.642 15.618 47.308C16.302 48 17.698 48 18.382 47.308C19.024 46.642 34 27.447 34 16.966C34 7.597 26.389 0 17 0Z"
+          d="M16,2A11.0134,11.0134,0,0,0,5,13a10.8885,10.8885,0,0,0,2.2163,6.6s.3.3945.3482.4517L16,30l8.439-9.9526c.0444-.0533.3447-.4478.3447-.4478l.0015-.0024A10.8846,10.8846,0,0,0,27,13,11.0134,11.0134,0,0,0,16,2Zm0,15a4,4,0,1,1,4-4A4.0045,4.0045,0,0,1,16,17Z"
           fill={primaryColor}
         />
+        <circle cx="16" cy="13" r="4" fill="#FFFFFF" />
       </svg>
-
-      {/* Central dot/icon */}
-      <div
-        style={{
-          position: "absolute",
-          top: "10px",
-          left: "10px",
-          width: "14px",
-          height: "14px",
-          borderRadius: "50%",
-          backgroundColor: theme.colors.white,
-        }}
-      ></div>
-
-      {/* Charging indicator if available */}
-      {hasCharging && (
-        <div
-          style={{
-            position: "absolute",
-            top: "5px",
-            right: "5px",
-            width: "10px",
-            height: "10px",
-            borderRadius: "50%",
-            backgroundColor: secondaryColor,
-            border: `1px solid ${theme.colors.white}`,
-          }}
-        >
-          <motion.div
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.7, 1, 0.7],
-            }}
-            transition={{
-              repeat: Infinity,
-              duration: 2,
-              ease: "easeInOut",
-            }}
-            style={{
-              width: "100%",
-              height: "100%",
-              borderRadius: "50%",
-              backgroundColor: secondaryColor,
-            }}
-          />
-        </div>
-      )}
     </div>
   );
 };
@@ -177,6 +130,22 @@ const createMapboxPopupContent = (
          : ""
      }
   </div>`;
+
+// Helper function to determine marker color based on service type
+function getMarkerColor(dealer, isSelected, theme) {
+  const services = dealer.services?.map((s) => s.toLowerCase()) || [];
+  const hasStore = services.includes("sales") || services.includes("store");
+  const hasService =
+    services.includes("service") || services.includes("repair");
+  const hasCharging = services.includes("charging");
+
+  if (hasStore) return theme.colors.skyBlue; // Sales - sky-600
+  if (hasService) return theme.colors.redColor; // Service - red-600
+  if (hasCharging) return theme.colors.greenColor; // Charging - green-600
+
+  // Default if no specific service found
+  return isSelected ? theme.colors.primary : theme.colors.neutral[700];
+}
 
 // --- Main Map Component ---
 const MapWrapper: React.FC<MapWrapperProps> = ({
@@ -356,84 +325,44 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       const existingMarker = mapboxMarkersRef.current[dealerId];
       const isSelected = selectedDealer?.id === dealerId;
 
-      // Create or update marker element using our custom component
+      // Determine service types for marker styling
+      const services = dealer.services?.map((s) => s.toLowerCase()) || [];
+      const hasStore = services.includes("sales") || services.includes("store");
+      const hasService =
+        services.includes("service") || services.includes("repair");
+      const hasCharging = services.includes("charging");
+
+      // Create or update marker element
       const markerEl = document.createElement("div");
       markerEl.className = "dealer-marker";
 
-      // Instead of directly rendering React component,
-      // create a DOM structure that mimics our custom marker
-      const hasCharging = dealer.services?.some((s) =>
-        s.toLowerCase().includes("charging")
-      );
-
-      // Set up SVG and styling inline for the marker
+      // Set up pin SVG marker
       markerEl.innerHTML = `
         <div style="
           cursor: pointer;
-          width: 34px;
-          height: 48px;
+          width: 32px;
+          height: 32px;
           position: relative;
           transform: ${isSelected ? "scale(1.15)" : "scale(1)"};
           transition: transform 0.2s ease-out;
-          transform-origin: bottom center;
+          transform-origin: center bottom;
           filter: ${
             isSelected ? "drop-shadow(0 3px 3px rgba(0,0,0,0.25))" : "none"
           };
         ">
           <svg 
-            width="34" 
-            height="48" 
-            viewBox="0 0 34 48" 
-            fill="none" 
-            xmlns="http://www.w3.org/2000/svg"
+            xmlns="http://www.w3.org/2000/svg" 
+            width="32" 
+            height="32" 
+            viewBox="0 0 32 32"
             style="position: absolute; top: 0; left: 0;">
             <path 
-              d="M17 0C7.611 0 0 7.597 0 16.966C0 27.447 14.976 46.642 15.618 47.308C16.302 48 17.698 48 18.382 47.308C19.024 46.642 34 27.447 34 16.966C34 7.597 26.389 0 17 0Z" 
-              fill="${
-                isSelected ? theme.colors.primary : theme.colors.neutral[700]
-              }"
+              d="M16,2A11.0134,11.0134,0,0,0,5,13a10.8885,10.8885,0,0,0,2.2163,6.6s.3.3945.3482.4517L16,30l8.439-9.9526c.0444-.0533.3447-.4478.3447-.4478l.0015-.0024A10.8846,10.8846,0,0,0,27,13,11.0134,11.0134,0,0,0,16,2Zm0,15a4,4,0,1,1,4-4A4.0045,4.0045,0,0,1,16,17Z" 
+              fill="${getMarkerColor(dealer, isSelected, theme)}"
             />
+            <circle cx="16" cy="13" r="4" fill="#FFFFFF"/>
           </svg>
-          <div style="
-            position: absolute; 
-            top: 10px; 
-            left: 10px; 
-            width: 14px; 
-            height: 14px; 
-            border-radius: 50%; 
-            background-color: white;">
-          </div>
-          ${
-            hasCharging
-              ? `
-            <div style="
-              position: absolute;
-              top: 5px;
-              right: 5px;
-              width: 10px;
-              height: 10px;
-              border-radius: 50%;
-              background-color: ${theme.colors.success};
-              border: 1px solid white;">
-              <div class="pulse-animation" style="
-                width: 100%;
-                height: 100%;
-                border-radius: 50%;
-                background-color: ${theme.colors.success};
-                animation: pulse 2s infinite ease-in-out;
-              "></div>
-            </div>
-          `
-              : ""
-          }
         </div>
-        <style>
-          @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.7; }
-            50% { transform: scale(1.2); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.7; }
-          }
-        </style>
       `;
 
       if (existingMarker) {

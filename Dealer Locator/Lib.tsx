@@ -113,83 +113,330 @@ export const GOOGLE_MAP_STYLES = [
 
 // Sample dealer data (Keep for canvas preview)
 export const SAMPLE_DEALERS = [
-  // Add ~5-10 sample dealers with coordinates relevant to the default center
   {
-    id: "dealer-1",
-    name: "Kabira Mobility - Margao",
+    id: "1",
+    name: "Kabira Mobility Showroom",
     address: {
-      formatted: "Shop 1, Fatorda Plaza, Margao, Goa 403602",
-      city: "Margao",
+      line1: "Plot No L-148 & 149, Verna Industrial Estate",
+      line2: "Verna Goa",
+      city: "Verna",
       state: "Goa",
+      pincode: "403722",
+      country: "India",
+      formatted:
+        "Plot No L-148 & 149, Verna Industrial Estate, Verna Goa, Verna, Goa, 403722, India",
     },
-    coordinates: { lat: 15.2833, lng: 73.9667 }, // Approx coords for Margao
+    coordinates: {
+      lat: 15.3640954,
+      lng: 73.9459574,
+    },
     contact: {
-      phone: "+91 98765 43210",
-      website: "www.kabiramobility.com",
+      phone: "8574600700",
+      email: "enquiry@kabiramobility.com",
+      website: "https://www.kabiramobility.com",
     },
+    hours: [
+      {
+        day: "Monday",
+        open: "10:00",
+        close: "17:00",
+      },
+      {
+        day: "Tuesday",
+        open: "10:00",
+        close: "17:00",
+      },
+      {
+        day: "Wednesday",
+        open: "10:00",
+        close: "17:00",
+      },
+      {
+        day: "Thursday",
+        open: "10:00",
+        close: "17:00",
+      },
+      {
+        day: "Friday",
+        open: "10:00",
+        close: "17:00",
+      },
+      {
+        day: "Saturday",
+        open: "10:00",
+        close: "17:00",
+      },
+      {
+        day: "Sunday",
+        open: "Closed",
+        close: "Closed",
+      },
+    ],
     services: ["sales", "service", "charging"],
-    hours: [{ day: "Monday", open: "9:00", close: "18:00" }],
+    active: true,
+    featured: true,
     imageUrl:
-      "https://via.placeholder.com/400x200/e2e8f0/cccccc?text=Store+Image+1",
+      "https://res.cloudinary.com/kabira-mobility/image/upload/v1744812227/Booking%20Engine/KM3000_apj2tj.png",
   },
   {
-    id: "dealer-2",
-    name: "EV Point Panjim",
+    id: "2",
+    name: "GreenVolt Charging Hyderabad",
     address: {
-      formatted: "18th June Road, Panjim, Goa 403001",
-      city: "Panjim",
-      state: "Goa",
+      line1: "Plot 25, Gachibowli Rd",
+      line2: "Opposite Deloitte",
+      city: "Hyderabad",
+      state: "Telangana",
+      pincode: "500032",
+      country: "India",
+      formatted:
+        "Plot 25, Gachibowli Rd, Opposite Deloitte, Hyderabad, Telangana, 500032, India",
     },
-    coordinates: { lat: 15.4989, lng: 73.8278 },
-    contact: { phone: "+91 91234 56789", email: "info@evpanjim.com" },
-    services: ["sales", "charging"],
-    hours: [{ day: "Tuesday", open: "10:00", close: "19:00" }],
-    imageUrl:
-      "https://via.placeholder.com/400x200/e2e8f0/cccccc?text=Store+Image+2",
-  },
-  {
-    id: "dealer-3",
-    name: "Vasco EV Station",
-    address: {
-      formatted: "Near Airport, Vasco da Gama, Goa 403802",
-      city: "Vasco da Gama",
-      state: "Goa",
+    coordinates: {
+      lat: 17.4375,
+      lng: 78.4482,
     },
-    coordinates: { lat: 15.387, lng: 73.836 }, // Approx coords for Vasco
-    contact: { phone: "+91 88888 11111" },
+    contact: {
+      phone: "8574600700",
+      email: "support.hyd@greenvolt.com",
+      website: "https://www.kabiramobility.com",
+    },
+    hours: [
+      {
+        day: "Monday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Tuesday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Wednesday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Thursday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Friday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Saturday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Sunday",
+        open: "09:00",
+        close: "16:00",
+      },
+    ],
     services: ["charging"],
+    active: true,
+    featured: true,
     imageUrl:
-      "https://via.placeholder.com/400x200/e2e8f0/cccccc?text=Charging+Station",
+      "https://res.cloudinary.com/kabira-mobility/image/upload/v1744812227/Booking%20Engine/KM3000_apj2tj.png",
   },
   {
-    id: "dealer-4",
-    name: "Mapusa Service Center",
+    id: "3",
+    name: "PowerUp Service Center Pune",
     address: {
-      formatted: "Horacio Nagar, Mapusa, Goa 403507",
-      city: "Mapusa",
-      state: "Goa",
+      line1: "MIDC Area, Phase 1",
+      line2: "Near Tata Motors",
+      city: "Pune",
+      state: "Maharashtra",
+      pincode: "411019",
+      country: "India",
+      formatted:
+        "MIDC Area, Phase 1, Near Tata Motors, Pune, Maharashtra, 411019, India",
     },
-    coordinates: { lat: 15.596, lng: 73.814 },
-    contact: { phone: "+91 77777 22222" },
+    coordinates: {
+      lat: 18.5832,
+      lng: 73.8479,
+    },
+    contact: {
+      phone: "8574600700",
+      email: "service.pune@powerup.in",
+      website: "https://www.kabiramobility.com",
+    },
+    hours: [
+      {
+        day: "Monday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Tuesday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Wednesday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Thursday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Friday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Saturday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Sunday",
+        open: "09:00",
+        close: "16:00",
+      },
+    ],
     services: ["service"],
-    hours: [{ day: "Wednesday", open: "8:30", close: "17:30" }],
+    active: true,
+    featured: true,
     imageUrl:
-      "https://via.placeholder.com/400x200/e2e8f0/cccccc?text=Service+Center",
+      "https://res.cloudinary.com/kabira-mobility/image/upload/v1744812227/Booking%20Engine/KM3000_apj2tj.png",
   },
   {
-    id: "dealer-5",
-    name: "Ponda Sales & Service",
+    id: "4",
+    name: "EV Next Dealer Chennai",
     address: {
-      formatted: "Upper Bazaar, Ponda, Goa 403401",
-      city: "Ponda",
-      state: "Goa",
+      line1: "Anna Salai, T Nagar",
+      line2: "Above Pothys",
+      city: "Chennai",
+      state: "Tamil Nadu",
+      pincode: "600017",
+      country: "India",
+      formatted:
+        "Anna Salai, T Nagar, Above Pothys, Chennai, Tamil Nadu, 600017, India",
     },
-    coordinates: { lat: 15.401, lng: 73.999 }, // Approx coords for Ponda
-    contact: { phone: "+91 66666 33333", website: "www.pondaev.com" },
-    services: ["sales", "service"],
-    hours: [{ day: "Thursday", open: "9:30", close: "18:30" }],
+    coordinates: {
+      lat: 13.0475,
+      lng: 80.258,
+    },
+    contact: {
+      phone: "8574600700",
+      email: "info.chennai@evnext.co.in",
+      website: "https://www.kabiramobility.com",
+    },
+    hours: [
+      {
+        day: "Monday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Tuesday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Wednesday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Thursday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Friday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Saturday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Sunday",
+        open: "09:00",
+        close: "16:00",
+      },
+    ],
+    services: ["sales"],
+    active: true,
+    featured: true,
     imageUrl:
-      "https://via.placeholder.com/400x200/e2e8f0/cccccc?text=Store+Image+5",
+      "https://res.cloudinary.com/kabira-mobility/image/upload/v1744812227/Booking%20Engine/KM3000_apj2tj.png",
+  },
+  {
+    id: "5",
+    name: "ChargePoint Bengaluru",
+    address: {
+      line1: "Koramangala 4th Block",
+      line2: "Near Forum Mall",
+      city: "Bengaluru",
+      state: "Karnataka",
+      pincode: "560034",
+      country: "India",
+      formatted:
+        "Koramangala 4th Block, Near Forum Mall, Bengaluru, Karnataka, 560034, India",
+    },
+    coordinates: {
+      lat: 12.9352,
+      lng: 77.6245,
+    },
+    contact: {
+      phone: "8574600700",
+      email: "support@chargepointindia.com",
+      website: "https://www.kabiramobility.com",
+    },
+    hours: [
+      {
+        day: "Monday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Tuesday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Wednesday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Thursday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Friday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Saturday",
+        open: "09:00",
+        close: "19:00",
+      },
+      {
+        day: "Sunday",
+        open: "09:00",
+        close: "16:00",
+      },
+    ],
+    services: ["sales", "service", "charging"],
+    active: true,
+    featured: true,
+    imageUrl:
+      "https://res.cloudinary.com/kabira-mobility/image/upload/v1744812227/Booking%20Engine/KM3000_apj2tj.png",
   },
 ];
 
