@@ -266,8 +266,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       }
       return false;
     }
-  }, [isMapbox, dealers, selectedDealer, onMarkerClick, theme, onMarkersReady]);
-
+ 
   // --- Cleanup function ---
   const cleanupMap = useCallback(() => {
     console.log("Cleaning up Mapbox instance...");
