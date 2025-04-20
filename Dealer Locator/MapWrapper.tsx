@@ -15,6 +15,17 @@ import {
 
 // --- Helper Functions ---
 
+// Helper to inject CSS rules into the document head if they don't exist
+const injectGlobalStyle = (id: string, css: string) => {
+    if (typeof document !== 'undefined' && !document.getElementById(id)) {
+        const style = document.createElement('style');
+        style.id = id;
+        style.textContent = css;
+        document.head.appendChild(style);
+        console.log(`Injected global style: #${id}`);
+    }
+};
+
 // Determines marker color based on service type and selection state
 function getMarkerColor(
   dealer: Dealer,
@@ -166,6 +177,17 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       // Don't remove CSS on unmount as other components might need it
     };
   }, []);
+
+  // Inject keyframes for user marker ripple effect
+  useEffect(() => {
+      const rippleKeyframes = `
+          @keyframes ripple {
+              0% { transform: scale(0.8); opacity: 0.8; }
+              100% { transform: scale(2.5); opacity: 0; }
+          }
+      `;
+      injectGlobalStyle('ripple-keyframes', rippleKeyframes);
+  }, []); // Run only once on mount
 
   // --- Map Interaction Handler ---
   const handleMapInteraction = useCallback(
