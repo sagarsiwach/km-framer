@@ -41,7 +41,8 @@ import {
   SearchBar,
 } from "https://framer.com/m/Components-bS3j.js@0jRsmeo87YGyazwSo9oO";
 
-import LoadingIndicator from "https://framer.com/m/LoadingOverlay-8m7G.js";
+// Explicitly import the default export to potentially resolve Framer module issues
+import { default as LoadingIndicator } from "https://framer.com/m/LoadingOverlay-8m7G.js";
 
 // --- Inline useDebounce Hook ---
 function useDebounce(value, delay = 400) {

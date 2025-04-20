@@ -157,7 +157,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
   const mapboxPopupRef = useRef<Popup | null>(null);
   const mapInitializedRef = useRef(false); // Track if map instance is created
   const markersReadyFiredRef = useRef(false); // Track if onMarkersReady was called
-  const mapLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Use NodeJS.Timeout for clarity
+  const mapLoadTimeoutRef = useRef<number | null>(null); // Use standard 'number' for setTimeout ID
   // Removed isRenderedRef and markersInitializedRef
 
   const isMapbox = mapProvider === "mapbox";
@@ -443,7 +443,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
           onMarkersReady();
           markersReadyFiredRef.current = true;
         }
-      }, 5000); // Use NodeJS.Timeout type
+      }, 5000); // setTimeout returns a number
     } catch (error) {
       console.error("Failed to initialize Mapbox Map:", error);
 
