@@ -38,14 +38,24 @@ import {
   type Hours,
   hexToRgba,
   Icon,
-} from "https://framer.com/m/Lib-8AS5.js";
+  formatAddress, // Import formatAddress
+} from "https://framer.com/m/Lib-8AS5.js@vS7d5YP2fjGyqMnH5L1D"; // Adjust path
 import {
   useDealerData,
   useGeolocation,
   useMapApiState,
-} from "https://framer.com/m/Hooks-ZmUS.js";
-import "https://framer.com/m/Components-bS3j.js";
-import MapWrapper from "https://framer.com/m/MapWrapper-dYOf.js";
+} from "https://framer.com/m/Hooks-ZmUS.js@2ecUl320qKIztH19IQLd"; // Adjust path
+import MapWrapper from "https://framer.com/m/MapWrapper-dYOf.js"; // Adjust path
+import {
+  DealerCard,
+  DealerDetailPanel,
+  ErrorDisplay,
+  // FilterButton, // FilterButton seems replaced by checkboxes, remove if unused
+  LoadingOverlay,
+  MapPlaceholder,
+  PaginationControls,
+  SearchBar,
+} from "https://framer.com/m/Components-bS3j.js@0jRsmeo87YGyazwSo9oO"; // Adjust path
 
 // --- Main Dealer Locator Component ---
 export default function DealerLocator(props) {
@@ -55,20 +65,24 @@ export default function DealerLocator(props) {
     mapboxAccessToken = "pk.eyJ1Ijoic2FnYXJzaXdhY2giLCJhIjoiY205MzY4dmxjMGdndjJrc2NrZnZpM2FkbSJ9.ZeZW7bToRYitGJQKaCvGlA",
     mapboxMapStyleUrl = "mapbox://styles/mapbox/light-v11",
     googleApiKey = "",
+    googleMapStyleId = "monochrome_minimal", // Keep for potential switch
     apiEndpoint = "https://booking-engine.sagarsiwach.workers.dev/dealer",
     initialZoom = 11,
     distanceUnit = "km",
-    resultsPerPage = 7,
+    resultsPerPage = 7, // Default results per page for pagination (if using pagination component)
+    useInfiniteScroll = true, // Added prop to toggle infinite scroll
     showSearchBar = true,
     showFilters = true,
     allowLocationAccess = true,
-    primaryColor = "#111827",
-    secondaryColor = "#6B7280",
-    accentColor = "#16A34A",
+    primaryColor = "#111827", // Default: Tailwind Gray 900
+    secondaryColor = "#6B7280", // Default: Tailwind Gray 500
+    accentColor = "#22C55E", // Default: Tailwind Green 500 (Used for Charging)
+    salesColor = "#0284C7", // Default: Tailwind Sky 700
+    serviceColor = "#DC2626", // Default: Tailwind Red 600
     backgroundColor = "#FFFFFF",
     surfaceColor = "#FFFFFF",
     onSurfaceColor = "#111827",
-    outlineColor = "#E5E7EB",
+    outlineColor = "#E5E7EB", // Default: Tailwind Gray 200
     borderRadius = 6,
     showShadows = false,
     searchPlaceholder = "Area / Pincode",
@@ -82,39 +96,37 @@ export default function DealerLocator(props) {
     hoursLabel = "Opening Hours",
     contactLabel = "Contact",
     title = "Locate a Dealer",
-    description = "Discover our network of 200+ Certified Partners — your go-to spots for test rides, purchases, or expert repairs.",
+    description = "Discover our network of partners.",
     style,
     detailPanelWidth = 400,
   } = props;
 
   // --- State ---
   const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
   const [searchLocation, setSearchLocation] = useState<Location>(null);
   const [filteredDealers, setFilteredDealers] = useState<Dealer[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1); // For both pagination/infinite scroll
+  const [isLoadingMore, setIsLoadingMore] = useState(false); // For infinite scroll UI
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [isLocatingCombined, setIsLocatingCombined] = useState(false);
   const [componentError, setComponentError] = useState<string | null>(null);
   const [activeMapCenter, setActiveMapCenter] = useState<
     Coordinates | [number, number]
   >(getInitialCenter(mapProvider));
   const [activeMapZoom, setActiveMapZoom] = useState(initialZoom);
-  const [spinnerRotation, setSpinnerRotation] = useState(0);
-  const [showStores, setShowStores] = useState(true);
+  const [spinnerRotation, setSpinnerRotation] = useState(0); // Keep for loading overlay
+  const [showStores, setShowStores] = useState(true); // Filter states
   const [showService, setShowService] = useState(true);
   const [showCharging, setShowCharging] = useState(true);
-  const [mapBackgroundOverlay, setMapBackgroundOverlay] = useState(false);
-  const [drawerExpanded, setDrawerExpanded] = useState(false);
+  const [mapBackgroundOverlay, setMapBackgroundOverlay] = useState(false); // Detail panel overlay
+  const [drawerExpanded, setDrawerExpanded] = useState(false); // Mobile detail panel state
 
   // --- Refs ---
-  const geocoderRef = useRef<any>(null);
-  const listContainerRef = useRef<HTMLDivElement>(null);
-  const drawerRef = useRef<HTMLDivElement>(null);
+  const geocoderRef = useRef<any>(null); // For geocoding instance
+  const listContainerRef = useRef<HTMLDivElement>(null); // For infinite scroll
 
   // --- Hooks ---
-  const debouncedSearchQuery = useDebounce(searchQuery, 400);
   const {
     dealers: allDealers,
     isLoading: isDealersLoading,
@@ -128,71 +140,91 @@ export default function DealerLocator(props) {
     getUserLocation,
   } = useGeolocation();
   const { isLoaded: isMapApiLoaded, loadError: mapApiLoadError } =
-    useMapApiState(mapProvider, googleApiKey);
+    useMapApiState(mapProvider, googleApiKey); // Manages API script loading if Google is used
+
+  // Combined loading state
+  const isLocatingCombined = useMemo(
+    () => isDealersLoading || isGeoLocating,
+    [isDealersLoading, isGeoLocating]
+  );
 
   // --- Responsive Check ---
   const isMobile = useMemo(() => {
     if (RenderTarget.current() === RenderTarget.canvas) return false;
     return typeof window !== "undefined" && window.innerWidth < 768;
-  }, []);
+  }, []); // Re-evaluates only on client side
 
   // --- Effects ---
+
+  // Initialize Geocoder based on provider
   useEffect(() => {
-    /* Geocoder Init */ if (mapProvider === "mapbox" && mapboxAccessToken)
+    if (mapProvider === "mapbox" && mapboxAccessToken) {
+      // Mapbox geocoding uses fetch, no specific instance needed here
       geocoderRef.current = "mapbox";
-    else if (
+      console.log("Mapbox geocoder ready (using fetch).");
+    } else if (
       mapProvider === "google" &&
       isMapApiLoaded &&
       window.google?.maps?.Geocoder
-    )
+    ) {
+      // Initialize Google Geocoder only if API is loaded
       geocoderRef.current = new window.google.maps.Geocoder();
-    else geocoderRef.current = null;
-  }, [mapProvider, isMapApiLoaded, mapboxAccessToken]);
+      console.log("Google Maps Geocoder initialized.");
+    } else {
+      geocoderRef.current = null;
+      console.log("Geocoder not available or provider/API not ready.");
+    }
+  }, [mapProvider, isMapApiLoaded, mapboxAccessToken, googleApiKey]); // Ensure googleApiKey is a dependency if needed
 
+  // Update combined error state
   useEffect(() => {
-    /* Loading State */ setIsLocatingCombined(
-      isDealersLoading || isGeoLocating
-    );
-  }, [isDealersLoading, isGeoLocating]);
+    const errorMsg =
+      dealersError || geoError || mapApiLoadError?.message || null;
+    if (errorMsg !== componentError) {
+      setComponentError(errorMsg);
+      if (errorMsg) console.error("Component Error Set:", errorMsg);
+    }
+  }, [dealersError, geoError, mapApiLoadError, componentError]);
 
+  // Spinner animation effect
   useEffect(() => {
-    /* Error State */ setComponentError(
-      dealersError || geoError || mapApiLoadError?.message || null
-    );
-  }, [dealersError, geoError, mapApiLoadError]);
-
-  useEffect(() => {
-    /* Spinner */ let f;
+    let frameId: number | null = null;
     if (isLocatingCombined) {
-      const a = () => {
+      const animate = () => {
         setSpinnerRotation((r) => (r + 6) % 360);
-        f = requestAnimationFrame(a);
+        frameId = requestAnimationFrame(animate);
       };
-      f = requestAnimationFrame(a);
+      frameId = requestAnimationFrame(animate);
     } else {
       setSpinnerRotation(0);
     }
     return () => {
-      if (f) cancelAnimationFrame(f);
+      if (frameId) cancelAnimationFrame(frameId);
     };
   }, [isLocatingCombined]);
 
+  // Reset map state on provider change
   useEffect(() => {
-    /* Provider Reset */ setActiveMapCenter(getInitialCenter(mapProvider));
+    console.log(`Map provider changed to: ${mapProvider}`);
+    setActiveMapCenter(getInitialCenter(mapProvider));
     setActiveMapZoom(initialZoom);
-    setSearchLocation(null);
-    setSelectedDealer(null);
-    setIsDetailOpen(false);
-    setComponentError(null);
+    setSearchLocation(null); // Clear search location
+    setSelectedDealer(null); // Deselect dealer
+    setIsDetailOpen(false); // Close detail panel
+    setMapBackgroundOverlay(false);
+    setComponentError(null); // Clear errors related to previous provider
   }, [mapProvider, initialZoom]);
 
-  // --- Filtering and Sorting Logic (Depends on multiple states) ---
+  // --- Filtering and Sorting Logic ---
   useEffect(() => {
     if (RenderTarget.current() === RenderTarget.canvas) {
-      setFilteredDealers(SAMPLE_DEALERS.slice(0, resultsPerPage));
+      // Show limited sample data on canvas
+      setFilteredDealers(SAMPLE_DEALERS.slice(0, 5)); // Show fewer on canvas
       return;
     }
+    if (isDealersLoading) return; // Wait for initial data load
 
+    console.log("Filtering and sorting dealers...");
     const locationForDistance = searchLocation || userLocation || null;
     let filtered = allDealers.map((dealer) => ({
       ...dealer,
@@ -202,34 +234,50 @@ export default function DealerLocator(props) {
             dealer.coordinates,
             distanceUnit
           )
-        : undefined,
+        : undefined, // Calculate distance if reference location exists
     }));
 
-    // Apply Text Search
-    if (debouncedSearchQuery && !searchLocation) {
-      const query = debouncedSearchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (d) =>
-          d.name?.toLowerCase().includes(query) ||
-          d.address?.formatted?.toLowerCase().includes(query) ||
-          d.address?.city?.toLowerCase().includes(query) ||
-          d.address?.zip?.toLowerCase().includes(query) ||
-          d.address?.pincode?.toLowerCase().includes(query)
-      );
-    } else if (searchLocation) {
-      const MAX_SEARCH_RADIUS_KM = 100;
+    // Apply Text Search Filter (if no specific location is searched/used)
+    if (debouncedSearchQuery && !searchLocation && !userLocation) {
+      const query = debouncedSearchQuery.toLowerCase().trim();
+      if (query) {
+        console.log(`Filtering by text: "${query}"`);
+        filtered = filtered.filter(
+          (d) =>
+            d.name?.toLowerCase().includes(query) ||
+            d.address?.formatted?.toLowerCase().includes(query) ||
+            d.address?.city?.toLowerCase().includes(query) ||
+            d.address?.pincode?.toLowerCase().includes(query) || // Use pincode if available
+            d.services?.some((s) => s.toLowerCase().includes(query)) // Filter by service name
+        );
+      }
+    } else if (locationForDistance) {
+      // If we have a location, filter by distance (optional, useful for dense areas)
+      const MAX_SEARCH_RADIUS_KM = 150; // Increased radius
       const maxDist =
         distanceUnit === "miles"
           ? MAX_SEARCH_RADIUS_KM * 0.621371
           : MAX_SEARCH_RADIUS_KM;
+      console.log(
+        `Filtering by distance (max ${maxDist} ${distanceUnit}) from location:`,
+        locationForDistance
+      );
       filtered = filtered.filter(
         (d) => d.distance !== undefined && d.distance <= maxDist
       );
     }
 
-    // Apply Service Filters
+    // Apply Service Type Filters
     const anyFilterActive = showStores || showService || showCharging;
-    if (anyFilterActive) {
+    const noFiltersActive = !showStores && !showService && !showCharging; // Check if ALL filters are off
+
+    if (anyFilterActive && !noFiltersActive) {
+      // Apply only if at least one filter is ON
+      console.log("Applying service filters:", {
+        showStores,
+        showService,
+        showCharging,
+      });
       filtered = filtered.filter((d) => {
         const services = d.services?.map((s) => s.toLowerCase()) || [];
         const isStore =
@@ -238,192 +286,183 @@ export default function DealerLocator(props) {
           services.includes("service") || services.includes("repair");
         const isCharging =
           services.includes("charging") || services.includes("ev charging");
+        // Return true if the dealer matches ANY of the ACTIVE filters
         return (
           (showStores && isStore) ||
           (showService && isService) ||
           (showCharging && isCharging)
         );
       });
+    } else {
+      console.log(
+        "No service filters active or all are off, showing all types based on other filters."
+      );
     }
 
-    // Sort Results
+    // Sort Results: Prioritize distance if available, otherwise alphabetically
     filtered.sort((a, b) => {
-      if (a.distance !== undefined && b.distance !== undefined)
-        return a.distance - b.distance;
-      if (a.distance !== undefined) return -1;
-      if (b.distance !== undefined) return 1;
-      return a.name.localeCompare(b.name);
+      if (a.distance !== undefined && b.distance !== undefined) {
+        return a.distance - b.distance; // Sort by distance ascending
+      }
+      if (a.distance !== undefined) return -1; // Dealers with distance come first
+      if (b.distance !== undefined) return 1; // Dealers without distance come last
+      return a.name.localeCompare(b.name); // Fallback to alphabetical sort
     });
 
+    console.log(`Found ${filtered.length} filtered dealers.`);
     setFilteredDealers(filtered);
-    // Reset page only if filters or search *actually change* the list count/order significantly.
-    // For simplicity, resetting every time is easier.
-    setCurrentPage(1);
+    // Reset to page 1 whenever filters/search changes the list
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+      listContainerRef.current?.scrollTo({ top: 0, behavior: "auto" }); // Scroll to top immediately
+    }
   }, [
     allDealers,
     debouncedSearchQuery,
     userLocation,
     searchLocation,
     distanceUnit,
-    resultsPerPage,
     showStores,
     showService,
     showCharging,
+    isDealersLoading, // Re-filter when loading finishes
+    // currentPage is intentionally omitted to prevent loops on page reset
   ]);
 
-  // --- Pagination Data (Depends on filteredDealers) ---
-  const paginatedDealers = useMemo(
-    () =>
-      filteredDealers.slice(
+  // --- Pagination/Infinite Scroll Data ---
+  // Use useMemo for derived data based on filteredDealers and currentPage
+  const displayedDealers = useMemo(() => {
+    if (useInfiniteScroll) {
+      // Slice up to the current "page" for infinite scroll effect
+      return filteredDealers.slice(0, currentPage * resultsPerPage);
+    } else {
+      // Slice only the current page for pagination
+      return filteredDealers.slice(
         (currentPage - 1) * resultsPerPage,
         currentPage * resultsPerPage
-      ),
-    [filteredDealers, currentPage, resultsPerPage]
-  );
-  const totalPages = useMemo(
-    () => Math.ceil(filteredDealers.length / resultsPerPage),
-    [filteredDealers, resultsPerPage]
-  );
+      );
+    }
+  }, [filteredDealers, currentPage, resultsPerPage, useInfiniteScroll]);
 
-  const handleScroll = useCallback(
-    (e) => {
-      const { scrollTop, scrollHeight, clientHeight } = e.target;
+  // Calculate total pages only if using pagination component
+  const totalPages = useMemo(() => {
+    if (useInfiniteScroll)
+      return Math.ceil(filteredDealers.length / resultsPerPage); // Still useful for knowing when to stop loading
+    return Math.ceil(filteredDealers.length / resultsPerPage);
+  }, [filteredDealers, resultsPerPage, useInfiniteScroll]);
 
-      // If scrolled to near bottom (within 200px of the bottom)
-      if (scrollHeight - scrollTop - clientHeight < 200) {
-        // If there are more pages and we're not already loading
-        if (currentPage < totalPages && !isLoadingMore) {
-          setIsLoadingMore(true);
+  // --- Infinite Scroll Handler ---
+  const handleScroll = useCallback(() => {
+    if (!useInfiniteScroll || isLoadingMore || currentPage >= totalPages)
+      return;
 
-          // Using a small timeout to prevent multiple rapid triggers
-          setTimeout(() => {
-            setCurrentPage((prev) => prev + 1);
-            setIsLoadingMore(false);
-          }, 300);
-        }
+    const listEl = listContainerRef.current;
+    if (listEl) {
+      const { scrollTop, scrollHeight, clientHeight } = listEl;
+      // Trigger loading more when user is near the bottom (e.g., 300px threshold)
+      if (scrollHeight - scrollTop - clientHeight < 300) {
+        console.log("Near bottom, loading next page...");
+        setIsLoadingMore(true);
+        // Increment page number after a short delay to allow rendering
+        setTimeout(() => {
+          setCurrentPage((prev) => prev + 1);
+          // IMPORTANT: Reset isLoadingMore slightly later OR after data update if async
+          // For now, reset it quickly, assuming data update is fast enough
+          setIsLoadingMore(false);
+        }, 300); // Short delay before allowing next trigger
       }
-    },
-    [currentPage, totalPages, isLoadingMore]
-  );
+    }
+  }, [useInfiniteScroll, isLoadingMore, currentPage, totalPages]);
+
+  // Attach/Detach scroll listener
   useEffect(() => {
     const list = listContainerRef.current;
-    if (list) {
+    if (list && useInfiniteScroll) {
       list.addEventListener("scroll", handleScroll);
+      console.log("Infinite scroll listener attached.");
+    } else {
+      console.log(
+        "Infinite scroll listener NOT attached (disabled or element missing)."
+      );
     }
 
+    // Cleanup listener on unmount or when infinite scroll is disabled
     return () => {
-      if (list) {
+      if (list && useInfiniteScroll) {
         list.removeEventListener("scroll", handleScroll);
+        console.log("Infinite scroll listener removed.");
       }
     };
-  }, [handleScroll]);
+  }, [useInfiniteScroll, handleScroll]); // Re-attach if mode changes or handler updates
 
-  // --- Theme and Style Generation (Depends on theme props, isMobile, totalPages) ---
+  // --- Theme and Style Generation ---
   const theme = useMemo(
     () => ({
-      /* ... Theme object ... */
       colors: {
         primary: primaryColor,
         secondary: secondaryColor,
-        tertiary: accentColor,
-        onPrimary: surfaceColor,
+        accent: accentColor, // Used for charging as default green
+        sales: salesColor, // Specific color for sales
+        service: serviceColor, // Specific color for service
+        // Keep specific service colors easily accessible if needed elsewhere
+        skyBlue: salesColor, // Alias for Sales
+        redColor: serviceColor, // Alias for Service
+        greenColor: accentColor, // Alias for Charging/Accent
+
+        onPrimary: surfaceColor, // Text on primary background
         background: backgroundColor,
         surface: surfaceColor,
         onSurface: onSurfaceColor,
-        surfaceVariant: hexToRgba(onSurfaceColor, 0.04),
-        onSurfaceVariant: secondaryColor,
+        surfaceVariant: hexToRgba(onSurfaceColor, 0.05), // Lighter variant
+        onSurfaceVariant: secondaryColor, // Text on variant surfaces (often grey)
         outline: outlineColor,
-        error: "#DC2626",
-        onErrorContainer: "#7F1D1D",
-        tertiaryContainer: hexToRgba(onSurfaceColor, 0.08),
-        onTertiaryContainer: onSurfaceColor,
-        success: "#16A34A",
-        skyBlue: "#0284C7", // Tailwind sky-600 for SALES
-        redColor: "#DC2626", // Tailwind red-600 for SERVICE
-        greenColor: "#16A34A", // Tailwind green-600 for CHARGING
+        outlineVariant: hexToRgba(outlineColor, 0.7), // Slightly dimmer outline
+        error: "#DC2626", // Consistent error red
+        onError: "#FFFFFF",
+        success: accentColor, // Use accent for success indicators
+        // Neutrals for shades of grey/text
         neutral: {
-          100: hexToRgba(onSurfaceColor, 0.04),
-          200: hexToRgba(onSurfaceColor, 0.08),
-          300: hexToRgba(onSurfaceColor, 0.16),
-          400: hexToRgba(onSurfaceColor, 0.26),
-          500: hexToRgba(onSurfaceColor, 0.44),
-          600: hexToRgba(onSurfaceColor, 0.64),
-          700: hexToRgba(onSurfaceColor, 0.8),
+          50: hexToRgba(onSurfaceColor, 0.03),
+          100: hexToRgba(onSurfaceColor, 0.06),
+          200: hexToRgba(onSurfaceColor, 0.1),
+          300: hexToRgba(onSurfaceColor, 0.2),
+          400: hexToRgba(onSurfaceColor, 0.35),
+          500: hexToRgba(onSurfaceColor, 0.5), // Mid-grey
+          600: hexToRgba(onSurfaceColor, 0.65), // Good for secondary text
+          700: hexToRgba(onSurfaceColor, 0.8), // Darker text
           800: hexToRgba(onSurfaceColor, 0.9),
-          900: onSurfaceColor,
+          900: onSurfaceColor, // Usually black/darkest grey
         },
         white: "#FFFFFF",
       },
       typography: {
         fontFamily:
           "Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'",
-        titleLarge: {
-          fontSize: "20px",
-          fontWeight: 600,
-          lineHeight: "28px",
-        },
-        titleMedium: {
-          fontSize: "16px",
-          fontWeight: 500,
-          lineHeight: "24px",
-        },
-        titleSmall: {
-          fontSize: "14px",
-          fontWeight: 500,
-          lineHeight: "20px",
-        },
-        bodyLarge: {
-          fontSize: "16px",
-          fontWeight: 400,
-          lineHeight: "24px",
-        },
-        bodyMedium: {
-          fontSize: "14px",
-          fontWeight: 400,
-          lineHeight: "20px",
-        },
-        bodySmall: {
-          fontSize: "12px",
-          fontWeight: 400,
-          lineHeight: "16px",
-        },
-        labelLarge: {
-          fontSize: "14px",
-          fontWeight: 500,
-          lineHeight: "20px",
-        },
-        labelMedium: {
-          fontSize: "12px",
-          fontWeight: 500,
-          lineHeight: "16px",
-        },
-        labelSmall: {
-          fontSize: "11px",
-          fontWeight: 500,
-          lineHeight: "16px",
-        },
+        // Define various text styles if needed
       },
       shape: {
+        small: `${Math.max(2, Math.round(borderRadius * 0.5))}px`,
         medium: `${borderRadius}px`,
+        large: `${Math.max(4, Math.round(borderRadius * 1.5))}px`,
         full: "9999px",
-        small: `${Math.max(2, Math.round(borderRadius * 0.6))}px`,
-        extraSmall: `${Math.max(2, Math.round(borderRadius * 0.33))}px`,
       },
-      spacing: (m = 1) => `${8 * m}px`,
+      spacing: (multiplier = 1) => `${8 * multiplier}px`,
       shadows: showShadows
         ? [
-            "none",
-            `0 1px 2px ${hexToRgba("#000000", 0.05)}`,
-            `0 4px 6px -1px ${hexToRgba("#000000", 0.1)}`,
-            `0 10px 15px -3px ${hexToRgba("#000000", 0.1)}`,
-            `0 20px 25px -5px ${hexToRgba("#000000", 0.1)}`,
+            "none", // 0
+            `0 1px 2px ${hexToRgba(onSurfaceColor, 0.05)}`, // 1 (subtle)
+            `0 3px 6px ${hexToRgba(onSurfaceColor, 0.07)}`, // 2 (small elevation)
+            `0 6px 12px ${hexToRgba(onSurfaceColor, 0.1)}`, // 3 (medium elevation)
+            `0 10px 20px ${hexToRgba(onSurfaceColor, 0.12)}`, // 4 (large elevation)
           ]
-        : Array(6).fill("none"),
+        : Array(5).fill("none"),
     }),
     [
       primaryColor,
       secondaryColor,
       accentColor,
+      salesColor,
+      serviceColor,
       backgroundColor,
       surfaceColor,
       onSurfaceColor,
@@ -433,119 +472,121 @@ export default function DealerLocator(props) {
     ]
   );
 
+  // --- Style Objects Generation ---
   const styles = useMemo(() => {
-    // --- Define all style objects using theme ---
-    const containerStyle = {
+    const containerStyle: React.CSSProperties = {
       display: "flex",
       flexDirection: isMobile ? "column" : "row",
       width: "100%",
-      height: "calc(100dvh - 81px)", // Use dynamic viewport height minus navbar
-      maxHeight: "calc(100dvh - 81px)", // Enforce maximum height
+      height: "calc(100dvh - 81px)", // Example: Adjust based on header height if applicable
+      maxHeight: "calc(100dvh - 81px)",
       backgroundColor: theme.colors.background,
-      overflow: "hidden", // Prevent scrolling of the container itself
+      overflow: "hidden",
       position: "relative",
       fontFamily: theme.typography.fontFamily,
       color: theme.colors.onSurface,
-      ...style,
+      ...style, // Allow overriding via Framer props
     };
 
-    const mapContainerStyle = {
-      flex: 1,
-      minHeight: isMobile ? "50%" : "100%",
+    const mapContainerStyle: React.CSSProperties = {
+      flex: 1, // Takes remaining space
+      minHeight: isMobile ? "40%" : "auto", // Ensure map is visible on mobile
+      height: isMobile ? "40%" : "100%",
       position: "relative",
       backgroundColor: theme.colors.surfaceVariant,
-      order: isMobile ? 1 : 2,
+      order: isMobile ? 1 : 2, // Map below list on mobile
     };
 
-    const sidebarStyle = {
-      flex: isMobile ? "1" : `0 0 ${detailPanelWidth}px`,
-      height: isMobile ? "50%" : "100%",
+    const sidebarStyle: React.CSSProperties = {
+      flex: isMobile ? "1" : `0 0 ${detailPanelWidth}px`, // Fixed width desktop, takes rest mobile
+      height: isMobile ? "60%" : "100%",
       display: "flex",
       flexDirection: "column",
       background: theme.colors.surface,
       borderRight: !isMobile ? `1px solid ${theme.colors.outline}` : "none",
-      overflow: "hidden",
-      order: isMobile ? 2 : 1,
-      position: "relative",
+      borderTop: isMobile ? `1px solid ${theme.colors.outline}` : "none", // Border top on mobile
+      overflow: "hidden", // Important: child list scrolls
+      order: isMobile ? 2 : 1, // List below map on mobile
+      position: "relative", // For absolute positioning of overlays
+      boxShadow: !isMobile ? theme.shadows[1] : "none", // Slight shadow on desktop sidebar
     };
 
-    const mapOverlayStyle = {
-      position: "fixed",
+    const mapOverlayStyle: React.CSSProperties = {
+      position: "fixed", // Covers viewport
       top: 0,
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: "rgba(10, 10, 10, 0.3)",
-      backdropFilter: "blur(2.5px)",
-      zIndex: 39, // Just below the detail panel
+      backgroundColor: hexToRgba(theme.colors.neutral[900], 0.4), // Darker overlay
+      backdropFilter: "blur(4px)", // Stronger blur
+      zIndex: 39, // Below detail panel (40)
+      pointerEvents: mapBackgroundOverlay ? "auto" : "none", // Clickable only when visible
       visibility: mapBackgroundOverlay ? "visible" : "hidden",
       opacity: mapBackgroundOverlay ? 1 : 0,
-      transition:
-        "opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.35s",
+      transition: "opacity 0.3s ease-out, visibility 0.3s ease-out",
     };
 
-    // Title and Description Styles
-    const titleContainerStyle = {
+    // --- Search/Filter Area Styles ---
+    const topSectionContainerStyle: React.CSSProperties = {
       padding: theme.spacing(2),
       borderBottom: `1px solid ${theme.colors.outline}`,
+      flexShrink: 0, // Prevent shrinking
     };
 
-    const titleStyle = {
-      fontSize: "28px",
-      fontWeight: "600",
-      margin: "0 0 8px 0",
+    const titleStyle: React.CSSProperties = {
+      fontSize: isMobile ? "22px" : "28px",
+      fontWeight: 600,
+      margin: `0 0 ${theme.spacing(1)} 0`,
       color: theme.colors.onSurface,
-      fontFamily: theme.typography.fontFamily,
     };
 
-    const descriptionStyle = {
-      fontSize: "16px",
+    const descriptionStyle: React.CSSProperties = {
+      fontSize: isMobile ? "14px" : "16px",
       color: theme.colors.neutral[600],
       margin: "0",
-      fontFamily: theme.typography.fontFamily,
       lineHeight: 1.5,
+      marginBottom: theme.spacing(2), // Space below description
     };
 
-    // Search and Filter Styles
-    const searchFilterContainerStyle = {
-      padding: theme.spacing(2),
-      borderBottom: `1px solid ${theme.colors.outline}`,
-      background: theme.colors.surface,
+    const locationLabelStyle: React.CSSProperties = {
+      fontSize: "12px", // Smaller label
+      fontWeight: 600, // Bolder
+      textTransform: "uppercase",
+      letterSpacing: "0.5px",
+      marginBottom: theme.spacing(0.5),
+      color: theme.colors.neutral[700], // Darker grey
     };
 
-    const locationLabelStyle = {
-      fontSize: "14px",
-      fontWeight: 500,
-      marginBottom: theme.spacing(1),
-      color: theme.colors.onSurface,
-    };
-
-    const searchInputContainerStyle = (isFocused = false) => ({
+    const searchInputContainerStyle = (
+      isFocused = false
+    ): React.CSSProperties => ({
       display: "flex",
       alignItems: "center",
-      height: "44px",
+      height: "44px", // Standard height
       border: `1px solid ${
         isFocused ? theme.colors.primary : theme.colors.outline
       }`,
       borderRadius: theme.shape.medium,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.surface, // Match surface
       overflow: "hidden",
-      marginBottom: showFilters ? theme.spacing(1.5) : 0,
-      transition: "border-color 0.2s ease-in-out",
+      transition: "border-color 0.2s, box-shadow 0.2s", // Added box-shadow transition
+      boxShadow: isFocused
+        ? `0 0 0 2px ${hexToRgba(theme.colors.primary, 0.2)}`
+        : "none",
+      // Removed margin-bottom, handled by parent gap or padding
     });
 
-    const searchInputStyle = {
+    const searchInputStyle: React.CSSProperties = {
       flex: 1,
       border: "none",
       outline: "none",
-      padding: `${theme.spacing(0.5)} ${theme.spacing(1)}`,
+      padding: `0 ${theme.spacing(1.5)}`, // Horizontal padding
       background: "transparent",
       color: theme.colors.onSurface,
       fontSize: "14px",
-      fontFamily: theme.typography.fontFamily,
     };
 
-    const searchIconButtonStyle = {
+    const searchIconButtonStyle: React.CSSProperties = {
       border: "none",
       background: "transparent",
       padding: theme.spacing(1),
@@ -556,28 +597,34 @@ export default function DealerLocator(props) {
       color: theme.colors.onSurfaceVariant,
     };
 
-    const filterContainerStyle = {
+    const filterContainerStyle: React.CSSProperties = {
       display: "flex",
       flexWrap: "wrap",
-      gap: theme.spacing(1),
-      marginTop: theme.spacing(1.5),
+      gap: theme.spacing(1.5), // Increased gap between filters
+      marginTop: theme.spacing(2), // Space above filters
     };
 
-    const filterCheckboxStyle = (isActive) => ({
+    const filterCheckboxStyle = (isActive: boolean): React.CSSProperties => ({
       display: "flex",
       alignItems: "center",
-      gap: theme.spacing(0.5),
+      gap: theme.spacing(0.75), // Gap between box and label
       fontSize: "14px",
-      fontWeight: isActive ? 500 : 400,
-      color: isActive ? theme.colors.primary : theme.colors.onSurfaceVariant,
+      fontWeight: 400,
+      color: theme.colors.onSurfaceVariant, // Default color
       cursor: "pointer",
       userSelect: "none",
-      transition: "color 0.2s ease-in-out",
+      padding: `${theme.spacing(0.5)} ${theme.spacing(1)}`, // Small padding for hover bg
+      borderRadius: theme.shape.small,
+      transition: "background-color 0.15s ease-in-out",
+      // Hover effect
+      ":hover": { backgroundColor: theme.colors.neutral[100] },
     });
 
-    const filterCheckboxIndicatorStyle = (isActive) => ({
-      width: "16px",
-      height: "16px",
+    const filterCheckboxIndicatorStyle = (
+      isActive: boolean
+    ): React.CSSProperties => ({
+      width: "18px",
+      height: "18px",
       borderRadius: theme.shape.small,
       border: `1.5px solid ${
         isActive ? theme.colors.primary : theme.colors.outline
@@ -586,97 +633,126 @@ export default function DealerLocator(props) {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      transition:
-        "background-color 0.2s ease-in-out, border-color 0.2s ease-in-out",
-      position: "relative",
+      transition: "background-color 0.2s, border-color 0.2s",
+      flexShrink: 0, // Prevent shrinking
+      // Add checkmark SVG inside when active
+      content: isActive
+        ? `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${encodeURIComponent(
+            theme.colors.onPrimary
+          )}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>')`
+        : '""',
     });
 
-    // Dealer List Styles
-    const dealerListContainerStyle = {
-      flex: 1,
-      overflowY: "auto",
-      padding: theme.spacing(1),
+    // --- Dealer List Styles ---
+    const dealerListContainerStyle: React.CSSProperties = {
+      flex: 1, // Takes remaining vertical space in sidebar
+      overflowY: "auto", // Enables scrolling for the list
+      WebkitOverflowScrolling: "touch",
+      padding: `${theme.spacing(1)} ${theme.spacing(1.5)}`, // Padding around the list items
     };
 
-    const dealerCardStyleBase = (isSelected) => ({
+    const dealerCardStyleBase = (isSelected: boolean): React.CSSProperties => ({
       background: isSelected
         ? theme.colors.surfaceVariant
         : theme.colors.surface,
       borderRadius: theme.shape.medium,
-      padding: theme.spacing(1.5),
+      padding: theme.spacing(1.5), // 12px padding inside card
       cursor: "pointer",
-      marginBottom: theme.spacing(1),
-      border: `1px solid ${
-        isSelected ? theme.colors.primary : theme.colors.outline
-      }`,
-      boxShadow: isSelected ? theme.shadows[1] : "none",
+      marginBottom: theme.spacing(1.5), // **** INCREASED MARGIN **** (12px)
+      border: `1px solid ${isSelected ? theme.colors.primary : "transparent"}`, // Only border when selected
+      borderLeft: `3px solid ${
+        isSelected ? theme.colors.primary : "transparent"
+      }`, // Accent border left
+      boxShadow: isSelected ? theme.shadows[2] : theme.shadows[1], // Subtle shadow always, more when selected
       transition:
-        "background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+        "background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s",
+      position: "relative", // For potential absolute elements inside
+      // Remove transform from base, handle in motion component props
     });
 
-    const dealerCardIconStyle = {
+    const dealerCardContentStyle: React.CSSProperties = {
       display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      width: "40px",
-      height: "40px",
-      borderRadius: theme.shape.small,
-      backgroundColor: theme.colors.surfaceVariant,
-      color: theme.colors.onSurfaceVariant,
-      flexShrink: 0,
-    };
-
-    const dealerCardContentStyle = {
-      display: "flex",
-      alignItems: "center",
+      alignItems: "flex-start", // Align items to top for better text flow
       justifyContent: "space-between",
       width: "100%",
+      gap: theme.spacing(1.5), // Gap between text and arrow
     };
 
-    const dealerCardTextWrapStyle = {
-      marginLeft: theme.spacing(1.5),
+    const dealerCardTextWrapStyle: React.CSSProperties = {
       flex: 1,
+      minWidth: 0, // Prevent overflow issues
     };
 
-    const dealerCardTitleStyle = {
-      margin: "0 0 4px 0",
+    const dealerCardTitleStyle: React.CSSProperties = {
+      margin: `0 0 ${theme.spacing(0.5)} 0`, // Reduced bottom margin
       fontSize: "16px",
-      fontWeight: 500,
+      fontWeight: 600, // Bolder title
       color: theme.colors.onSurface,
+      lineHeight: 1.4, // Slightly increased line height
     };
 
-    const dealerCardAddressStyle = {
-      margin: 0,
+    const dealerCardAddressStyle: React.CSSProperties = {
+      margin: `0 0 ${theme.spacing(1)} 0`, // Margin below address
       fontSize: "14px",
-      color: theme.colors.onSurfaceVariant,
-      lineHeight: 1.3,
+      color: theme.colors.neutral[600], // Darker grey for address
+      lineHeight: 1.45, // Better line height for multiline addresses
     };
 
-    const dealerCardDistanceStyle = {
-      margin: "8px 0 0 0",
+    // Service indicators wrapper (add this if not already defined)
+    const dealerCardServicesStyle: React.CSSProperties = {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: theme.spacing(1),
+      marginTop: theme.spacing(1),
+      marginBottom: theme.spacing(1), // Add margin below services if distance is present
+    };
+
+    // Style for individual service tags (add this if not already defined)
+    const dealerCardServiceTagStyle = (
+      bgColor: string,
+      textColor: string,
+      bdColor: string
+    ): React.CSSProperties => ({
+      fontSize: "10px",
+      padding: "3px 6px", // Slightly adjust padding
+      backgroundColor: bgColor,
+      color: textColor,
+      borderRadius: "3px", // Slightly more rounded
+      textTransform: "uppercase",
+      fontWeight: 700,
+      letterSpacing: "0.5px", // More spacing
+      outline: `1px solid ${bdColor}`,
+      outlineOffset: "-1px",
+    });
+
+    const dealerCardDistanceStyle: React.CSSProperties = {
+      margin: `${theme.spacing(1)} 0 0 0`, // Consistent top margin
       fontSize: "13px",
       fontWeight: 500,
       color: theme.colors.primary,
     };
 
-    const dealerCardArrowStyle = {
+    const dealerCardArrowStyle: React.CSSProperties = {
       color: theme.colors.onSurfaceVariant,
       display: "flex",
       alignItems: "center",
-      marginLeft: theme.spacing(1),
+      marginTop: theme.spacing(0.5), // Align arrow slightly lower
+      flexShrink: 0, // Prevent arrow shrinking
     };
 
-    // Pagination Styles
-    const paginationContainerStyle = {
+    // --- Pagination Styles --- (Keep if PaginationControls component is used)
+    const paginationContainerStyle: React.CSSProperties = {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       padding: theme.spacing(1.5),
       borderTop: `1px solid ${theme.colors.outline}`,
       backgroundColor: theme.colors.surface,
+      flexShrink: 0, // Prevent shrinking
     };
-
-    const paginationButtonStyleBase = (isDisabled) => ({
+    const paginationButtonStyleBase = (
+      isDisabled: boolean
+    ): React.CSSProperties => ({
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -686,157 +762,160 @@ export default function DealerLocator(props) {
       border: "none",
       borderRadius: "50%",
       color: isDisabled
-        ? theme.colors.neutral[300]
+        ? theme.colors.neutral[400]
         : theme.colors.onSurfaceVariant,
       cursor: isDisabled ? "not-allowed" : "pointer",
-      opacity: isDisabled ? 0.5 : 1,
+      opacity: isDisabled ? 0.6 : 1,
       transition: "background-color 0.2s, color 0.2s",
     });
-
-    const paginationInfoStyle = {
+    const paginationInfoStyle: React.CSSProperties = {
       margin: `0 ${theme.spacing(2)}`,
       fontSize: "14px",
       color: theme.colors.onSurfaceVariant,
     };
 
-    // Loading, Error, and Placeholder Styles
+    // --- Loading, Error, Placeholder Styles --- (Simplified, assuming defined in Components.tsx)
     const loadingOverlayStyle = {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: hexToRgba(theme.colors.background, 0.85),
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 50,
-      backdropFilter: "blur(3px)",
+      /* Defined in Components.tsx */
     };
-
     const spinnerStyle = (rotation) => ({
-      width: "48px",
-      height: "48px",
-      borderRadius: "50%",
-      border: `3px solid ${hexToRgba(theme.colors.primary, 0.2)}`,
-      borderTopColor: theme.colors.primary,
-      transform: `rotate(${rotation}deg)`,
+      /* Defined in Components.tsx */
     });
-
     const loadingTextStyle = {
-      marginTop: theme.spacing(2),
-      fontSize: "16px",
-      fontWeight: 500,
-      color: theme.colors.onSurface,
+      /* Defined in Components.tsx */
     };
-
     const errorOverlayStyle = {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: hexToRgba(theme.colors.background, 0.9),
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 50,
-      padding: theme.spacing(2),
+      /* Defined in Components.tsx */
     };
-
     const errorIconStyle = {
-      color: theme.colors.error,
-      marginBottom: theme.spacing(2),
-    };
-
+      /* Defined in Components.tsx */
+    }; // Pass theme.colors.error
     const errorTextStyle = {
-      fontSize: "16px",
-      fontWeight: 500,
-      color: theme.colors.onSurface,
-      textAlign: "center",
-      maxWidth: "400px",
-      marginBottom: theme.spacing(3),
+      /* Defined in Components.tsx */
     };
-
     const errorButtonStyle = {
-      backgroundColor: theme.colors.primary,
-      color: theme.colors.onPrimary,
-      border: "none",
-      borderRadius: theme.shape.medium,
-      padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
-      fontSize: "14px",
-      fontWeight: 500,
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    };
-
+      /* Defined in Components.tsx */
+    }; // Pass theme colors
     const mapPlaceholderStyle = {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: theme.colors.surfaceVariant,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: theme.spacing(2),
+      /* Defined in Components.tsx */
     };
-
     const mapPlaceholderTextStyle = {
-      fontSize: "16px",
-      fontWeight: 500,
-      color: theme.colors.onSurfaceVariant,
-      textAlign: "center",
-      marginTop: theme.spacing(2),
+      /* Defined in Components.tsx */
     };
-
     const mapPlaceholderSubTextStyle = {
-      fontSize: "14px",
-      color: theme.colors.neutral[500],
-      textAlign: "center",
-      marginTop: theme.spacing(1),
+      /* Defined in Components.tsx */
     };
 
-    // Button Styles
-    const textButtonStyle = (isDisabled = false) => ({
+    // --- Button Styles ---
+    const textButtonStyle = (isDisabled = false): React.CSSProperties => ({
+      // Style for text-based buttons like "Use Location"
       backgroundColor: "transparent",
       color: isDisabled ? theme.colors.neutral[400] : theme.colors.primary,
       border: "none",
       borderRadius: theme.shape.medium,
-      padding: `${theme.spacing(0.5)} ${theme.spacing(1)}`,
+      padding: `${theme.spacing(0.5)} ${theme.spacing(1)}`, // Adjust padding as needed
       fontSize: "14px",
       fontWeight: 500,
       cursor: isDisabled ? "not-allowed" : "pointer",
       display: "flex",
       alignItems: "center",
       transition: "background-color 0.2s, color 0.2s",
-      opacity: isDisabled ? 0.5 : 1,
+      opacity: isDisabled ? 0.6 : 1,
     });
 
-    // Event handler functions for hover states
-    const handleLinkEnter = () => {
-      // Empty function - implemented by component consumers if needed
+    // --- Detail Panel Styles (Extracted for clarity) ---
+    const detailSectionTitleStyle: React.CSSProperties = {
+      fontSize: "12px",
+      fontWeight: 600,
+      textTransform: "uppercase",
+      letterSpacing: "0.72px",
+      color: theme.colors.neutral[700],
+      margin: `0 0 ${theme.spacing(1.25)} 0`, // 10px bottom margin
+    };
+    const detailParagraphStyle: React.CSSProperties = {
+      fontSize: "16px",
+      lineHeight: 1.6, // Increased line height
+      color: theme.colors.neutral[700], // Slightly darker text
+      margin: `0 0 ${theme.spacing(1)} 0`,
+    };
+    const detailDistanceStyle: React.CSSProperties = {
+      fontSize: "14px",
+      color: theme.colors.neutral[500],
+      margin: `${theme.spacing(1)} 0 0 0`, // 8px top margin
+    };
+    const detailContactItemStyle: React.CSSProperties = {
+      display: "flex",
+      alignItems: "center",
+      gap: theme.spacing(1.25), // 10px gap
+    };
+    const detailLinkStyle: React.CSSProperties = {
+      color: theme.colors.primary, // Use primary color for links
+      textDecoration: "none",
+      fontSize: "16px",
+      wordBreak: "break-word", // Break long links
+      ":hover": { textDecoration: "underline" },
+    };
+    const detailHoursGridStyle: React.CSSProperties = {
+      display: "grid",
+      gridTemplateColumns: "100px 1fr", // Adjusted column width
+      gap: theme.spacing(1),
+      fontSize: "14px",
+    };
+    const detailHoursDayStyle: React.CSSProperties = {
+      /* Base style in panel */
+    };
+    const detailHoursTimeStyle: React.CSSProperties = {
+      /* Base style in panel */
+    };
+    const detailServicesListStyle: React.CSSProperties = {
+      display: "flex",
+      flexDirection: "column",
+      gap: theme.spacing(1), // 8px gap
+    };
+    const detailServiceItemStyle: React.CSSProperties = {
+      fontSize: "16px",
+      lineHeight: 1.4,
+      display: "flex",
+      alignItems: "center",
+      gap: theme.spacing(1), // 8px gap
+    };
+    const detailActionsFooterStyle: React.CSSProperties = {
+      display: "flex",
+      padding: theme.spacing(2),
+      borderTop: `1px solid ${theme.colors.outline}`,
+      gap: theme.spacing(1.5), // 12px gap
+      backgroundColor: theme.colors.surface, // Ensure bg color
+      flexShrink: 0, // Prevent shrinking
+    };
+    const detailActionButtonStyle: React.CSSProperties = {
+      flex: 1,
+      padding: `${theme.spacing(1.5)} ${theme.spacing(2)}`, // 12px 16px
+      backgroundColor: theme.colors.neutral[800], // Darker button background
+      color: theme.colors.white,
+      fontSize: "16px",
+      fontWeight: 600,
+      textDecoration: "none",
+      textAlign: "center",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center", // Center content
+      gap: theme.spacing(1), // Gap between text and icon
+      borderRadius: theme.shape.medium,
+      transition: "filter 0.2s ease-out",
     };
 
-    const handleLinkLeave = () => {
-      // Empty function - implemented by component consumers if needed
-    };
+    // Dummy hover handlers if needed by components expecting them
+    const handleLinkEnter = () => {};
+    const handleLinkLeave = () => {};
 
     return {
       containerStyle,
       mapContainerStyle,
       sidebarStyle,
       mapOverlayStyle,
-      titleContainerStyle,
+      topSectionContainerStyle,
       titleStyle,
       descriptionStyle,
-      searchFilterContainerStyle,
       locationLabelStyle,
       searchInputContainerStyle,
       searchInputStyle,
@@ -846,11 +925,12 @@ export default function DealerLocator(props) {
       filterCheckboxIndicatorStyle,
       dealerListContainerStyle,
       dealerCardStyleBase,
-      dealerCardIconStyle,
       dealerCardContentStyle,
       dealerCardTextWrapStyle,
       dealerCardTitleStyle,
       dealerCardAddressStyle,
+      dealerCardServicesStyle,
+      dealerCardServiceTagStyle, // Added service styles
       dealerCardDistanceStyle,
       dealerCardArrowStyle,
       paginationContainerStyle,
@@ -870,53 +950,75 @@ export default function DealerLocator(props) {
       handleLinkEnter,
       handleLinkLeave,
       detailPanelWidth,
+      // Detail panel specific styles
+      detailSectionTitleStyle,
+      detailParagraphStyle,
+      detailDistanceStyle,
+      detailContactItemStyle,
+      detailLinkStyle,
+      detailHoursGridStyle,
+      detailHoursDayStyle,
+      detailHoursTimeStyle,
+      detailServicesListStyle,
+      detailServiceItemStyle,
+      detailActionsFooterStyle,
+      detailActionButtonStyle,
     };
   }, [
     theme,
     isMobile,
     style,
-    showShadows,
     detailPanelWidth,
     showFilters,
-    totalPages,
     mapBackgroundOverlay,
+    // No need for totalPages here unless a style depends on it directly
   ]);
 
   // --- Geocoding Handler ---
   const handleGeocodeSearch = useCallback(
-    async (query) => {
-      /* ... Geocoding logic ... */
+    async (query: string) => {
       if (!query) {
         setSearchLocation(null);
         return;
       }
-      if (RenderTarget.current() === RenderTarget.canvas) return;
-      setSearchLocation(null);
-      setIsLocatingCombined(true);
+      if (RenderTarget.current() === RenderTarget.canvas) return; // No geocoding on canvas
+      setSearchLocation(null); // Clear previous search location immediately
+      // setIsLoading(true); // Use combined loading state instead?
       setComponentError(null);
+      console.log(`Geocoding search for: "${query}"`);
+
       try {
         if (
           mapProvider === "mapbox" &&
           mapboxAccessToken &&
           geocoderRef.current === "mapbox"
         ) {
-          const p = userLocation
-            ? `${userLocation.lng},${userLocation.lat}`
+          const proximity = userLocation
+            ? `&proximity=${userLocation.lng},${userLocation.lat}`
             : "";
-          const u = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          const country = "&country=IN"; // Bias search to India
+          const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
             query
-          )}.json?access_token=${mapboxAccessToken}&limit=1&country=IN${
-            p ? "&proximity=" + p : ""
-          }`;
-          const r = await fetch(u);
-          setIsLocatingCombined(false);
-          if (!r.ok) throw new Error(`Geocoding failed: ${r.statusText}`);
-          const d = await r.json();
-          if (d.features?.length > 0) {
-            const [lng, lat] = d.features[0].center;
+          )}.json?access_token=${mapboxAccessToken}&limit=1${country}${proximity}`;
+
+          const response = await fetch(url);
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              `Mapbox Geocoding failed: ${data.message || response.statusText}`
+            );
+          }
+
+          if (data.features?.length > 0) {
+            const [lng, lat] = data.features[0].center;
+            console.log("Mapbox Geocoding result:", { lat, lng });
             setSearchLocation({ lat, lng });
+            setActiveMapCenter([lng, lat]); // Center map on result
+            setActiveMapZoom(13); // Zoom closer on search
           } else {
-            setComponentError("Could not find location.");
+            console.warn("Mapbox Geocoding: No results found.");
+            setComponentError("Could not find location for the search query.");
           }
         } else if (
           mapProvider === "google" &&
@@ -924,89 +1026,133 @@ export default function DealerLocator(props) {
         ) {
           geocoderRef.current.geocode(
             { address: query, region: "IN" },
-            (res, stat) => {
-              setIsLocatingCombined(false);
-              if (stat === "OK" && res?.[0]) {
-                const l = res[0].geometry.location;
-                setSearchLocation({
-                  lat: l.lat(),
-                  lng: l.lng(),
-                });
+            (results, status) => {
+              if (status === "OK" && results?.[0]) {
+                const location = results[0].geometry.location;
+                const coords = {
+                  lat: location.lat(),
+                  lng: location.lng(),
+                };
+                console.log("Google Geocoding result:", coords);
+                setSearchLocation(coords);
+                setActiveMapCenter(coords); // Center map on result
+                setActiveMapZoom(13); // Zoom closer
               } else {
-                setComponentError("Could not find location.");
-                console.warn(`Google Geocoding failed: ${stat}`);
+                console.warn(`Google Geocoding failed: ${status}`);
+                setComponentError(
+                  "Could not find location for the search query."
+                );
               }
             }
           );
         } else {
-          setIsLocatingCombined(false);
+          console.warn("Geocoding service not available or not configured.");
           setComponentError("Geocoding service not available.");
         }
-      } catch (e) {
-        setIsLocatingCombined(false);
-        console.error("Geocoding error:", e);
-        setComponentError(e.message || "Geocoding failed.");
+      } catch (err) {
+        console.error("Geocoding error:", err);
+        setComponentError(err.message || "Geocoding failed.");
+      } finally {
+        // Maybe set loading false here if using separate loading state
       }
     },
-    [mapProvider, mapboxAccessToken, userLocation]
-  );
+    [mapProvider, mapboxAccessToken, userLocation, googleApiKey]
+  ); // Dependencies
 
   // --- Event Handlers ---
-  const handleSearchSubmit = (query) => {
-    handleGeocodeSearch(query);
+  const handleSearchSubmit = (query: string) => {
+    setSearchQuery(query); // Update query state immediately
+    handleGeocodeSearch(query); // Perform geocoding
   };
 
   const handleClearSearch = () => {
     setSearchQuery("");
-    setSearchLocation(null);
-    setComponentError(null);
+    setSearchLocation(null); // Clear the specific search location coordinates
+    setComponentError(null); // Clear any previous search errors
+    // Optionally reset map view to user location or default
+    if (userLocation) {
+      setActiveMapCenter([userLocation.lng, userLocation.lat]);
+      setActiveMapZoom(12);
+    } else {
+      setActiveMapCenter(getInitialCenter(mapProvider));
+      setActiveMapZoom(initialZoom);
+    }
   };
 
-  const handleDealerSelect = useCallback((dealer) => {
-    setSelectedDealer(dealer);
-    setIsDetailOpen(true);
-    setMapBackgroundOverlay(true); // Show overlay when detail opens
-    setDrawerExpanded(false); // Start with collapsed drawer on mobile
-  }, []);
+  const handleDealerSelect = useCallback(
+    (dealer: Dealer) => {
+      console.log("Dealer selected:", dealer.name);
+      setSelectedDealer(dealer);
+      setActiveMapCenter([dealer.coordinates.lng, dealer.coordinates.lat]); // Pan map to dealer
+      setActiveMapZoom(14); // Zoom in slightly on selected dealer
+      setIsDetailOpen(true);
+      setMapBackgroundOverlay(true); // Show overlay
+      if (isMobile) {
+        setDrawerExpanded(false); // Start collapsed on mobile
+      }
+      // Scroll selected card into view in the list
+      const cardElement = listContainerRef.current?.querySelector(
+        `[data-dealer-id="${dealer.id}"]`
+      );
+      cardElement?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    },
+    [isMobile]
+  ); // Dependency: isMobile for drawer behavior
 
   const handleMapClick = useCallback(() => {
-    // Close the detail panel when clicking outside on the map
+    // Close detail panel when clicking map background (if open)
     if (isDetailOpen) {
+      console.log("Map click detected, closing detail panel.");
       setIsDetailOpen(false);
       setMapBackgroundOverlay(false);
+      setSelectedDealer(null); // Deselect dealer on map click
     }
-  }, [isDetailOpen]);
+  }, [isDetailOpen]); // Dependency: isDetailOpen
 
-  const handleUseLocation = () => {
-    setComponentError(null);
-    handleClearSearch();
-    getUserLocation();
+  const handleUseLocation = useCallback(() => {
+    console.log("Attempting to use user location...");
+    setComponentError(null); // Clear previous errors
+    handleClearSearch(); // Clear any text search
+    getUserLocation(); // Trigger geolocation hook
+    // Map panning will happen in the effect watching userLocation
+  }, [getUserLocation]); // Dependency: getUserLocation
+
+  const handlePageChange = (page: number) => {
+    // For pagination component
+    if (!useInfiniteScroll) {
+      console.log(`Changing page to: ${page}`);
+      setCurrentPage(page);
+      listContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" }); // Scroll list to top
+    }
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    listContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleDetailClose = () => {
+  const handleDetailClose = useCallback(() => {
+    console.log("Closing detail panel.");
     setIsDetailOpen(false);
-    setMapBackgroundOverlay(false); // Hide overlay when detail closes
-  };
+    setMapBackgroundOverlay(false); // Hide overlay
+    setSelectedDealer(null); // Deselect dealer when panel closes
+  }, []);
 
-  const handleToggleDrawerExpanded = (expanded) => {
+  const handleToggleDrawerExpanded = useCallback((expanded: boolean) => {
+    console.log(`Toggling mobile drawer expanded state to: ${expanded}`);
     setDrawerExpanded(expanded);
-  };
+  }, []);
 
   // --- Render Conditionals ---
-  const apiKeyMissing = mapProvider === "mapbox" && !mapboxAccessToken;
+  const apiKeyMissing =
+    (mapProvider === "mapbox" && !mapboxAccessToken) ||
+    (mapProvider === "google" && !googleApiKey);
   const showMapPlaceholder =
     RenderTarget.current() === RenderTarget.canvas || apiKeyMissing;
-  const actualMapProvider = apiKeyMissing ? "none" : mapProvider;
+  const actualMapProvider = showMapPlaceholder ? "none" : mapProvider; // Prevent map render if placeholder shown
 
   // --- Final Render ---
   return (
     <div style={styles.containerStyle}>
-      {/* Overlays */}
+      {/* Overlays - Render on top */}
       {isLocatingCombined && !componentError && (
         <LoadingOverlay
           theme={theme}
@@ -1015,16 +1161,15 @@ export default function DealerLocator(props) {
           spinnerRotation={spinnerRotation}
         />
       )}
-
-      {componentError && !isDetailOpen && (
-        <ErrorDisplay
-          message={componentError}
-          onRetry={dealersError ? refetchDealers : undefined}
-          theme={theme}
-          styles={styles}
-        />
-      )}
-
+      {componentError &&
+        !isLocatingCombined && ( // Show error only if not loading
+          <ErrorDisplay
+            message={componentError}
+            onRetry={dealersError ? refetchDealers : undefined} // Allow refetch only for dealer data errors
+            theme={theme}
+            styles={styles}
+          />
+        )}
       {/* Background overlay for detail panel */}
       <div
         style={styles.mapOverlayStyle}
@@ -1032,16 +1177,15 @@ export default function DealerLocator(props) {
         aria-hidden={!mapBackgroundOverlay}
       />
 
-      {/* Sidebar or Mobile Bottom Section */}
+      {/* Sidebar (List View) */}
       <div style={styles.sidebarStyle}>
-        {/* Title and Description Section - New */}
-        <div style={styles.titleContainerStyle}>
+        {/* Top Section: Title, Desc, Search, Filters */}
+        <div style={styles.topSectionContainerStyle}>
           <h1 style={styles.titleStyle}>{title}</h1>
           <p style={styles.descriptionStyle}>{description}</p>
-        </div>
-
-        <div style={styles.searchFilterContainerStyle}>
-          {!isMobile && <div style={styles.locationLabelStyle}>LOCATION</div>}
+          {!isMobile && (
+            <div style={styles.locationLabelStyle}>FIND LOCATION</div>
+          )}
           {showSearchBar && (
             <SearchBar
               searchQuery={searchQuery}
@@ -1051,58 +1195,63 @@ export default function DealerLocator(props) {
               allowLocationAccess={allowLocationAccess}
               onUseLocation={handleUseLocation}
               isLocating={isGeoLocating}
-              locationError={null}
+              locationError={geoError} // Pass geoError for potential display in SearchBar
               searchPlaceholder={searchPlaceholder}
               useMyLocationText={"Use Location"}
               theme={theme}
               styles={styles}
             />
           )}
-          <div style={styles.filterContainerStyle}>
-            <label
-              style={styles.filterCheckboxStyle(showStores)}
-              onClick={() => setShowStores((s) => !s)}
-            >
-              <span
-                style={styles.filterCheckboxIndicatorStyle(showStores)}
-              ></span>{" "}
-              {filterStoresText}
-            </label>
-            <label
-              style={styles.filterCheckboxStyle(showService)}
-              onClick={() => setShowService((s) => !s)}
-            >
-              <span
-                style={styles.filterCheckboxIndicatorStyle(showService)}
-              ></span>{" "}
-              {filterServiceText}
-            </label>
-            <label
-              style={styles.filterCheckboxStyle(showCharging)}
-              onClick={() => setShowCharging((s) => !s)}
-            >
-              <span
-                style={styles.filterCheckboxIndicatorStyle(showCharging)}
-              ></span>{" "}
-              {filterChargingText}
-            </label>
-          </div>
+          {showFilters && (
+            <div style={styles.filterContainerStyle}>
+              <label
+                style={styles.filterCheckboxStyle(showStores)}
+                onClick={() => setShowStores((s) => !s)}
+              >
+                <span
+                  style={styles.filterCheckboxIndicatorStyle(showStores)}
+                ></span>
+                {filterStoresText}
+              </label>
+              <label
+                style={styles.filterCheckboxStyle(showService)}
+                onClick={() => setShowService((s) => !s)}
+              >
+                <span
+                  style={styles.filterCheckboxIndicatorStyle(showService)}
+                ></span>
+                {filterServiceText}
+              </label>
+              <label
+                style={styles.filterCheckboxStyle(showCharging)}
+                onClick={() => setShowCharging((s) => !s)}
+              >
+                <span
+                  style={styles.filterCheckboxIndicatorStyle(showCharging)}
+                ></span>
+                {filterChargingText}
+              </label>
+            </div>
+          )}
         </div>
+
+        {/* Dealer List Area */}
         <div ref={listContainerRef} style={styles.dealerListContainerStyle}>
+          {/* Conditional Rendering: No Results or Dealer Cards */}
           {filteredDealers.length === 0 && !isDealersLoading ? (
             <div
               style={{
                 padding: theme.spacing(4),
                 textAlign: "center",
                 color: theme.colors.onSurfaceVariant,
-                ...theme.typography.bodyMedium,
               }}
             >
               {noResultsText}
             </div>
           ) : (
             <>
-              {paginatedDealers.map((dealer) => (
+              {/* Use displayedDealers which handles pagination/infinite scroll */}
+              {displayedDealers.map((dealer) => (
                 <DealerCard
                   key={dealer.id}
                   dealer={dealer}
@@ -1110,10 +1259,11 @@ export default function DealerLocator(props) {
                   onSelect={handleDealerSelect}
                   distanceUnit={distanceUnit}
                   theme={theme}
-                  styles={styles}
+                  styles={styles} // Pass the generated styles down
                 />
               ))}
-              {isLoadingMore && (
+              {/* Loading indicator for infinite scroll */}
+              {useInfiniteScroll && isLoadingMore && (
                 <div
                   style={{
                     padding: theme.spacing(2),
@@ -1131,21 +1281,39 @@ export default function DealerLocator(props) {
                       animation: "spin 1s linear infinite",
                     }}
                   />
+                  <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
                 </div>
               )}
             </>
           )}
         </div>
+
+        {/* Optional Pagination Controls */}
+        {!useInfiniteScroll && totalPages > 1 && (
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            theme={theme}
+            styles={styles}
+          />
+        )}
       </div>
 
       {/* Map Area */}
       <div style={styles.mapContainerStyle}>
         {showMapPlaceholder ? (
           <MapPlaceholder
-            message={apiKeyMissing ? "Mapbox Token Required" : "Map Preview"}
+            message={
+              apiKeyMissing
+                ? `${
+                    mapProvider === "mapbox" ? "Mapbox Token" : "Google API Key"
+                  } Required`
+                : "Map Preview"
+            }
             subtext={
               apiKeyMissing
-                ? "Add token in properties panel."
+                ? "Add credential in properties panel."
                 : "Map renders in Preview/Published site."
             }
             theme={theme}
@@ -1155,9 +1323,10 @@ export default function DealerLocator(props) {
           <MapWrapper
             mapProvider={actualMapProvider}
             mapboxAccessToken={mapboxAccessToken}
+            googleApiKey={googleApiKey} // Pass even if mapbox, for API state hook
             center={activeMapCenter}
             zoom={activeMapZoom}
-            dealers={filteredDealers}
+            dealers={filteredDealers} // Pass all filtered dealers for markers
             selectedDealer={selectedDealer}
             userLocation={userLocation}
             searchLocation={searchLocation}
@@ -1166,14 +1335,16 @@ export default function DealerLocator(props) {
             theme={theme}
             distanceUnit={distanceUnit}
             mapboxMapStyleUrl={mapboxMapStyleUrl}
-            hideControls={true}
-            navigationControl={false}
-            attributionControl={false}
+            googleMapStyleId={googleMapStyleId}
+            // Map controls are handled internally by MapWrapper based on its props now
+            hideControls={false} // Example: explicitly show controls
+            navigationControl={true}
+            attributionControl={true}
           />
         )}
       </div>
 
-      {/* Detail Panel (Drawer/Sheet) - Rendered last */}
+      {/* Detail Panel (Rendered last for higher z-index conceptually) */}
       <DealerDetailPanel
         dealer={selectedDealer}
         isOpen={isDetailOpen}
@@ -1181,12 +1352,12 @@ export default function DealerLocator(props) {
         distanceUnit={distanceUnit}
         isMobile={isMobile}
         theme={theme}
-        styles={styles}
+        styles={styles} // Pass generated styles
         contactLabel={contactLabel}
         hoursLabel={hoursLabel}
         servicesLabel={servicesLabel}
         getDirectionsText={getDirectionsText}
-        mapProvider={actualMapProvider}
+        mapProvider={actualMapProvider} // Use actual provider
         isExpanded={drawerExpanded}
         onToggleExpanded={handleToggleDrawerExpanded}
       />
@@ -1229,12 +1400,11 @@ addPropertyControls(DealerLocator, {
     hidden: (props) => props.mapProvider !== "google",
     group: "_mapGroup",
   },
-  googleMapStyle: {
-    title: "Google Style",
-    type: ControlType.Enum,
+  googleMapStyleId: {
+    title: "Google Style ID",
+    type: ControlType.String,
     defaultValue: "monochrome_minimal",
-    options: GOOGLE_MAP_STYLES.map((s) => s.id),
-    optionTitles: GOOGLE_MAP_STYLES.map((s) => s.name),
+    description: "Use 'standard' or custom style ID.",
     hidden: (props) => props.mapProvider !== "google",
     group: "_mapGroup",
   },
@@ -1267,14 +1437,22 @@ addPropertyControls(DealerLocator, {
     defaultValue: "https://booking-engine.sagarsiwach.workers.dev/dealer",
     group: "_dataGroup",
   },
+  useInfiniteScroll: {
+    title: "Use Infinite Scroll",
+    type: ControlType.Boolean,
+    defaultValue: true,
+    description: "Loads more items on scroll instead of pagination.",
+    group: "_dataGroup",
+  },
   resultsPerPage: {
-    title: "Results Per Page",
+    title: "Items Per Load",
     type: ControlType.Number,
-    defaultValue: 7,
+    defaultValue: 10,
     min: 1,
-    max: 20,
+    max: 50,
     step: 1,
     displayStepper: true,
+    description: "Items per page (Pagination) or per scroll load (Infinite).",
     group: "_dataGroup",
   },
 
@@ -1289,8 +1467,7 @@ addPropertyControls(DealerLocator, {
   description: {
     title: "Description",
     type: ControlType.String,
-    defaultValue:
-      "Discover our network of 200+ Certified Partners — your go-to spots for test rides, purchases, or expert repairs.",
+    defaultValue: "Discover our network of partners.",
     group: "_featuresGroup",
   },
   showSearchBar: {
@@ -1321,15 +1498,27 @@ addPropertyControls(DealerLocator, {
     group: "_appearanceGroup",
   },
   secondaryColor: {
-    title: "Secondary",
+    title: "Secondary (Text)",
     type: ControlType.Color,
     defaultValue: "#6B7280",
     group: "_appearanceGroup",
   },
-  accentColor: {
-    title: "Accent (Services)",
+  salesColor: {
+    title: "Sales Color",
     type: ControlType.Color,
-    defaultValue: "#16A34A",
+    defaultValue: "#0284C7",
+    group: "_appearanceGroup",
+  },
+  serviceColor: {
+    title: "Service Color",
+    type: ControlType.Color,
+    defaultValue: "#DC2626",
+    group: "_appearanceGroup",
+  },
+  accentColor: {
+    title: "Charging/Accent",
+    type: ControlType.Color,
+    defaultValue: "#22C55E",
     group: "_appearanceGroup",
   },
   backgroundColor: {
@@ -1339,7 +1528,7 @@ addPropertyControls(DealerLocator, {
     group: "_appearanceGroup",
   },
   surfaceColor: {
-    title: "Surface",
+    title: "Surface (Cards)",
     type: ControlType.Color,
     defaultValue: "#FFFFFF",
     group: "_appearanceGroup",
@@ -1369,9 +1558,9 @@ addPropertyControls(DealerLocator, {
   showShadows: {
     title: "Show Shadows",
     type: ControlType.Boolean,
-    defaultValue: false,
+    defaultValue: true,
     group: "_appearanceGroup",
-  },
+  }, // Enabled shadows by default
   detailPanelWidth: {
     title: "Drawer Width (Desktop)",
     type: ControlType.Number,
@@ -1415,7 +1604,7 @@ addPropertyControls(DealerLocator, {
   noResultsText: {
     title: "No Results Text",
     type: ControlType.String,
-    defaultValue: "No locations found.",
+    defaultValue: "No locations found matching your criteria.",
     group: "_textGroup",
   },
   loadingText: {
