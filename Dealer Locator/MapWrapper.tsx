@@ -147,6 +147,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
   const mapInitializedRef = useRef(false); // Track if map instance is created
   const markersReadyFiredRef = useRef(false); // Track if onMarkersReady was called
   const mapLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Use NodeJS.Timeout for clarity
+  // Removed isRenderedRef and markersInitializedRef
 
   const isMapbox = mapProvider === "mapbox";
 
@@ -297,8 +298,8 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
         mapboxMapRef.current = null;
       }
     }
-
-    isRenderedRef.current = false;
+ 
+    // Removed isRenderedRef reset
     markersReadyFiredRef.current = false;
     mapInitializedRef.current = false; // Reset map initialized flag
     console.log("Mapbox cleanup complete.");
@@ -328,12 +329,15 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
         markersReadyFiredRef.current = true;
       }
 
-      return cleanupMap; // Ensure cleanup if conditions change
+      // If skipping map init, ensure cleanup function is still returned
+      // in case dependencies change later and require cleanup.
+      return cleanupMap;
     }
-
-    // Cleanup existing map before reinitializing
-    if (mapboxMapRef.current) {
-      cleanupMap();
+ 
+    // Prevent re-initialization if map already exists and essential props haven't changed
+    if (mapInitializedRef.current && mapboxMapRef.current) {
+        console.log("Map already initialized, skipping re-init.");
+        return cleanupMap; // Still return cleanup in case props change later
     }
 
     console.log("Initializing Mapbox Map...");
@@ -384,6 +388,9 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       map.on("load", () => {
         console.log("Mapbox map loaded.");
         map.on("click", handleMapInteraction); // Attach click listener here
+ 
+        // Ensure map resizes if container size changes after load
+        map.resize();
  
         // Markers will be handled by the dedicated marker effect.
         // Ensure onMarkersReady is called if no dealers exist.
@@ -437,8 +444,8 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     hideControls,
     navigationControl,
     attributionControl,
-    // Removed dealers, initializeMarkers, onMarkersReady, cleanupMap, handleMapInteraction
-    // These are handled in other effects or are stable callbacks
+    // Removed dealers, onMarkersReady, cleanupMap, handleMapInteraction
+    // These are handled in other effects or are stable callbacks/refs
   ]); // Keep center/zoom out as they are handled separately
 
   // --- Mapbox Marker Creation/Update Effect ---
