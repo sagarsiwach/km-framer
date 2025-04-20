@@ -738,8 +738,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
                 theme.colors.primary || "#007AFF"
               }; opacity: 0.5; animation: ripple 1.5s infinite ease-out;"></div>
             </div>
-            <style> @keyframes ripple { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } } </style>
-          `;
+          `; // Removed inline <style> tag
 
       const userMarker = new mapboxgl.Marker({
         element: userMarkerEl,
