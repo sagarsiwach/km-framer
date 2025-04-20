@@ -146,6 +146,8 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
   const mapboxPopupRef = useRef<Popup | null>(null);
   const isRenderedRef = useRef(false);
   const markersReadyFiredRef = useRef(false);
+  const markersInitializedRef = useRef(false);
+  const mapLoadTimeoutRef = useRef<number | null>(null);
 
   const isMapbox = mapProvider === "mapbox";
 
@@ -177,23 +179,130 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       if (!features || features.length === 0) {
         console.log("Map background clicked");
         onMapClick();
-        mapboxPopupRef.current?.remove(); // Close popup on map click
+        if (mapboxPopupRef.current) {
+          mapboxPopupRef.current.remove(); // Close popup on map click
+        }
       }
     },
     [onMapClick]
   );
 
+  // --- Main initialization method for markers ---
+  const initializeMarkers = useCallback(() => {
+    if (!mapboxMapRef.current || !isMapbox) {
+      console.log("Cannot initialize markers yet: Map not ready");
+      return false;
+    }
+
+    console.log("Initializing markers for the first time:", dealers.length);
+    markersInitializedRef.current = true;
+
+    const currentMap = mapboxMapRef.current;
+    const newMarkers: { [id: string]: Marker } = {};
+    let validDealersCount = 0;
+
+    try {
+      // Process each dealer
+      dealers.forEach((dealer) => {
+        // Enhanced validation for coordinates
+        if (
+          !dealer.coordinates ||
+          typeof dealer.coordinates.lat !== "number" ||
+          typeof dealer.coordinates.lng !== "number" ||
+          isNaN(dealer.coordinates.lat) ||
+          isNaN(dealer.coordinates.lng)
+        ) {
+          console.warn(
+            `Invalid coordinates for dealer ${dealer.name || dealer.id}`,
+            dealer.coordinates
+          );
+          return; // Skip this dealer
+        }
+
+        validDealersCount++;
+        const dealerId = dealer.id;
+        const isSelected = selectedDealer?.id === dealerId;
+
+        // Create marker element using the SVG function
+        const markerEl = document.createElement("div");
+        markerEl.className = `dealer-marker dealer-marker-${dealerId}`;
+        markerEl.innerHTML = getMarkerSvg(dealer, isSelected, theme);
+
+        // Create and add the marker
+        const marker = new mapboxgl.Marker({
+          element: markerEl,
+          anchor: "bottom", // Anchor at the tip of the pin
+        })
+          .setLngLat([dealer.coordinates.lng, dealer.coordinates.lat])
+          .addTo(currentMap);
+
+        // Add click handler to the marker
+        marker.getElement().addEventListener("click", () => {
+          console.log(`Marker clicked: ${dealer.name}`);
+          onMarkerClick(dealer);
+        });
+
+        newMarkers[dealerId] = marker;
+      });
+
+      console.log(
+        `Created ${validDealersCount} valid markers out of ${dealers.length} dealers`
+      );
+
+      // Update markers ref
+      mapboxMarkersRef.current = {
+        ...newMarkers,
+        ...(mapboxMarkersRef.current["user-location"]
+          ? {
+              "user-location": mapboxMarkersRef.current["user-location"],
+            }
+          : {}),
+      };
+
+      // Notify parent that markers are now rendered
+      if (
+        !markersReadyFiredRef.current &&
+        typeof onMarkersReady === "function"
+      ) {
+        console.log("Notifying parent that markers are ready");
+        onMarkersReady();
+        markersReadyFiredRef.current = true;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error initializing markers:", error);
+      // Still notify parent even if there was an error
+      if (
+        !markersReadyFiredRef.current &&
+        typeof onMarkersReady === "function"
+      ) {
+        onMarkersReady();
+        markersReadyFiredRef.current = true;
+      }
+      return false;
+    }
+  }, [isMapbox, dealers, selectedDealer, onMarkerClick, theme, onMarkersReady]);
+
   // --- Cleanup function ---
   const cleanupMap = useCallback(() => {
     console.log("Cleaning up Mapbox instance...");
+    if (mapLoadTimeoutRef.current) {
+      clearTimeout(mapLoadTimeoutRef.current);
+      mapLoadTimeoutRef.current = null;
+    }
+
     if (mapboxPopupRef.current) {
       mapboxPopupRef.current.remove();
       mapboxPopupRef.current = null;
     }
+
     Object.values(mapboxMarkersRef.current).forEach((marker) =>
       marker.remove()
     );
+
     mapboxMarkersRef.current = {};
+
     if (mapboxMapRef.current) {
       try {
         // Unbind events manually if necessary, although remove() should handle most
@@ -205,8 +314,10 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
         mapboxMapRef.current = null;
       }
     }
+
     isRenderedRef.current = false;
     markersReadyFiredRef.current = false;
+    markersInitializedRef.current = false;
     console.log("Mapbox cleanup complete.");
   }, [handleMapInteraction]); // Include handleMapInteraction in dependencies
 
@@ -223,6 +334,17 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
         isCanvas: RenderTarget.current() === RenderTarget.canvas,
         hasToken: !!mapboxAccessToken,
       });
+
+      // Make sure we notify markers ready even if skipping map init
+      if (
+        !markersReadyFiredRef.current &&
+        typeof onMarkersReady === "function"
+      ) {
+        console.log("Notifying markers ready (map init skipped)");
+        onMarkersReady();
+        markersReadyFiredRef.current = true;
+      }
+
       return cleanupMap; // Ensure cleanup if conditions change
     }
 
@@ -275,28 +397,63 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
 
       mapboxMapRef.current = map;
 
+      // Try to initialize markers immediately rather than waiting for 'load' event
+      let markersInitialized = false;
+
+      if (dealers && dealers.length > 0) {
+        markersInitialized = initializeMarkers();
+      }
+
       map.on("load", () => {
         console.log("Mapbox map loaded.");
         isRenderedRef.current = true;
         map.on("click", handleMapInteraction); // Attach click listener here
 
-        // Notify on first load that map is ready
+        // If markers weren't initialized earlier, try again
         if (
+          !markersInitialized &&
+          !markersInitializedRef.current &&
+          dealers.length > 0
+        ) {
+          console.log("Trying to initialize markers after map load");
+          initializeMarkers();
+        } else if (
           !markersReadyFiredRef.current &&
           typeof onMarkersReady === "function"
         ) {
-          setTimeout(() => {
-            onMarkersReady();
-            markersReadyFiredRef.current = true;
-          }, 500); // Short delay to ensure map is fully rendered
+          // Make sure onMarkersReady is called even if we have no dealers
+          console.log("No markers to initialize, but notifying ready");
+          onMarkersReady();
+          markersReadyFiredRef.current = true;
         }
       });
 
       map.on("error", (e) => {
         console.error("Mapbox GL Error:", e.error?.message || e);
       });
+
+      // Set a fallback timeout to ensure markers get initialized
+      mapLoadTimeoutRef.current = window.setTimeout(() => {
+        if (
+          !markersReadyFiredRef.current &&
+          typeof onMarkersReady === "function"
+        ) {
+          console.log("Fallback timer: ensuring markers ready is fired");
+          onMarkersReady();
+          markersReadyFiredRef.current = true;
+        }
+      }, 5000) as unknown as number;
     } catch (error) {
       console.error("Failed to initialize Mapbox Map:", error);
+
+      // Notify ready even if there was an error
+      if (
+        !markersReadyFiredRef.current &&
+        typeof onMarkersReady === "function"
+      ) {
+        onMarkersReady();
+        markersReadyFiredRef.current = true;
+      }
     }
 
     return cleanupMap;
@@ -310,226 +467,309 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     cleanupMap,
     handleMapInteraction,
     onMarkersReady,
+    dealers,
+    initializeMarkers,
     // center and zoom are handled separately to prevent re-init
   ]);
 
   // --- Mapbox Marker Update Effect ---
   useEffect(() => {
-    if (!mapboxMapRef.current || !isRenderedRef.current || !isMapbox) {
-      console.log("Skipping marker update: Map not ready or not Mapbox.");
+    // If markers not initialized yet, try to initialize them now
+    if (
+      !markersInitializedRef.current &&
+      mapboxMapRef.current &&
+      isMapbox &&
+      dealers.length > 0
+    ) {
+      console.log("Trying to initialize markers in update effect");
+      initializeMarkers();
+      return;
+    }
+
+    if (!mapboxMapRef.current || !isMapbox) {
+      if (
+        !markersReadyFiredRef.current &&
+        typeof onMarkersReady === "function"
+      ) {
+        console.log("Map not ready, but notifying markers ready for stability");
+        onMarkersReady();
+        markersReadyFiredRef.current = true;
+      }
       return;
     }
 
     console.log(`Updating ${dealers.length} markers...`);
     const currentMap = mapboxMapRef.current;
     const newMarkers: { [id: string]: Marker } = {};
+    let validDealersCount = 0;
 
-    // 1. Add or Update Markers
-    dealers.forEach((dealer) => {
-      if (
-        !dealer.coordinates ||
-        !dealer.coordinates.lat ||
-        !dealer.coordinates.lng
-      ) {
-        console.warn(
-          `Invalid coordinates for dealer ${dealer.name || dealer.id}`,
-          dealer.coordinates
-        );
-        return; // Skip this dealer
-      }
+    try {
+      // 1. Process each dealer and create/update markers
+      dealers.forEach((dealer) => {
+        // Enhanced validation for coordinates
+        if (
+          !dealer.coordinates ||
+          typeof dealer.coordinates.lat !== "number" ||
+          typeof dealer.coordinates.lng !== "number" ||
+          isNaN(dealer.coordinates.lat) ||
+          isNaN(dealer.coordinates.lng)
+        ) {
+          console.warn(
+            `Invalid coordinates for dealer ${dealer.name || dealer.id}`,
+            dealer.coordinates
+          );
+          return; // Skip this dealer
+        }
 
-      const dealerId = dealer.id;
-      const isSelected = selectedDealer?.id === dealerId;
+        validDealersCount++;
+        const dealerId = dealer.id;
+        const isSelected = selectedDealer?.id === dealerId;
 
-      try {
-        // Create marker element using the SVG function
-        const markerEl = document.createElement("div");
-        markerEl.className = `dealer-marker dealer-marker-${dealerId}`;
-        markerEl.innerHTML = getMarkerSvg(dealer, isSelected, theme);
+        try {
+          // Create marker element using the SVG function
+          const markerEl = document.createElement("div");
+          markerEl.className = `dealer-marker dealer-marker-${dealerId}`;
+          markerEl.innerHTML = getMarkerSvg(dealer, isSelected, theme);
 
-        // Find the existing marker if any
-        const existingMarker = mapboxMarkersRef.current[dealerId];
+          // Find the existing marker if any
+          const existingMarker = mapboxMarkersRef.current[dealerId];
 
-        if (existingMarker) {
-          // CHANGE: First store the existing marker in newMarkers to ensure it's not removed
-          newMarkers[dealerId] = existingMarker;
+          if (existingMarker) {
+            // First store the existing marker in newMarkers to ensure it's not removed
+            newMarkers[dealerId] = existingMarker;
 
-          // Then update the marker properties
-          try {
-            existingMarker.getElement().innerHTML = markerEl.innerHTML;
+            // Then update the marker properties
+            try {
+              existingMarker.getElement().innerHTML = markerEl.innerHTML;
 
-            // Update position if needed
-            const currentPos = existingMarker.getLngLat();
-            if (
-              currentPos.lng !== dealer.coordinates.lng ||
-              currentPos.lat !== dealer.coordinates.lat
-            ) {
-              existingMarker.setLngLat([
-                dealer.coordinates.lng,
-                dealer.coordinates.lat,
-              ]);
+              // Update position if needed
+              const currentPos = existingMarker.getLngLat();
+              if (
+                currentPos.lng !== dealer.coordinates.lng ||
+                currentPos.lat !== dealer.coordinates.lat
+              ) {
+                existingMarker.setLngLat([
+                  dealer.coordinates.lng,
+                  dealer.coordinates.lat,
+                ]);
+              }
+            } catch (err) {
+              console.error("Error updating marker:", err);
+              existingMarker.remove(); // Remove problematic marker
+              // We'll create a new one below
+              delete newMarkers[dealerId]; // Remove from newMarkers since it failed
             }
-          } catch (err) {
-            console.error("Error updating marker:", err);
-            existingMarker.remove(); // Remove problematic marker
-            // We'll create a new one below
-            delete newMarkers[dealerId]; // Remove from newMarkers since it failed
           }
+
+          // If no existing marker or update failed, create a new one
+          if (!newMarkers[dealerId]) {
+            const marker = new mapboxgl.Marker({
+              element: markerEl,
+              anchor: "bottom", // Anchor at the tip of the pin
+            })
+              .setLngLat([dealer.coordinates.lng, dealer.coordinates.lat])
+              .addTo(currentMap);
+
+            // Add click handler to the marker
+            marker.getElement().addEventListener("click", () => {
+              console.log(`Marker clicked: ${dealer.name}`);
+              onMarkerClick(dealer);
+            });
+
+            newMarkers[dealerId] = marker;
+          }
+        } catch (error) {
+          console.error(
+            "Failed to create/update Mapbox Marker:",
+            error,
+            dealer
+          );
         }
+      });
 
-        // If no existing marker or update failed, create a new one
-        if (!newMarkers[dealerId]) {
-          const marker = new mapboxgl.Marker({
-            element: markerEl,
-            anchor: "bottom", // Anchor at the tip of the pin
-          })
-            .setLngLat([dealer.coordinates.lng, dealer.coordinates.lat])
-            .addTo(currentMap);
+      console.log(
+        `Updated ${validDealersCount} valid markers out of ${dealers.length} dealers`
+      );
 
-          // Add click handler to the marker
-          marker.getElement().addEventListener("click", () => {
-            console.log(`Marker clicked: ${dealer.name}`);
-            onMarkerClick(dealer);
-          });
-
-          newMarkers[dealerId] = marker;
+      // 2. Remove Old Markers (excluding user marker)
+      Object.keys(mapboxMarkersRef.current).forEach((oldDealerId) => {
+        if (oldDealerId !== "user-location" && !newMarkers[oldDealerId]) {
+          console.log(`Removing old marker: ${oldDealerId}`);
+          mapboxMarkersRef.current[oldDealerId].remove();
         }
-      } catch (error) {
-        console.error("Failed to create/update Mapbox Marker:", error, dealer);
+      });
+
+      // 3. Update the marker ref, preserving user marker if it exists
+      mapboxMarkersRef.current = {
+        ...newMarkers,
+        ...(mapboxMarkersRef.current["user-location"]
+          ? {
+              "user-location": mapboxMarkersRef.current["user-location"],
+            }
+          : {}),
+      };
+
+      // 4. Notify parent component that markers are rendered
+      if (
+        !markersReadyFiredRef.current &&
+        typeof onMarkersReady === "function"
+      ) {
+        console.log("Notifying that markers are now ready");
+        onMarkersReady();
+        markersReadyFiredRef.current = true;
       }
-    });
-
-    // 2. Remove Old Markers (excluding user marker)
-    Object.keys(mapboxMarkersRef.current).forEach((oldDealerId) => {
-      if (oldDealerId !== "user-location" && !newMarkers[oldDealerId]) {
-        console.log(`Removing old marker: ${oldDealerId}`);
-        mapboxMarkersRef.current[oldDealerId].remove();
+    } catch (error) {
+      console.error("Error processing markers:", error);
+      // Still notify parent even if there was an error
+      if (
+        !markersReadyFiredRef.current &&
+        typeof onMarkersReady === "function"
+      ) {
+        console.log(
+          "Notifying that markers processing is complete (with errors)"
+        );
+        onMarkersReady();
+        markersReadyFiredRef.current = true;
       }
-    });
-
-    // 3. Update the marker ref, preserving user marker if it exists
-    mapboxMarkersRef.current = {
-      ...newMarkers,
-      ...(mapboxMarkersRef.current["user-location"]
-        ? { "user-location": mapboxMarkersRef.current["user-location"] }
-        : {}),
-    };
-
-    // 4. Notify parent component that markers are rendered
-    if (!markersReadyFiredRef.current && typeof onMarkersReady === "function") {
-      console.log("Notifying that markers are now ready");
-      onMarkersReady();
-      markersReadyFiredRef.current = true;
     }
-  }, [isMapbox, dealers, selectedDealer, onMarkerClick, theme, onMarkersReady]);
+  }, [
+    isMapbox,
+    dealers,
+    selectedDealer,
+    onMarkerClick,
+    theme,
+    onMarkersReady,
+    initializeMarkers,
+  ]);
 
   // --- Mapbox Popup Update Effect ---
   useEffect(() => {
-    if (!mapboxMapRef.current || !isRenderedRef.current || !isMapbox) return;
-    const currentMap = mapboxMapRef.current;
+    if (!mapboxMapRef.current || !isMapbox) return;
 
+    // Just make sure any existing popup is removed
     if (mapboxPopupRef.current) {
       mapboxPopupRef.current.remove();
       mapboxPopupRef.current = null;
     }
 
-    if (selectedDealer) {
-      console.log(`Showing popup for: ${selectedDealer.name}`);
-      try {
-        const popupOffset = 35; // Adjust based on marker height for better positioning
-        mapboxPopupRef.current = new mapboxgl.Popup({
-          offset: [0, -popupOffset], // Negative vertical offset moves it up
-          closeButton: false,
-          closeOnClick: false,
-          maxWidth: "240px",
-          className: "dealer-popup",
-          anchor: "bottom", // Anchor relative to marker's bottom
-        })
-          .setLngLat([
-            selectedDealer.coordinates.lng,
-            selectedDealer.coordinates.lat,
-          ])
-          .setHTML(
-            createEnhancedPopupContent(selectedDealer, theme, distanceUnit)
-          )
-          .addTo(currentMap);
-      } catch (error) {
-        console.error("Failed to create Mapbox Popup:", error);
-      }
-    }
-  }, [isMapbox, selectedDealer, theme, distanceUnit]); // Dependencies
+    // We don't need to create a new popup since we're using the drawer
+  }, [isMapbox, selectedDealer]);
 
   // --- Map Panning & Zooming Effects ---
   useEffect(() => {
-    if (!mapboxMapRef.current || !isRenderedRef.current || !isMapbox) return;
-    const targetLocation = searchLocation || userLocation;
-    if (!targetLocation) return;
-    console.log("Panning map to target location:", targetLocation);
-    mapboxMapRef.current.flyTo({
-      center: [targetLocation.lng, targetLocation.lat],
-      zoom: searchLocation ? 13 : 12,
-      duration: 1000,
-      essential: true,
-    });
-  }, [isMapbox, searchLocation, userLocation]); // Dependencies
+    if (!mapboxMapRef.current || !isMapbox) return;
 
+    // Only respond to explicit location searches, not just any userLocation change
+    const targetLocation = searchLocation;
+    if (!targetLocation) return;
+
+    console.log("Panning map to search location:", targetLocation);
+    try {
+      mapboxMapRef.current.flyTo({
+        center: [targetLocation.lng, targetLocation.lat],
+        zoom: 13, // Use a consistent zoom for search results
+        duration: 1000,
+        essential: true,
+      });
+    } catch (error) {
+      console.error("Error during map flyTo:", error);
+    }
+  }, [isMapbox, searchLocation]); // Only depend on searchLocation
+
+  // Handle direct centering of map on user location
   useEffect(() => {
-    if (!mapboxMapRef.current || !isRenderedRef.current || !isMapbox) return;
+    if (!mapboxMapRef.current || !isMapbox || !userLocation) return;
+
+    // Only center if there's no search location active
+    if (searchLocation) return;
+
+    // Check if this is the initial userLocation appearance
+    if (userLocation && !mapboxMarkersRef.current["user-location"]) {
+      console.log("Centering map on initial user location");
+      try {
+        mapboxMapRef.current.flyTo({
+          center: [userLocation.lng, userLocation.lat],
+          zoom: 13,
+          duration: 1000,
+          essential: true,
+        });
+      } catch (error) {
+        console.error("Error centering on user location:", error);
+      }
+    }
+  }, [isMapbox, userLocation, searchLocation]);
+
+  // Handle center/zoom changes directly
+  useEffect(() => {
+    if (!mapboxMapRef.current || !isMapbox) return;
     const currentMap = mapboxMapRef.current;
-    const targetCenter = Array.isArray(center)
-      ? center
-      : [center.lng, center.lat];
-    const currentCenter = currentMap.getCenter();
-    const centerDiff =
-      Math.abs(currentCenter.lng - targetCenter[0]) +
-      Math.abs(currentCenter.lat - targetCenter[1]);
-    if (centerDiff > 0.0001) {
-      currentMap.panTo(targetCenter, { duration: 300, essential: true });
+
+    try {
+      const targetCenter = Array.isArray(center)
+        ? center
+        : [center.lng, center.lat];
+      const currentCenter = currentMap.getCenter();
+
+      // Only pan if there's a significant difference
+      const centerDiff =
+        Math.abs(currentCenter.lng - targetCenter[0]) +
+        Math.abs(currentCenter.lat - targetCenter[1]);
+
+      if (centerDiff > 0.0001) {
+        console.log("Panning to new center:", targetCenter);
+        currentMap.panTo(targetCenter, {
+          duration: 300,
+          essential: true,
+        });
+      }
+
+      // Set zoom if different
+      if (Math.abs(currentMap.getZoom() - zoom) > 0.1) {
+        console.log("Setting new zoom:", zoom);
+        currentMap.setZoom(zoom);
+      }
+    } catch (error) {
+      console.error("Error updating map position:", error);
     }
-    if (Math.abs(currentMap.getZoom() - zoom) > 0.1) {
-      currentMap.setZoom(zoom);
-    }
-  }, [isMapbox, center, zoom]); // Dependencies
+  }, [isMapbox, center, zoom]); // Depend on center and zoom
 
   // --- User location marker ---
   useEffect(() => {
-    if (
-      !mapboxMapRef.current ||
-      !userLocation ||
-      !isRenderedRef.current ||
-      !isMapbox
-    )
-      return;
+    if (!mapboxMapRef.current || !userLocation || !isMapbox) return;
 
-    // Remove existing user marker if it exists
-    if (mapboxMarkersRef.current["user-location"]) {
-      mapboxMarkersRef.current["user-location"].remove();
-      delete mapboxMarkersRef.current["user-location"]; // Clean up ref
-    }
+    console.log("Adding/updating user location marker");
 
-    const userMarkerEl = document.createElement("div");
-    userMarkerEl.className = "user-location-marker";
-    userMarkerEl.innerHTML = `
-          <div style="width: 16px; height: 16px; border-radius: 50%; background-color: ${
-            theme.colors.primary || "#007AFF"
-          }; border: 2px solid white; box-shadow: 0 0 0 2px rgba(0,0,0,0.1);">
-            <div style="position: absolute; top: -4px; left: -4px; width: 24px; height: 24px; border-radius: 50%; background: transparent; border: 1px solid ${
+    try {
+      // Remove existing user marker if it exists
+      if (mapboxMarkersRef.current["user-location"]) {
+        mapboxMarkersRef.current["user-location"].remove();
+        delete mapboxMarkersRef.current["user-location"]; // Clean up ref
+      }
+
+      const userMarkerEl = document.createElement("div");
+      userMarkerEl.className = "user-location-marker";
+      userMarkerEl.innerHTML = `
+            <div style="width: 16px; height: 16px; border-radius: 50%; background-color: ${
               theme.colors.primary || "#007AFF"
-            }; opacity: 0.5; animation: ripple 1.5s infinite ease-out;"></div>
-          </div>
-          <style> @keyframes ripple { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } } </style>
-        `;
+            }; border: 2px solid white; box-shadow: 0 0 0 2px rgba(0,0,0,0.1);">
+              <div style="position: absolute; top: -4px; left: -4px; width: 24px; height: 24px; border-radius: 50%; background: transparent; border: 1px solid ${
+                theme.colors.primary || "#007AFF"
+              }; opacity: 0.5; animation: ripple 1.5s infinite ease-out;"></div>
+            </div>
+            <style> @keyframes ripple { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } } </style>
+          `;
 
-    const userMarker = new mapboxgl.Marker({
-      element: userMarkerEl,
-      anchor: "center",
-    })
-      .setLngLat([userLocation.lng, userLocation.lat])
-      .addTo(mapboxMapRef.current);
+      const userMarker = new mapboxgl.Marker({
+        element: userMarkerEl,
+        anchor: "center",
+      })
+        .setLngLat([userLocation.lng, userLocation.lat])
+        .addTo(mapboxMapRef.current);
 
-    mapboxMarkersRef.current["user-location"] = userMarker; // Store with specific ID
-
-    // No return cleanup needed here as the main cleanupMap handles it
+      mapboxMarkersRef.current["user-location"] = userMarker; // Store with specific ID
+    } catch (error) {
+      console.error("Error creating user location marker:", error);
+    }
   }, [isMapbox, userLocation, theme]); // Dependencies
 
   // --- Render the Map Container ---

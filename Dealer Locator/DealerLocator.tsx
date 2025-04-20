@@ -81,7 +81,6 @@ export default function DealerLocator(props) {
     resultsPerPage = 7,
     useInfiniteScroll = true,
     showSearchBar = true,
-    showFilters = true,
     allowLocationAccess = true,
 
     // Theme Configuration
@@ -99,9 +98,6 @@ export default function DealerLocator(props) {
 
     // Text Labels
     searchPlaceholder = "Area / Pincode",
-    filterStoresText = "Stores",
-    filterServiceText = "Service",
-    filterChargingText = "Charging",
     noResultsText = "No locations found.",
     loadingText = "Loading...",
     getDirectionsText = "Navigate",
@@ -144,15 +140,13 @@ export default function DealerLocator(props) {
   const [activeMapZoom, setActiveMapZoom] = useState(initialZoom);
   const [markersRendered, setMarkersRendered] = useState(false);
 
-  // Filter States
-  const [showStores, setShowStores] = useState(true);
-  const [showService, setShowService] = useState(true);
-  const [showCharging, setShowCharging] = useState(true);
-
   // ==================== REFS ====================
   const geocoderRef = useRef(null);
   const listContainerRef = useRef(null);
   const markersProcessedRef = useRef(false);
+  const userLocationRequestedRef = useRef(false);
+  const mapCenteringTimeoutRef = useRef(null);
+  const dealerSelectTimeoutRef = useRef(null);
 
   // ==================== HOOKS ====================
   // Data fetching hook
@@ -190,6 +184,8 @@ export default function DealerLocator(props) {
 
   // Pagination calculation
   const displayedDealers = useMemo(() => {
+    if (!filteredDealers || filteredDealers.length === 0) return [];
+
     if (useInfiniteScroll) {
       return filteredDealers.slice(0, currentPage * resultsPerPage);
     } else {
@@ -201,6 +197,7 @@ export default function DealerLocator(props) {
   }, [filteredDealers, currentPage, resultsPerPage, useInfiniteScroll]);
 
   const totalPages = useMemo(() => {
+    if (!filteredDealers || filteredDealers.length === 0) return 0;
     return Math.ceil(filteredDealers.length / resultsPerPage);
   }, [filteredDealers, resultsPerPage]);
 
@@ -254,14 +251,37 @@ export default function DealerLocator(props) {
   useEffect(() => {
     console.log(`Map provider changed to: ${mapProvider}`);
     setActiveMapCenter([78.9629, 20.5937]); // Center of India
-    setActiveMapZoom(initialZoom);
+    setActiveMapZoom(4.5); // Lower zoom to show all of India
     setSearchLocation(null);
     setSelectedDealer(null);
     setIsDetailOpen(false);
     setMapBackgroundOverlay(false);
     setComponentError(null);
     setMarkersRendered(false);
+    markersProcessedRef.current = false;
+    userLocationRequestedRef.current = false;
+
+    // Clear any pending timeouts
+    if (mapCenteringTimeoutRef.current) {
+      clearTimeout(mapCenteringTimeoutRef.current);
+      mapCenteringTimeoutRef.current = null;
+    }
+
+    if (dealerSelectTimeoutRef.current) {
+      clearTimeout(dealerSelectTimeoutRef.current);
+      dealerSelectTimeoutRef.current = null;
+    }
   }, [mapProvider, initialZoom]);
+
+  // Request location on mount
+  useEffect(() => {
+    // Request user location on component mount - only once
+    if (allowLocationAccess && !userLocationRequestedRef.current) {
+      console.log("Automatically requesting user location on mount");
+      userLocationRequestedRef.current = true;
+      getUserLocation();
+    }
+  }, [allowLocationAccess, getUserLocation]);
 
   // Markers ready notification
   useEffect(() => {
@@ -271,9 +291,10 @@ export default function DealerLocator(props) {
       !markersProcessedRef.current
     ) {
       const timer = setTimeout(() => {
+        console.log("Setting markers as rendered");
         setMarkersRendered(true);
         markersProcessedRef.current = true;
-      }, 1500);
+      }, 1000);
 
       return () => clearTimeout(timer);
     }
@@ -284,16 +305,40 @@ export default function DealerLocator(props) {
     if (userLocation) {
       console.log("User location updated:", userLocation);
 
-      // Update map center when in location search mode
-      if (searchMode === "location") {
-        setActiveMapCenter([userLocation.lng, userLocation.lat]);
-        setActiveMapZoom(13);
+      // Center map if location was specifically requested by user
+      if (userLocationRequestedRef.current) {
         console.log("Centering map on user location");
+
+        // Clear any existing timeout
+        if (mapCenteringTimeoutRef.current) {
+          clearTimeout(mapCenteringTimeoutRef.current);
+        }
+
+        // Use timeout to ensure map has time to initialize properly
+        mapCenteringTimeoutRef.current = setTimeout(() => {
+          setActiveMapCenter([userLocation.lng, userLocation.lat]);
+          setActiveMapZoom(12); // Zoom level for user location - showing neighborhood
+          mapCenteringTimeoutRef.current = null;
+        }, 200);
       }
     }
-  }, [userLocation, searchMode]);
+  }, [userLocation]);
 
-  // Process and sort dealers
+  // Fallback for markers ready
+  useEffect(() => {
+    // Force markers to be rendered after a timeout even if callback wasn't received
+    const timer = setTimeout(() => {
+      if (!markersRendered && !markersProcessedRef.current) {
+        console.log("Force setting markers as rendered after timeout");
+        setMarkersRendered(true);
+        markersProcessedRef.current = true;
+      }
+    }, 3000); // Fallback timeout
+
+    return () => clearTimeout(timer);
+  }, [markersRendered]);
+
+  // Process and sort dealers with filtering of invalid coordinates
   useEffect(() => {
     if (RenderTarget.current() === RenderTarget.canvas) {
       setFilteredDealers(SAMPLE_DEALERS.slice(0, 5));
@@ -306,17 +351,37 @@ export default function DealerLocator(props) {
     console.log("Processing and sorting dealers...");
     const locationForDistance = searchLocation || userLocation || null;
 
-    // Add distance to dealers if location is available
-    let enhancedDealers = allDealers.map((dealer) => ({
-      ...dealer,
-      distance: locationForDistance
-        ? calculateDistance(
-            locationForDistance,
-            dealer.coordinates,
-            distanceUnit
-          )
-        : undefined,
-    }));
+    // Add distance to dealers and filter out invalid coordinates
+    let enhancedDealers = allDealers
+      .filter((dealer) => {
+        // Filter out dealers with missing or invalid coordinates
+        if (
+          !dealer.coordinates ||
+          typeof dealer.coordinates.lat !== "number" ||
+          typeof dealer.coordinates.lng !== "number" ||
+          isNaN(dealer.coordinates.lat) ||
+          isNaN(dealer.coordinates.lng)
+        ) {
+          console.warn(
+            `Filtering out dealer with invalid coordinates: ${
+              dealer.name || dealer.id
+            }`,
+            dealer.coordinates
+          );
+          return false;
+        }
+        return true;
+      })
+      .map((dealer) => ({
+        ...dealer,
+        distance: locationForDistance
+          ? calculateDistance(
+              locationForDistance,
+              dealer.coordinates,
+              distanceUnit
+            )
+          : undefined,
+      }));
 
     // Sort dealers: featured first, then by distance or alphabetically
     enhancedDealers.sort((a, b) => {
@@ -354,35 +419,15 @@ export default function DealerLocator(props) {
       setSearchMode("none");
     }
 
-    // Apply service type filters
-    if (showFilters) {
-      const anyFilterActive = showStores || showService || showCharging;
-
-      if (anyFilterActive) {
-        enhancedDealers = enhancedDealers.filter((d) => {
-          const services = d.services?.map((s) => s.toLowerCase()) || [];
-          const isStore =
-            services.includes("sales") || services.includes("store");
-          const isService =
-            services.includes("service") || services.includes("repair");
-          const isCharging = services.includes("charging");
-
-          return (
-            (showStores && isStore) ||
-            (showService && isService) ||
-            (showCharging && isCharging)
-          );
-        });
-      }
-    }
-
     // Set filtered dealers for the list
     setFilteredDealers(enhancedDealers);
 
     // Reset to page 1 when filter changes
     if (currentPage !== 1) {
       setCurrentPage(1);
-      listContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
+      if (listContainerRef.current) {
+        listContainerRef.current.scrollTo({ top: 0, behavior: "auto" });
+      }
     }
   }, [
     allDealers,
@@ -392,10 +437,6 @@ export default function DealerLocator(props) {
     distanceUnit,
     isDealersLoading,
     currentPage,
-    showStores,
-    showService,
-    showCharging,
-    showFilters,
   ]);
 
   // Infinite scroll handler
@@ -630,47 +671,6 @@ export default function DealerLocator(props) {
       cursor: "pointer",
       color: theme.colors.onSurfaceVariant,
     };
-
-    const filterContainerStyle = {
-      display: "flex",
-      flexWrap: "wrap",
-      gap: theme.spacing(1.5),
-      marginTop: theme.spacing(2),
-    };
-
-    const filterCheckboxStyle = (isActive) => ({
-      display: "flex",
-      alignItems: "center",
-      gap: theme.spacing(0.75),
-      fontSize: "14px",
-      fontWeight: 400,
-      color: theme.colors.onSurfaceVariant,
-      cursor: "pointer",
-      userSelect: "none",
-      padding: `${theme.spacing(0.5)} ${theme.spacing(1)}`,
-      borderRadius: theme.shape.small,
-      transition: "background-color 0.15s ease-in-out",
-    });
-
-    const filterCheckboxIndicatorStyle = (isActive) => ({
-      width: "18px",
-      height: "18px",
-      borderRadius: theme.shape.small,
-      border: `1.5px solid ${
-        isActive ? theme.colors.primary : theme.colors.outline
-      }`,
-      backgroundColor: isActive ? theme.colors.primary : "transparent",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      transition: "background-color 0.2s, border-color 0.2s",
-      flexShrink: 0,
-      content: isActive
-        ? `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${encodeURIComponent(
-            theme.colors.onPrimary
-          )}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>')`
-        : '""',
-    });
 
     const dealerListContainerStyle = {
       flex: 1,
@@ -1006,9 +1006,6 @@ export default function DealerLocator(props) {
       searchInputContainerStyle,
       searchInputStyle,
       searchIconButtonStyle,
-      filterContainerStyle,
-      filterCheckboxStyle,
-      filterCheckboxIndicatorStyle,
       dealerListContainerStyle,
       dealerCardStyleBase,
       dealerCardContentStyle,
@@ -1058,6 +1055,7 @@ export default function DealerLocator(props) {
 
   // ==================== EVENT HANDLERS ====================
   // Geocoding handler
+  // Update geocoding handler for better search experience and India restriction
   const handleGeocodeSearch = useCallback(
     async (query) => {
       if (!query) {
@@ -1065,6 +1063,7 @@ export default function DealerLocator(props) {
         return;
       }
       if (RenderTarget.current() === RenderTarget.canvas) return;
+
       setSearchLocation(null);
       setComponentError(null);
       console.log(`Geocoding search for: "${query}"`);
@@ -1078,10 +1077,16 @@ export default function DealerLocator(props) {
           const proximity = userLocation
             ? `&proximity=${userLocation.lng},${userLocation.lat}`
             : "";
-          const country = "&country=IN"; // Bias search to India
+
+          // Strictly enforce India search with multiple constraints
+          const country = "&country=in"; // India country code
+          const bbox = "&bbox=68.1,6.5,97.4,35.5"; // India bounding box
+          const types =
+            "&types=region,district,place,locality,neighborhood,address,postcode"; // Valid result types
+
           const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
             query
-          )}.json?access_token=${mapboxAccessToken}&limit=1${country}${proximity}`;
+          )}.json?access_token=${mapboxAccessToken}&limit=1${country}${proximity}${bbox}${types}`;
 
           const response = await fetch(url);
           const data = await response.json();
@@ -1093,38 +1098,162 @@ export default function DealerLocator(props) {
           }
 
           if (data.features?.length > 0) {
-            const [lng, lat] = data.features[0].center;
-            console.log("Mapbox Geocoding result:", { lat, lng });
+            // Verify result is in India by checking context
+            const isInIndia = data.features[0].context?.some(
+              (ctx) => ctx.id.startsWith("country.") && ctx.short_code === "in"
+            );
+
+            if (!isInIndia) {
+              setComponentError(
+                "Search is restricted to locations in India only."
+              );
+              return;
+            }
+
+            const feature = data.features[0];
+            const [lng, lat] = feature.center;
+            console.log("Mapbox Geocoding result:", {
+              lat,
+              lng,
+              feature,
+            });
+
+            // Validate coordinates are within India bounds
+            if (lat < 6.5 || lat > 35.5 || lng < 68.1 || lng > 97.4) {
+              setComponentError(
+                "Search is restricted to locations in India only."
+              );
+              return;
+            }
+
             setSearchLocation({ lat, lng });
-            setActiveMapCenter([lng, lat]);
-            setActiveMapZoom(13);
+
+            // Clear any existing timeout
+            if (mapCenteringTimeoutRef.current) {
+              clearTimeout(mapCenteringTimeoutRef.current);
+            }
+
+            // Determine zoom level based on the result type/precision
+            let newZoom = 13; // Default zoom
+
+            // Adjust zoom based on the type of result
+            if (feature.place_type) {
+              const placeType = feature.place_type[0];
+              if (placeType === "country") newZoom = 5;
+              else if (placeType === "region") newZoom = 7; // State level
+              else if (placeType === "district") newZoom = 9;
+              else if (placeType === "place") newZoom = 11; // City level
+              else if (placeType === "locality" || placeType === "neighborhood")
+                newZoom = 13;
+              else if (placeType === "address" || placeType === "poi")
+                newZoom = 15;
+              else if (placeType === "postcode") newZoom = 12; // Pincode
+            }
+
+            // Use timeout to ensure consistent behavior
+            mapCenteringTimeoutRef.current = setTimeout(() => {
+              setActiveMapCenter([lng, lat]);
+              setActiveMapZoom(newZoom);
+              mapCenteringTimeoutRef.current = null;
+            }, 200);
+
             setSearchMode("location");
           } else {
             console.warn("Mapbox Geocoding: No results found.");
-            setComponentError("Could not find location for the search query.");
+            setComponentError(
+              "Could not find location in India. Please try a different search."
+            );
           }
         } else if (
           mapProvider === "google" &&
           geocoderRef.current instanceof window.google.maps.Geocoder
         ) {
+          // For Google Maps, similar strict restriction to India
           geocoderRef.current.geocode(
-            { address: query, region: "IN" },
+            {
+              address: query,
+              region: "in",
+              componentRestrictions: { country: "in" }, // Strictly enforce India
+              bounds: new window.google.maps.LatLngBounds(
+                new window.google.maps.LatLng(6.5, 68.1), // SW corner
+                new window.google.maps.LatLng(35.5, 97.4) // NE corner
+              ),
+            },
             (results, status) => {
               if (status === "OK" && results?.[0]) {
+                // Verify result is in India
+                const isInIndia = results[0].address_components.some(
+                  (component) =>
+                    component.types.includes("country") &&
+                    component.short_name === "IN"
+                );
+
+                if (!isInIndia) {
+                  setComponentError(
+                    "Search is restricted to locations in India only."
+                  );
+                  return;
+                }
+
                 const location = results[0].geometry.location;
                 const coords = {
                   lat: location.lat(),
                   lng: location.lng(),
                 };
-                console.log("Google Geocoding result:", coords);
+
+                // Validate coordinates are within India bounds
+                if (
+                  coords.lat < 6.5 ||
+                  coords.lat > 35.5 ||
+                  coords.lng < 68.1 ||
+                  coords.lng > 97.4
+                ) {
+                  setComponentError(
+                    "Search is restricted to locations in India only."
+                  );
+                  return;
+                }
+
+                console.log("Google Geocoding result:", coords, results[0]);
                 setSearchLocation(coords);
-                setActiveMapCenter([coords.lng, coords.lat]);
-                setActiveMapZoom(13);
+
+                // Clear any existing timeout
+                if (mapCenteringTimeoutRef.current) {
+                  clearTimeout(mapCenteringTimeoutRef.current);
+                }
+
+                // Determine zoom level based on the result type
+                let newZoom = 13; // Default zoom
+                const resultTypes = results[0].types || [];
+
+                if (resultTypes.includes("country")) newZoom = 5;
+                else if (resultTypes.includes("administrative_area_level_1"))
+                  newZoom = 7; // State
+                else if (resultTypes.includes("administrative_area_level_2"))
+                  newZoom = 9; // District
+                else if (resultTypes.includes("locality")) newZoom = 11; // City
+                else if (resultTypes.includes("sublocality"))
+                  newZoom = 13; // Area
+                else if (resultTypes.includes("postal_code"))
+                  newZoom = 12; // Pincode
+                else if (
+                  resultTypes.includes("street_address") ||
+                  resultTypes.includes("point_of_interest")
+                )
+                  newZoom = 15;
+
+                // Use timeout to ensure consistent behavior
+                mapCenteringTimeoutRef.current = setTimeout(() => {
+                  setActiveMapCenter([coords.lng, coords.lat]);
+                  setActiveMapZoom(newZoom);
+                  mapCenteringTimeoutRef.current = null;
+                }, 200);
+
                 setSearchMode("location");
               } else {
                 console.warn(`Google Geocoding failed: ${status}`);
                 setComponentError(
-                  "Could not find location for the search query."
+                  "Could not find location in India. Please try a different search."
                 );
               }
             }
@@ -1152,6 +1281,7 @@ export default function DealerLocator(props) {
     setSearchLocation(null);
     setComponentError(null);
     setSearchMode("none");
+    userLocationRequestedRef.current = false;
 
     // Reset map view to user location or default center of India
     if (userLocation) {
@@ -1164,12 +1294,39 @@ export default function DealerLocator(props) {
   };
 
   // Dealer selection handler
+  // Update dealer selection handler to validate coordinates first
   const handleDealerSelect = useCallback(
     (dealer) => {
       console.log("Dealer selected:", dealer.name);
+
+      // Validate coordinates before setting
+      if (
+        !dealer.coordinates ||
+        typeof dealer.coordinates.lat !== "number" ||
+        typeof dealer.coordinates.lng !== "number" ||
+        isNaN(dealer.coordinates.lat) ||
+        isNaN(dealer.coordinates.lng)
+      ) {
+        console.error("Selected dealer has invalid coordinates:", dealer);
+        setComponentError("This dealer has missing location data.");
+        return;
+      }
+
       setSelectedDealer(dealer);
-      setActiveMapCenter([dealer.coordinates.lng, dealer.coordinates.lat]);
-      setActiveMapZoom(14);
+
+      // Clear any existing timeout
+      if (dealerSelectTimeoutRef.current) {
+        clearTimeout(dealerSelectTimeoutRef.current);
+      }
+
+      // Use timeout to ensure consistent behavior
+      dealerSelectTimeoutRef.current = setTimeout(() => {
+        // Force the map to center exactly on these coordinates
+        setActiveMapCenter([dealer.coordinates.lng, dealer.coordinates.lat]);
+        setActiveMapZoom(14);
+        dealerSelectTimeoutRef.current = null;
+      }, 100);
+
       setIsDetailOpen(true);
       setMapBackgroundOverlay(true);
 
@@ -1182,10 +1339,12 @@ export default function DealerLocator(props) {
         `[data-dealer-id="${dealer.id}"]`
       );
 
-      cardElement?.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-      });
+      if (cardElement) {
+        cardElement.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }
     },
     [isMobile]
   );
@@ -1205,6 +1364,7 @@ export default function DealerLocator(props) {
     console.log("Attempting to use user location...");
     setComponentError(null);
     handleClearSearch();
+    userLocationRequestedRef.current = true;
     getUserLocation();
     setSearchMode("location");
   }, [getUserLocation]);
@@ -1231,11 +1391,14 @@ export default function DealerLocator(props) {
     setDrawerExpanded(expanded);
   }, []);
 
-  // Markers ready notification handler
+  // Update the markers ready callback to be more reliable
   const handleMarkersReady = useCallback(() => {
     console.log("Markers rendered callback received");
-    setMarkersRendered(true);
-    markersProcessedRef.current = true;
+    // Set a short timeout to ensure the UI has time to update
+    setTimeout(() => {
+      setMarkersRendered(true);
+      markersProcessedRef.current = true;
+    }, 100);
   }, []);
 
   // ==================== RENDER CONDITIONALS ====================
@@ -1303,37 +1466,6 @@ export default function DealerLocator(props) {
               theme={theme}
               styles={styles}
             />
-          )}
-          {showFilters && (
-            <div style={styles.filterContainerStyle}>
-              <label
-                style={styles.filterCheckboxStyle(showStores)}
-                onClick={() => setShowStores((s) => !s)}
-              >
-                <span
-                  style={styles.filterCheckboxIndicatorStyle(showStores)}
-                ></span>
-                {filterStoresText}
-              </label>
-              <label
-                style={styles.filterCheckboxStyle(showService)}
-                onClick={() => setShowService((s) => !s)}
-              >
-                <span
-                  style={styles.filterCheckboxIndicatorStyle(showService)}
-                ></span>
-                {filterServiceText}
-              </label>
-              <label
-                style={styles.filterCheckboxStyle(showCharging)}
-                onClick={() => setShowCharging((s) => !s)}
-              >
-                <span
-                  style={styles.filterCheckboxIndicatorStyle(showCharging)}
-                ></span>
-                {filterChargingText}
-              </label>
-            </div>
           )}
         </div>
 
@@ -1600,12 +1732,6 @@ addPropertyControls(DealerLocator, {
     defaultValue: true,
     group: "_featuresGroup",
   },
-  showFilters: {
-    title: "Show Filters",
-    type: ControlType.Boolean,
-    defaultValue: true,
-    group: "_featuresGroup",
-  },
   allowLocationAccess: {
     title: "Allow 'Use Location'",
     type: ControlType.Boolean,
@@ -1713,27 +1839,6 @@ addPropertyControls(DealerLocator, {
     title: "Search Placeholder",
     type: ControlType.String,
     defaultValue: "Area / Pincode",
-    group: "_textGroup",
-  },
-  filterStoresText: {
-    title: "Filter 'Stores'",
-    type: ControlType.String,
-    defaultValue: "Stores",
-    hidden: (props) => !props.showFilters,
-    group: "_textGroup",
-  },
-  filterServiceText: {
-    title: "Filter 'Service'",
-    type: ControlType.String,
-    defaultValue: "Service",
-    hidden: (props) => !props.showFilters,
-    group: "_textGroup",
-  },
-  filterChargingText: {
-    title: "Filter 'Charging'",
-    type: ControlType.String,
-    defaultValue: "Charging",
-    hidden: (props) => !props.showFilters,
     group: "_textGroup",
   },
   noResultsText: {

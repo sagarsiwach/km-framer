@@ -856,8 +856,6 @@ export const SearchBar = ({
               ? {
                   scale: 1.05,
                   color: theme.colors.primary,
-                  // Optionally change background slightly on hover
-                  // backgroundColor: theme.colors.neutral[50],
                 }
               : {}
           }
@@ -874,8 +872,9 @@ export const SearchBar = ({
             alignItems: "center",
             gap: "6px", // Slightly more gap
             flexShrink: 0, // Prevent shrinking
+            cursor: isLocating ? "default" : "pointer", // Change cursor when loading
           }}
-          onClick={onUseLocation}
+          onClick={!isLocating ? onUseLocation : undefined} // Only trigger if not already locating
           disabled={isLocating}
           aria-label={isLocating ? "Locating..." : useMyLocationText}
         >
@@ -909,12 +908,10 @@ export const SearchBar = ({
           {/* Responsive text - consider media query in styles or JS */}
           <span
             style={{
-              // Example: Hide on very small screens if needed via JS/CSS
-              // display: window.innerWidth < 400 ? "none" : "inline",
               whiteSpace: "nowrap", // Prevent text wrapping
             }}
           >
-            {useMyLocationText}
+            {isLocating ? "Locating..." : useMyLocationText}
           </span>
         </motion.button>
       )}
