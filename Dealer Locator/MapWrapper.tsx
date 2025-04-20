@@ -114,7 +114,7 @@ interface MapWrapperProps {
   hideControls?: boolean;
   navigationControl?: boolean;
   attributionControl?: boolean;
-  onMarkersReady?: () => void; // New callback for marker rendering readiness
+  // Removed onMarkersReady prop
 }
 
 // --- Main Map Component ---
@@ -138,14 +138,13 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
   hideControls = false, // Default to showing controls unless specified
   navigationControl = true, // Default to show navigation
   attributionControl = true, // Default to show attribution
-  onMarkersReady,
+  // Removed onMarkersReady prop
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapboxMapRef = useRef<mapboxgl.Map | null>(null);
   const mapboxMarkersRef = useRef<{ [id: string]: Marker }>({});
   const mapboxPopupRef = useRef<Popup | null>(null);
-  const isRenderedRef = useRef(false);
-  const markersReadyFiredRef = useRef(false);
+  const isRenderedRef = useRef(false); // Tracks if the map instance is loaded
 
   const isMapbox = mapProvider === "mapbox";
 
@@ -205,10 +204,9 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
         mapboxMapRef.current = null;
       }
     }
-    isRenderedRef.current = false;
-    markersReadyFiredRef.current = false;
+    isRenderedRef.current = false; // Reset rendered flag
     console.log("Mapbox cleanup complete.");
-  }, [handleMapInteraction]); // Include handleMapInteraction in dependencies
+  }, [handleMapInteraction]);
 
   // --- Mapbox Initialization Effect ---
   useEffect(() => {
@@ -277,19 +275,9 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
 
       map.on("load", () => {
         console.log("Mapbox map loaded.");
-        isRenderedRef.current = true;
+        isRenderedRef.current = true; // Set flag when map is loaded
         map.on("click", handleMapInteraction); // Attach click listener here
-
-        // Notify on first load that map is ready
-        if (
-          !markersReadyFiredRef.current &&
-          typeof onMarkersReady === "function"
-        ) {
-          setTimeout(() => {
-            onMarkersReady();
-            markersReadyFiredRef.current = true;
-          }, 500); // Short delay to ensure map is fully rendered
-        }
+        // Removed onMarkersReady logic
       });
 
       map.on("error", (e) => {
@@ -309,7 +297,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     attributionControl,
     cleanupMap,
     handleMapInteraction,
-    onMarkersReady,
+    // Removed onMarkersReady dependency
     // center and zoom are handled separately to prevent re-init
   ]);
 

@@ -16,6 +16,7 @@ export default function LoadingIndicator(props) {
     fullScreen = true,
     backgroundColor = "rgba(255, 255, 255, 0.9)",
     style,
+    // Removed spinnerRotation prop
     ...rest
   } = props;
 
