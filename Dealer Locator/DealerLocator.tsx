@@ -1,4 +1,4 @@
-// DealerLocator.tsx
+// DealerLocator.tsx - A fully functional dealer/store locator component for Framer
 import React, {
   useEffect,
   useRef,
@@ -18,19 +18,19 @@ import {
   type Location,
   type MapProvider,
   type Coordinates,
-  type Address,
-  type Contact,
-  type Hours,
   hexToRgba,
   Icon,
   formatAddress,
-} from "https://framer.com/m/Lib-8AS5.js@vS7d5YP2fjGyqMnH5L1D"; // Adjust path
+} from "https://framer.com/m/Lib-8AS5.js@vS7d5YP2fjGyqMnH5L1D";
+
 import {
   useDealerData,
   useGeolocation,
   useMapApiState,
-} from "https://framer.com/m/Hooks-ZmUS.js@2ecUl320qKIztH19IQLd"; // Adjust path
-import MapWrapper from "https://framer.com/m/MapWrapper-dYOf.js"; // Adjust path
+} from "https://framer.com/m/Hooks-ZmUS.js@2ecUl320qKIztH19IQLd";
+
+import MapWrapper from "https://framer.com/m/MapWrapper-dYOf.js";
+
 import {
   DealerCard,
   DealerDetailPanel,
@@ -39,7 +39,8 @@ import {
   MapPlaceholder,
   PaginationControls,
   SearchBar,
-} from "https://framer.com/m/Components-bS3j.js@0jRsmeo87YGyazwSo9oO"; // Adjust path
+} from "https://framer.com/m/Components-bS3j.js@0jRsmeo87YGyazwSo9oO";
+
 import LoadingIndicator from "https://framer.com/m/LoadingOverlay-8m7G.js";
 
 // --- Inline useDebounce Hook ---
@@ -59,23 +60,31 @@ function useDebounce(value, delay = 400) {
   return debouncedValue;
 }
 
-// --- Main Dealer Locator Component ---
+/**
+ * @framerSupportedLayoutWidth any
+ * @framerSupportedLayoutHeight any
+ */
 export default function DealerLocator(props) {
-  // --- Props ---
+  // ==================== PROPS ====================
   const {
+    // Map Configuration
     mapProvider = "mapbox",
     mapboxAccessToken = "pk.eyJ1Ijoic2FnYXJzaXdhY2giLCJhIjoiY205MzY4dmxjMGdndjJrc2NrZnZpM2FkbSJ9.ZeZW7bToRYitGJQKaCvGlA",
     mapboxMapStyleUrl = "mapbox://styles/mapbox/light-v11",
     googleApiKey = "",
-    googleMapStyleId = "monochrome_minimal", // Keep for potential switch
+    googleMapStyleId = "monochrome_minimal",
     apiEndpoint = "https://booking-engine.sagarsiwach.workers.dev/dealer",
-    initialZoom = 11,
+    initialZoom = 5, // Lower zoom to show more of India
     distanceUnit = "km",
+
+    // Content Configuration
     resultsPerPage = 7,
     useInfiniteScroll = true,
     showSearchBar = true,
     showFilters = true,
     allowLocationAccess = true,
+
+    // Theme Configuration
     primaryColor = "#111827",
     secondaryColor = "#6B7280",
     accentColor = "#22C55E",
@@ -87,6 +96,8 @@ export default function DealerLocator(props) {
     outlineColor = "#E5E7EB",
     borderRadius = 6,
     showShadows = false,
+
+    // Text Labels
     searchPlaceholder = "Area / Pincode",
     filterStoresText = "Stores",
     filterServiceText = "Service",
@@ -99,43 +110,52 @@ export default function DealerLocator(props) {
     contactLabel = "Contact",
     title = "Locate a Dealer",
     description = "Discover our network of partners.",
+
+    // Layout Configuration
     style,
     detailPanelWidth = 400,
-    maxSearchRadius = 150, // Default maximum search radius in km (can be made a prop)
-    showNearestDealers = 7, // Number of nearest dealers to show if no results in search area
+    maxSearchRadius = 150,
+    showNearestDealers = 7,
+    navbarHeight = 81, // Height of the navbar for proper sizing
   } = props;
 
-  // --- State ---
+  // ==================== STATE ====================
+  // UI States
   const [selectedDealer, setSelectedDealer] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [mapBackgroundOverlay, setMapBackgroundOverlay] = useState(false);
+  const [drawerExpanded, setDrawerExpanded] = useState(false);
+  const [componentError, setComponentError] = useState(null);
+  const [spinnerRotation, setSpinnerRotation] = useState(0);
+
+  // Data States
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
   const [searchLocation, setSearchLocation] = useState(null);
   const [filteredDealers, setFilteredDealers] = useState([]);
-  const [allFilteredDealers, setAllFilteredDealers] = useState([]); // Store all filtered dealers
+  const [searchMode, setSearchMode] = useState("none");
+
+  // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [componentError, setComponentError] = useState(null);
-  const [activeMapCenter, setActiveMapCenter] = useState(
-    getInitialCenter(mapProvider)
-  );
+
+  // Map States
+  const [activeMapCenter, setActiveMapCenter] = useState([78.9629, 20.5937]); // Center of India
   const [activeMapZoom, setActiveMapZoom] = useState(initialZoom);
-  const [spinnerRotation, setSpinnerRotation] = useState(0);
+  const [markersRendered, setMarkersRendered] = useState(false);
+
+  // Filter States
   const [showStores, setShowStores] = useState(true);
   const [showService, setShowService] = useState(true);
   const [showCharging, setShowCharging] = useState(true);
-  const [mapBackgroundOverlay, setMapBackgroundOverlay] = useState(false);
-  const [drawerExpanded, setDrawerExpanded] = useState(false);
-  const [markersReady, setMarkersReady] = useState(false); // Track when markers are ready
-  const [searchMode, setSearchMode] = useState("none");
-  const [markersRendered, setMarkersRendered] = useState(false);
 
-  // --- Refs ---
+  // ==================== REFS ====================
   const geocoderRef = useRef(null);
   const listContainerRef = useRef(null);
   const markersProcessedRef = useRef(false);
 
-  // --- Hooks ---
+  // ==================== HOOKS ====================
+  // Data fetching hook
   const {
     dealers: allDealers,
     isLoading: isDealersLoading,
@@ -143,6 +163,7 @@ export default function DealerLocator(props) {
     refetch: refetchDealers,
   } = useDealerData(apiEndpoint, SAMPLE_DEALERS);
 
+  // Geolocation hook
   const {
     userLocation,
     isLocating: isGeoLocating,
@@ -150,24 +171,41 @@ export default function DealerLocator(props) {
     getUserLocation,
   } = useGeolocation();
 
+  // Map API state hook
   const { isLoaded: isMapApiLoaded, loadError: mapApiLoadError } =
     useMapApiState(mapProvider, googleApiKey);
 
+  // ==================== COMPUTED VALUES ====================
   // Combined loading state
   const isLocatingCombined = useMemo(
     () => isDealersLoading || isGeoLocating || !markersRendered,
     [isDealersLoading, isGeoLocating, markersRendered]
   );
 
-  // --- Responsive Check ---
+  // Responsive check
   const isMobile = useMemo(() => {
     if (RenderTarget.current() === RenderTarget.canvas) return false;
     return typeof window !== "undefined" && window.innerWidth < 768;
   }, []);
 
-  // --- Effects ---
+  // Pagination calculation
+  const displayedDealers = useMemo(() => {
+    if (useInfiniteScroll) {
+      return filteredDealers.slice(0, currentPage * resultsPerPage);
+    } else {
+      return filteredDealers.slice(
+        (currentPage - 1) * resultsPerPage,
+        currentPage * resultsPerPage
+      );
+    }
+  }, [filteredDealers, currentPage, resultsPerPage, useInfiniteScroll]);
 
-  // Initialize Geocoder based on provider
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredDealers.length / resultsPerPage);
+  }, [filteredDealers, resultsPerPage]);
+
+  // ==================== EFFECTS ====================
+  // Initialize Geocoder
   useEffect(() => {
     if (mapProvider === "mapbox" && mapboxAccessToken) {
       geocoderRef.current = "mapbox";
@@ -195,7 +233,7 @@ export default function DealerLocator(props) {
     }
   }, [dealersError, geoError, mapApiLoadError, componentError]);
 
-  // Spinner animation effect
+  // Spinner animation
   useEffect(() => {
     let frameId = null;
     if (isLocatingCombined) {
@@ -215,7 +253,7 @@ export default function DealerLocator(props) {
   // Reset map state on provider change
   useEffect(() => {
     console.log(`Map provider changed to: ${mapProvider}`);
-    setActiveMapCenter(getInitialCenter(mapProvider));
+    setActiveMapCenter([78.9629, 20.5937]); // Center of India
     setActiveMapZoom(initialZoom);
     setSearchLocation(null);
     setSelectedDealer(null);
@@ -225,9 +263,8 @@ export default function DealerLocator(props) {
     setMarkersRendered(false);
   }, [mapProvider, initialZoom]);
 
-  // Effects for markers ready notification
+  // Markers ready notification
   useEffect(() => {
-    // After dealers are loaded, set a timeout to ensure markers are processed
     if (
       !isDealersLoading &&
       allDealers.length > 0 &&
@@ -236,41 +273,41 @@ export default function DealerLocator(props) {
       const timer = setTimeout(() => {
         setMarkersRendered(true);
         markersProcessedRef.current = true;
-      }, 1500); // Allow some time for markers to render
+      }, 1500);
 
       return () => clearTimeout(timer);
     }
   }, [isDealersLoading, allDealers]);
 
-  // Effect for when user location changes
+  // User location handling
   useEffect(() => {
     if (userLocation) {
       console.log("User location updated:", userLocation);
-      // If we're in location search mode, update the center
+
+      // Update map center when in location search mode
       if (searchMode === "location") {
         setActiveMapCenter([userLocation.lng, userLocation.lat]);
-        setActiveMapZoom(13); // Zoom in a bit
+        setActiveMapZoom(13);
+        console.log("Centering map on user location");
       }
     }
   }, [userLocation, searchMode]);
 
-  // --- Filtering and Sorting Logic ---
+  // Process and sort dealers
   useEffect(() => {
     if (RenderTarget.current() === RenderTarget.canvas) {
-      // Show limited sample data on canvas
       setFilteredDealers(SAMPLE_DEALERS.slice(0, 5));
-      setAllFilteredDealers(SAMPLE_DEALERS);
       setMarkersRendered(true);
       return;
     }
 
-    if (isDealersLoading) return; // Wait for initial data load
+    if (isDealersLoading) return;
 
-    console.log("Filtering and sorting dealers...");
+    console.log("Processing and sorting dealers...");
     const locationForDistance = searchLocation || userLocation || null;
 
-    // STEP 1: Enhance dealers with distance if location available
-    let allDealersWithDistance = allDealers.map((dealer) => ({
+    // Add distance to dealers if location is available
+    let enhancedDealers = allDealers.map((dealer) => ({
       ...dealer,
       distance: locationForDistance
         ? calculateDistance(
@@ -281,25 +318,29 @@ export default function DealerLocator(props) {
         : undefined,
     }));
 
-    // STEP 2: Sort by distance (if available) or alphabetically
-    allDealersWithDistance.sort((a, b) => {
+    // Sort dealers: featured first, then by distance or alphabetically
+    enhancedDealers.sort((a, b) => {
+      // Featured dealers come first
+      if (a.featured && !b.featured) return -1;
+      if (!a.featured && b.featured) return 1;
+
+      // Then sort by distance if available
       if (a.distance !== undefined && b.distance !== undefined) {
         return a.distance - b.distance;
       }
       if (a.distance !== undefined) return -1;
       if (b.distance !== undefined) return 1;
+
+      // Finally sort alphabetically
       return a.name.localeCompare(b.name);
     });
 
-    // Store all dealers with distance for potential nearest fallback
-    const allDealersWithDistanceSorted = [...allDealersWithDistance];
-
-    // STEP 3: Apply Text Search Filter if using text search without location
-    if (debouncedSearchQuery && !searchLocation && !userLocation) {
+    // Apply text search filter
+    if (debouncedSearchQuery) {
       const query = debouncedSearchQuery.toLowerCase().trim();
       if (query) {
         console.log(`Filtering by text: "${query}"`);
-        allDealersWithDistance = allDealersWithDistance.filter(
+        enhancedDealers = enhancedDealers.filter(
           (d) =>
             d.name?.toLowerCase().includes(query) ||
             d.address?.formatted?.toLowerCase().includes(query) ||
@@ -308,81 +349,37 @@ export default function DealerLocator(props) {
             d.services?.some((s) => s.toLowerCase().includes(query))
         );
       }
-      setSearchMode("text");
-    }
-    // STEP 4: Apply distance filtering if using location-based search
-    else if (locationForDistance) {
-      const MAX_SEARCH_RADIUS_KM = maxSearchRadius;
-      const maxDist =
-        distanceUnit === "miles"
-          ? MAX_SEARCH_RADIUS_KM * 0.621371
-          : MAX_SEARCH_RADIUS_KM;
-
-      console.log(
-        `Filtering by distance (max ${maxDist} ${distanceUnit}) from location:`,
-        locationForDistance
-      );
-
-      // Filter dealers by distance
-      const dealersInRadius = allDealersWithDistance.filter(
-        (d) => d.distance !== undefined && d.distance <= maxDist
-      );
-
-      // If no dealers found in radius, show nearest N dealers
-      if (dealersInRadius.length === 0) {
-        console.log(
-          `No dealers found within ${maxDist} ${distanceUnit}, showing nearest ${showNearestDealers}`
-        );
-        allDealersWithDistance = allDealersWithDistanceSorted.slice(
-          0,
-          showNearestDealers
-        );
-      } else {
-        allDealersWithDistance = dealersInRadius;
-      }
-
-      setSearchMode("location");
+      setSearchMode(searchLocation || userLocation ? "location" : "text");
     } else {
-      // No search applied, reset search mode
       setSearchMode("none");
     }
 
-    // STEP 5: Apply Service Type Filters
-    const anyFilterActive = showStores || showService || showCharging;
+    // Apply service type filters
+    if (showFilters) {
+      const anyFilterActive = showStores || showService || showCharging;
 
-    // Store the full filtered list before service filtering for the map
-    let allFilteredBeforeServiceFilters = [...allDealersWithDistance];
+      if (anyFilterActive) {
+        enhancedDealers = enhancedDealers.filter((d) => {
+          const services = d.services?.map((s) => s.toLowerCase()) || [];
+          const isStore =
+            services.includes("sales") || services.includes("store");
+          const isService =
+            services.includes("service") || services.includes("repair");
+          const isCharging = services.includes("charging");
 
-    // Apply service filters if any are active
-    if (anyFilterActive) {
-      allDealersWithDistance = allDealersWithDistance.filter((d) => {
-        const services = d.services?.map((s) => s.toLowerCase()) || [];
-        const isStore =
-          services.includes("sales") || services.includes("store");
-        const isService =
-          services.includes("service") || services.includes("repair");
-        const isCharging =
-          services.includes("charging") || services.includes("ev charging");
-
-        // Changed from AND to OR logic for filters
-        return (
-          (showStores && isStore) ||
-          (showService && isService) ||
-          (showCharging && isCharging)
-        );
-      });
+          return (
+            (showStores && isStore) ||
+            (showService && isService) ||
+            (showCharging && isCharging)
+          );
+        });
+      }
     }
 
-    console.log(`Found ${allDealersWithDistance.length} filtered dealers.`);
+    // Set filtered dealers for the list
+    setFilteredDealers(enhancedDealers);
 
-    // Set the filtered dealers for the list view
-    setFilteredDealers(allDealersWithDistance);
-
-    // Set all filtered dealers for the map (without service filters)
-    // This way map shows all dealers but list is filtered
-    setAllFilteredDealers(allFilteredBeforeServiceFilters);
-
-    // Reset to page 1 whenever filters/search changes the list
+    // Reset to page 1 when filter changes
     if (currentPage !== 1) {
       setCurrentPage(1);
       listContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
@@ -393,32 +390,15 @@ export default function DealerLocator(props) {
     userLocation,
     searchLocation,
     distanceUnit,
+    isDealersLoading,
+    currentPage,
     showStores,
     showService,
     showCharging,
-    isDealersLoading,
-    maxSearchRadius,
-    showNearestDealers,
-    currentPage,
+    showFilters,
   ]);
 
-  // --- Pagination/Infinite Scroll Data ---
-  const displayedDealers = useMemo(() => {
-    if (useInfiniteScroll) {
-      return filteredDealers.slice(0, currentPage * resultsPerPage);
-    } else {
-      return filteredDealers.slice(
-        (currentPage - 1) * resultsPerPage,
-        currentPage * resultsPerPage
-      );
-    }
-  }, [filteredDealers, currentPage, resultsPerPage, useInfiniteScroll]);
-
-  const totalPages = useMemo(() => {
-    return Math.ceil(filteredDealers.length / resultsPerPage);
-  }, [filteredDealers, resultsPerPage]);
-
-  // --- Infinite Scroll Handler ---
+  // Infinite scroll handler
   const handleScroll = useCallback(() => {
     if (!useInfiniteScroll || isLoadingMore || currentPage >= totalPages)
       return;
@@ -437,27 +417,22 @@ export default function DealerLocator(props) {
     }
   }, [useInfiniteScroll, isLoadingMore, currentPage, totalPages]);
 
-  // Attach/Detach scroll listener
+  // Attach/detach scroll listener
   useEffect(() => {
     const list = listContainerRef.current;
     if (list && useInfiniteScroll) {
       list.addEventListener("scroll", handleScroll);
       console.log("Infinite scroll listener attached.");
-    } else {
-      console.log(
-        "Infinite scroll listener NOT attached (disabled or element missing)."
-      );
     }
 
     return () => {
       if (list && useInfiniteScroll) {
         list.removeEventListener("scroll", handleScroll);
-        console.log("Infinite scroll listener removed.");
       }
     };
   }, [useInfiniteScroll, handleScroll]);
 
-  // --- Theme and Style Generation ---
+  // ==================== THEME GENERATION ====================
   const theme = useMemo(
     () => ({
       colors: {
@@ -531,14 +506,17 @@ export default function DealerLocator(props) {
     ]
   );
 
-  // --- Style Objects Generation ---
+  // ==================== STYLE GENERATION ====================
   const styles = useMemo(() => {
+    // Calculate height respecting navbar
+    const totalHeight = `calc(100dvh - ${navbarHeight}px)`;
+
     const containerStyle = {
       display: "flex",
       flexDirection: isMobile ? "column" : "row",
       width: "100%",
-      height: "100vh", // Use viewport height
-      maxHeight: "100vh",
+      height: totalHeight,
+      maxHeight: totalHeight,
       backgroundColor: theme.colors.background,
       overflow: "hidden",
       position: "relative",
@@ -549,7 +527,7 @@ export default function DealerLocator(props) {
 
     const mapContainerStyle = {
       flex: 1,
-      minHeight: isMobile ? "40vh" : "auto", // Use vh units for mobile
+      minHeight: isMobile ? "40vh" : "auto",
       height: isMobile ? "40%" : "100%",
       position: "relative",
       backgroundColor: theme.colors.surfaceVariant,
@@ -558,14 +536,14 @@ export default function DealerLocator(props) {
 
     const sidebarStyle = {
       flex: isMobile ? "1" : `0 0 ${detailPanelWidth}px`,
-      height: isMobile ? "60vh" : "100%", // Use viewport height units
+      height: isMobile ? "60vh" : "100%",
       maxHeight: isMobile ? "60vh" : "100%",
       display: "flex",
       flexDirection: "column",
       background: theme.colors.surface,
       borderRight: !isMobile ? `1px solid ${theme.colors.outline}` : "none",
       borderTop: isMobile ? `1px solid ${theme.colors.outline}` : "none",
-      overflow: "hidden", // Important: keep this as hidden
+      overflow: "hidden",
       order: isMobile ? 2 : 1,
       position: "relative",
       boxShadow: !isMobile ? theme.shadows[1] : "none",
@@ -586,7 +564,6 @@ export default function DealerLocator(props) {
       transition: "opacity 0.3s ease-out, visibility 0.3s ease-out",
     };
 
-    // --- Search/Filter Area Styles ---
     const topSectionContainerStyle = {
       padding: theme.spacing(2),
       borderBottom: `1px solid ${theme.colors.outline}`,
@@ -695,14 +672,13 @@ export default function DealerLocator(props) {
         : '""',
     });
 
-    // Updated dealer list style with proper height
     const dealerListContainerStyle = {
       flex: 1,
       overflowY: "auto",
       WebkitOverflowScrolling: "touch",
       padding: `${theme.spacing(1)} ${theme.spacing(1.5)}`,
-      height: "calc(100% - 20px)", // Ensure it fills available space
-      maxHeight: "100%", // Prevent overflowing its container
+      height: "calc(100% - 20px)",
+      maxHeight: "100%",
     };
 
     const dealerCardStyleBase = (isSelected) => ({
@@ -751,27 +727,6 @@ export default function DealerLocator(props) {
       lineHeight: 1.45,
     };
 
-    const dealerCardServicesStyle = {
-      display: "flex",
-      flexWrap: "wrap",
-      gap: theme.spacing(1),
-      marginTop: theme.spacing(1),
-      marginBottom: theme.spacing(1),
-    };
-
-    const dealerCardServiceTagStyle = (bgColor, textColor, bdColor) => ({
-      fontSize: "10px",
-      padding: "3px 6px",
-      backgroundColor: bgColor,
-      color: textColor,
-      borderRadius: "3px",
-      textTransform: "uppercase",
-      fontWeight: 700,
-      letterSpacing: "0.5px",
-      outline: `1px solid ${bdColor}`,
-      outlineOffset: "-1px",
-    });
-
     const dealerCardDistanceStyle = {
       margin: `${theme.spacing(1)} 0 0 0`,
       fontSize: "13px",
@@ -787,7 +742,6 @@ export default function DealerLocator(props) {
       flexShrink: 0,
     };
 
-    // --- Pagination Styles ---
     const paginationContainerStyle = {
       display: "flex",
       alignItems: "center",
@@ -821,7 +775,6 @@ export default function DealerLocator(props) {
       color: theme.colors.onSurfaceVariant,
     };
 
-    // --- Loading, Error, Placeholder Styles ---
     const loadingOverlayStyle = {
       position: "absolute",
       top: 0,
@@ -923,7 +876,7 @@ export default function DealerLocator(props) {
       textAlign: "center",
     };
 
-    // --- Button Styles ---
+    // Fixed textButtonStyle (now an object, not a function)
     const textButtonStyle = (isDisabled = false) => ({
       backgroundColor: "transparent",
       color: isDisabled ? theme.colors.neutral[400] : theme.colors.primary,
@@ -939,7 +892,7 @@ export default function DealerLocator(props) {
       opacity: isDisabled ? 0.6 : 1,
     });
 
-    // --- Detail Panel Styles ---
+    // Detail panel styles
     const detailSectionTitleStyle = {
       fontSize: "12px",
       fontWeight: 600,
@@ -982,9 +935,13 @@ export default function DealerLocator(props) {
       fontSize: "14px",
     };
 
-    const detailHoursDayStyle = {};
+    const detailHoursDayStyle = {
+      color: theme.colors.neutral[600],
+    };
 
-    const detailHoursTimeStyle = {};
+    const detailHoursTimeStyle = {
+      color: theme.colors.neutral[800],
+    };
 
     const detailServicesListStyle = {
       display: "flex",
@@ -1024,11 +981,18 @@ export default function DealerLocator(props) {
       gap: theme.spacing(1),
       borderRadius: theme.shape.medium,
       transition: "filter 0.2s ease-out",
+      border: "none",
+      cursor: "pointer",
     };
 
     // Event handlers for hover effects
-    const handleLinkEnter = () => {};
-    const handleLinkLeave = () => {};
+    const handleLinkEnter = (e) => {
+      e.currentTarget.style.textDecoration = "underline";
+    };
+
+    const handleLinkLeave = (e) => {
+      e.currentTarget.style.textDecoration = "none";
+    };
 
     return {
       containerStyle,
@@ -1051,8 +1015,6 @@ export default function DealerLocator(props) {
       dealerCardTextWrapStyle,
       dealerCardTitleStyle,
       dealerCardAddressStyle,
-      dealerCardServicesStyle,
-      dealerCardServiceTagStyle,
       dealerCardDistanceStyle,
       dealerCardArrowStyle,
       paginationContainerStyle,
@@ -1090,11 +1052,12 @@ export default function DealerLocator(props) {
     isMobile,
     style,
     detailPanelWidth,
-    showFilters,
+    navbarHeight,
     mapBackgroundOverlay,
   ]);
 
-  // --- Geocoding Handler ---
+  // ==================== EVENT HANDLERS ====================
+  // Geocoding handler
   const handleGeocodeSearch = useCallback(
     async (query) => {
       if (!query) {
@@ -1155,7 +1118,7 @@ export default function DealerLocator(props) {
                 };
                 console.log("Google Geocoding result:", coords);
                 setSearchLocation(coords);
-                setActiveMapCenter(coords);
+                setActiveMapCenter([coords.lng, coords.lat]);
                 setActiveMapZoom(13);
                 setSearchMode("location");
               } else {
@@ -1175,10 +1138,10 @@ export default function DealerLocator(props) {
         setComponentError(err.message || "Geocoding failed.");
       }
     },
-    [mapProvider, mapboxAccessToken, userLocation, googleApiKey]
+    [mapProvider, mapboxAccessToken, userLocation]
   );
 
-  // --- Event Handlers ---
+  // Search handlers
   const handleSearchSubmit = (query) => {
     setSearchQuery(query);
     handleGeocodeSearch(query);
@@ -1190,16 +1153,17 @@ export default function DealerLocator(props) {
     setComponentError(null);
     setSearchMode("none");
 
-    // Reset map view to user location or default
+    // Reset map view to user location or default center of India
     if (userLocation) {
       setActiveMapCenter([userLocation.lng, userLocation.lat]);
       setActiveMapZoom(12);
     } else {
-      setActiveMapCenter(getInitialCenter(mapProvider));
+      setActiveMapCenter([78.9629, 20.5937]);
       setActiveMapZoom(initialZoom);
     }
   };
 
+  // Dealer selection handler
   const handleDealerSelect = useCallback(
     (dealer) => {
       console.log("Dealer selected:", dealer.name);
@@ -1226,8 +1190,8 @@ export default function DealerLocator(props) {
     [isMobile]
   );
 
+  // Map interaction handlers
   const handleMapClick = useCallback(() => {
-    // Close detail panel when clicking map background (if open)
     if (isDetailOpen) {
       console.log("Map click detected, closing detail panel.");
       setIsDetailOpen(false);
@@ -1236,15 +1200,16 @@ export default function DealerLocator(props) {
     }
   }, [isDetailOpen]);
 
+  // User location handler
   const handleUseLocation = useCallback(() => {
     console.log("Attempting to use user location...");
     setComponentError(null);
     handleClearSearch();
     getUserLocation();
     setSearchMode("location");
-    // Map panning will happen in the effect watching userLocation
   }, [getUserLocation]);
 
+  // Pagination handler
   const handlePageChange = (page) => {
     if (!useInfiniteScroll) {
       console.log(`Changing page to: ${page}`);
@@ -1253,6 +1218,7 @@ export default function DealerLocator(props) {
     }
   };
 
+  // Detail panel handlers
   const handleDetailClose = useCallback(() => {
     console.log("Closing detail panel.");
     setIsDetailOpen(false);
@@ -1265,14 +1231,14 @@ export default function DealerLocator(props) {
     setDrawerExpanded(expanded);
   }, []);
 
-  // Function to notify when markers are loaded
+  // Markers ready notification handler
   const handleMarkersReady = useCallback(() => {
     console.log("Markers rendered callback received");
     setMarkersRendered(true);
     markersProcessedRef.current = true;
   }, []);
 
-  // --- Render Conditionals ---
+  // ==================== RENDER CONDITIONALS ====================
   const apiKeyMissing =
     (mapProvider === "mapbox" && !mapboxAccessToken) ||
     (mapProvider === "google" && !googleApiKey);
@@ -1282,7 +1248,7 @@ export default function DealerLocator(props) {
 
   const actualMapProvider = showMapPlaceholder ? "none" : mapProvider;
 
-  // --- Final Render ---
+  // ==================== RENDER ====================
   return (
     <div style={styles.containerStyle}>
       {/* Full Screen Loading Indicator - Only show during initial loading */}
@@ -1462,13 +1428,13 @@ export default function DealerLocator(props) {
             googleApiKey={googleApiKey}
             center={activeMapCenter}
             zoom={activeMapZoom}
-            dealers={allFilteredDealers} // Use allFilteredDealers for the map to show all dealers, not just list-filtered ones
+            dealers={allDealers} // Always show all dealers on the map
             selectedDealer={selectedDealer}
             userLocation={userLocation}
             searchLocation={searchLocation}
             onMarkerClick={handleDealerSelect}
             onMapClick={handleMapClick}
-            onMarkersReady={handleMarkersReady} // Add callback for marker rendering
+            onMarkersReady={handleMarkersReady}
             theme={theme}
             distanceUnit={distanceUnit}
             mapboxMapStyleUrl={mapboxMapStyleUrl}
@@ -1501,7 +1467,7 @@ export default function DealerLocator(props) {
   );
 }
 
-// ========== PROPERTY CONTROLS ==========
+// ==================== PROPERTY CONTROLS ====================
 addPropertyControls(DealerLocator, {
   // --- Group: Map Setup ---
   _mapGroup: { type: ControlType.Group, title: "Map Setup" },
@@ -1547,7 +1513,7 @@ addPropertyControls(DealerLocator, {
   initialZoom: {
     title: "Initial Zoom",
     type: ControlType.Number,
-    defaultValue: 11,
+    defaultValue: 5, // Lower zoom to show more of India
     min: 1,
     max: 18,
     step: 1,
@@ -1727,6 +1693,17 @@ addPropertyControls(DealerLocator, {
     max: 600,
     step: 10,
     displayStepper: true,
+    group: "_appearanceGroup",
+  },
+  navbarHeight: {
+    title: "Navbar Height",
+    type: ControlType.Number,
+    defaultValue: 81,
+    min: 0,
+    max: 200,
+    step: 1,
+    displayStepper: true,
+    description: "Height of the navbar to adjust component height",
     group: "_appearanceGroup",
   },
 

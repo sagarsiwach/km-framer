@@ -351,7 +351,10 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
         const existingMarker = mapboxMarkersRef.current[dealerId];
 
         if (existingMarker) {
-          // Update existing marker element
+          // CHANGE: First store the existing marker in newMarkers to ensure it's not removed
+          newMarkers[dealerId] = existingMarker;
+
+          // Then update the marker properties
           try {
             existingMarker.getElement().innerHTML = markerEl.innerHTML;
 
@@ -366,12 +369,11 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
                 dealer.coordinates.lat,
               ]);
             }
-
-            newMarkers[dealerId] = existingMarker;
           } catch (err) {
             console.error("Error updating marker:", err);
             existingMarker.remove(); // Remove problematic marker
             // We'll create a new one below
+            delete newMarkers[dealerId]; // Remove from newMarkers since it failed
           }
         }
 
