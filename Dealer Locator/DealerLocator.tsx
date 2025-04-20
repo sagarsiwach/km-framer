@@ -8,21 +8,6 @@ import React, {
 } from "react";
 import { addPropertyControls, ControlType, RenderTarget } from "framer";
 
-// --- Inline useDebounce Hook ---
-function useDebounce<T>(value: T, delay?: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay || 400);
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-  return debouncedValue;
-}
-// --- End Inline useDebounce Hook ---
-
 // --- Imports ---
 import {
   GOOGLE_MAP_STYLES,
@@ -56,6 +41,23 @@ import {
   SearchBar,
 } from "https://framer.com/m/Components-bS3j.js@0jRsmeo87YGyazwSo9oO"; // Adjust path
 import LoadingIndicator from "https://framer.com/m/LoadingOverlay-8m7G.js";
+
+// --- Inline useDebounce Hook ---
+function useDebounce(value, delay = 400) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 // --- Main Dealer Locator Component ---
 export default function DealerLocator(props) {
@@ -104,19 +106,19 @@ export default function DealerLocator(props) {
   } = props;
 
   // --- State ---
-  const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
+  const [selectedDealer, setSelectedDealer] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
-  const [searchLocation, setSearchLocation] = useState<Location>(null);
-  const [filteredDealers, setFilteredDealers] = useState<Dealer[]>([]);
-  const [allFilteredDealers, setAllFilteredDealers] = useState<Dealer[]>([]); // Store all filtered dealers
+  const [searchLocation, setSearchLocation] = useState(null);
+  const [filteredDealers, setFilteredDealers] = useState([]);
+  const [allFilteredDealers, setAllFilteredDealers] = useState([]); // Store all filtered dealers
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [componentError, setComponentError] = useState<string | null>(null);
-  const [activeMapCenter, setActiveMapCenter] = useState<
-    Coordinates | [number, number]
-  >(getInitialCenter(mapProvider));
+  const [componentError, setComponentError] = useState(null);
+  const [activeMapCenter, setActiveMapCenter] = useState(
+    getInitialCenter(mapProvider)
+  );
   const [activeMapZoom, setActiveMapZoom] = useState(initialZoom);
   const [spinnerRotation, setSpinnerRotation] = useState(0);
   const [showStores, setShowStores] = useState(true);
@@ -125,14 +127,12 @@ export default function DealerLocator(props) {
   const [mapBackgroundOverlay, setMapBackgroundOverlay] = useState(false);
   const [drawerExpanded, setDrawerExpanded] = useState(false);
   const [markersReady, setMarkersReady] = useState(false); // Track when markers are ready
-  const [searchMode, setSearchMode] = useState<"none" | "text" | "location">(
-    "none"
-  );
+  const [searchMode, setSearchMode] = useState("none");
   const [markersRendered, setMarkersRendered] = useState(false);
 
   // --- Refs ---
-  const geocoderRef = useRef<any>(null);
-  const listContainerRef = useRef<HTMLDivElement>(null);
+  const geocoderRef = useRef(null);
+  const listContainerRef = useRef(null);
   const markersProcessedRef = useRef(false);
 
   // --- Hooks ---
@@ -197,7 +197,7 @@ export default function DealerLocator(props) {
 
   // Spinner animation effect
   useEffect(() => {
-    let frameId: number | null = null;
+    let frameId = null;
     if (isLocatingCombined) {
       const animate = () => {
         setSpinnerRotation((r) => (r + 6) % 360);
@@ -364,7 +364,7 @@ export default function DealerLocator(props) {
         const isCharging =
           services.includes("charging") || services.includes("ev charging");
 
-        // FIXED: Changed from AND to OR logic for filters
+        // Changed from AND to OR logic for filters
         return (
           (showStores && isStore) ||
           (showService && isService) ||
@@ -399,6 +399,7 @@ export default function DealerLocator(props) {
     isDealersLoading,
     maxSearchRadius,
     showNearestDealers,
+    currentPage,
   ]);
 
   // --- Pagination/Infinite Scroll Data ---
@@ -532,12 +533,12 @@ export default function DealerLocator(props) {
 
   // --- Style Objects Generation ---
   const styles = useMemo(() => {
-    const containerStyle: React.CSSProperties = {
+    const containerStyle = {
       display: "flex",
       flexDirection: isMobile ? "column" : "row",
       width: "100%",
-      height: "100%",
-      maxHeight: "100%",
+      height: "100vh", // Use viewport height
+      maxHeight: "100vh",
       backgroundColor: theme.colors.background,
       overflow: "hidden",
       position: "relative",
@@ -546,30 +547,31 @@ export default function DealerLocator(props) {
       ...style,
     };
 
-    const mapContainerStyle: React.CSSProperties = {
+    const mapContainerStyle = {
       flex: 1,
-      minHeight: isMobile ? "40%" : "auto",
+      minHeight: isMobile ? "40vh" : "auto", // Use vh units for mobile
       height: isMobile ? "40%" : "100%",
       position: "relative",
       backgroundColor: theme.colors.surfaceVariant,
       order: isMobile ? 1 : 2,
     };
 
-    const sidebarStyle: React.CSSProperties = {
+    const sidebarStyle = {
       flex: isMobile ? "1" : `0 0 ${detailPanelWidth}px`,
-      height: isMobile ? "60%" : "100%",
+      height: isMobile ? "60vh" : "100%", // Use viewport height units
+      maxHeight: isMobile ? "60vh" : "100%",
       display: "flex",
       flexDirection: "column",
       background: theme.colors.surface,
       borderRight: !isMobile ? `1px solid ${theme.colors.outline}` : "none",
       borderTop: isMobile ? `1px solid ${theme.colors.outline}` : "none",
-      overflow: "hidden",
+      overflow: "hidden", // Important: keep this as hidden
       order: isMobile ? 2 : 1,
       position: "relative",
       boxShadow: !isMobile ? theme.shadows[1] : "none",
     };
 
-    const mapOverlayStyle: React.CSSProperties = {
+    const mapOverlayStyle = {
       position: "fixed",
       top: 0,
       left: 0,
@@ -585,20 +587,20 @@ export default function DealerLocator(props) {
     };
 
     // --- Search/Filter Area Styles ---
-    const topSectionContainerStyle: React.CSSProperties = {
+    const topSectionContainerStyle = {
       padding: theme.spacing(2),
       borderBottom: `1px solid ${theme.colors.outline}`,
       flexShrink: 0,
     };
 
-    const titleStyle: React.CSSProperties = {
+    const titleStyle = {
       fontSize: isMobile ? "22px" : "28px",
       fontWeight: 600,
       margin: `0 0 ${theme.spacing(1)} 0`,
       color: theme.colors.onSurface,
     };
 
-    const descriptionStyle: React.CSSProperties = {
+    const descriptionStyle = {
       fontSize: isMobile ? "14px" : "16px",
       color: theme.colors.neutral[600],
       margin: "0",
@@ -606,7 +608,7 @@ export default function DealerLocator(props) {
       marginBottom: theme.spacing(2),
     };
 
-    const locationLabelStyle: React.CSSProperties = {
+    const locationLabelStyle = {
       fontSize: "12px",
       fontWeight: 600,
       textTransform: "uppercase",
@@ -615,9 +617,7 @@ export default function DealerLocator(props) {
       color: theme.colors.neutral[700],
     };
 
-    const searchInputContainerStyle = (
-      isFocused = false
-    ): React.CSSProperties => ({
+    const searchInputContainerStyle = (isFocused = false) => ({
       display: "flex",
       alignItems: "center",
       height: "44px",
@@ -633,7 +633,7 @@ export default function DealerLocator(props) {
         : "none",
     });
 
-    const searchInputStyle: React.CSSProperties = {
+    const searchInputStyle = {
       flex: 1,
       border: "none",
       outline: "none",
@@ -643,7 +643,7 @@ export default function DealerLocator(props) {
       fontSize: "14px",
     };
 
-    const searchIconButtonStyle: React.CSSProperties = {
+    const searchIconButtonStyle = {
       border: "none",
       background: "transparent",
       padding: theme.spacing(1),
@@ -654,14 +654,14 @@ export default function DealerLocator(props) {
       color: theme.colors.onSurfaceVariant,
     };
 
-    const filterContainerStyle: React.CSSProperties = {
+    const filterContainerStyle = {
       display: "flex",
       flexWrap: "wrap",
       gap: theme.spacing(1.5),
       marginTop: theme.spacing(2),
     };
 
-    const filterCheckboxStyle = (isActive: boolean): React.CSSProperties => ({
+    const filterCheckboxStyle = (isActive) => ({
       display: "flex",
       alignItems: "center",
       gap: theme.spacing(0.75),
@@ -675,9 +675,7 @@ export default function DealerLocator(props) {
       transition: "background-color 0.15s ease-in-out",
     });
 
-    const filterCheckboxIndicatorStyle = (
-      isActive: boolean
-    ): React.CSSProperties => ({
+    const filterCheckboxIndicatorStyle = (isActive) => ({
       width: "18px",
       height: "18px",
       borderRadius: theme.shape.small,
@@ -697,15 +695,17 @@ export default function DealerLocator(props) {
         : '""',
     });
 
-    // --- Dealer List Styles ---
-    const dealerListContainerStyle: React.CSSProperties = {
+    // Updated dealer list style with proper height
+    const dealerListContainerStyle = {
       flex: 1,
       overflowY: "auto",
       WebkitOverflowScrolling: "touch",
       padding: `${theme.spacing(1)} ${theme.spacing(1.5)}`,
+      height: "calc(100% - 20px)", // Ensure it fills available space
+      maxHeight: "100%", // Prevent overflowing its container
     };
 
-    const dealerCardStyleBase = (isSelected: boolean): React.CSSProperties => ({
+    const dealerCardStyleBase = (isSelected) => ({
       background: isSelected
         ? theme.colors.surfaceVariant
         : theme.colors.surface,
@@ -723,7 +723,7 @@ export default function DealerLocator(props) {
       position: "relative",
     });
 
-    const dealerCardContentStyle: React.CSSProperties = {
+    const dealerCardContentStyle = {
       display: "flex",
       alignItems: "flex-start",
       justifyContent: "space-between",
@@ -731,12 +731,12 @@ export default function DealerLocator(props) {
       gap: theme.spacing(1.5),
     };
 
-    const dealerCardTextWrapStyle: React.CSSProperties = {
+    const dealerCardTextWrapStyle = {
       flex: 1,
       minWidth: 0,
     };
 
-    const dealerCardTitleStyle: React.CSSProperties = {
+    const dealerCardTitleStyle = {
       margin: `0 0 ${theme.spacing(0.5)} 0`,
       fontSize: "16px",
       fontWeight: 600,
@@ -744,14 +744,14 @@ export default function DealerLocator(props) {
       lineHeight: 1.4,
     };
 
-    const dealerCardAddressStyle: React.CSSProperties = {
+    const dealerCardAddressStyle = {
       margin: `0 0 ${theme.spacing(1)} 0`,
       fontSize: "14px",
       color: theme.colors.neutral[600],
       lineHeight: 1.45,
     };
 
-    const dealerCardServicesStyle: React.CSSProperties = {
+    const dealerCardServicesStyle = {
       display: "flex",
       flexWrap: "wrap",
       gap: theme.spacing(1),
@@ -759,11 +759,7 @@ export default function DealerLocator(props) {
       marginBottom: theme.spacing(1),
     };
 
-    const dealerCardServiceTagStyle = (
-      bgColor: string,
-      textColor: string,
-      bdColor: string
-    ): React.CSSProperties => ({
+    const dealerCardServiceTagStyle = (bgColor, textColor, bdColor) => ({
       fontSize: "10px",
       padding: "3px 6px",
       backgroundColor: bgColor,
@@ -776,14 +772,14 @@ export default function DealerLocator(props) {
       outlineOffset: "-1px",
     });
 
-    const dealerCardDistanceStyle: React.CSSProperties = {
+    const dealerCardDistanceStyle = {
       margin: `${theme.spacing(1)} 0 0 0`,
       fontSize: "13px",
       fontWeight: 500,
       color: theme.colors.primary,
     };
 
-    const dealerCardArrowStyle: React.CSSProperties = {
+    const dealerCardArrowStyle = {
       color: theme.colors.onSurfaceVariant,
       display: "flex",
       alignItems: "center",
@@ -792,7 +788,7 @@ export default function DealerLocator(props) {
     };
 
     // --- Pagination Styles ---
-    const paginationContainerStyle: React.CSSProperties = {
+    const paginationContainerStyle = {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -802,9 +798,7 @@ export default function DealerLocator(props) {
       flexShrink: 0,
     };
 
-    const paginationButtonStyleBase = (
-      isDisabled: boolean
-    ): React.CSSProperties => ({
+    const paginationButtonStyleBase = (isDisabled) => ({
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -821,14 +815,14 @@ export default function DealerLocator(props) {
       transition: "background-color 0.2s, color 0.2s",
     });
 
-    const paginationInfoStyle: React.CSSProperties = {
+    const paginationInfoStyle = {
       margin: `0 ${theme.spacing(2)}`,
       fontSize: "14px",
       color: theme.colors.onSurfaceVariant,
     };
 
     // --- Loading, Error, Placeholder Styles ---
-    const loadingOverlayStyle: React.CSSProperties = {
+    const loadingOverlayStyle = {
       position: "absolute",
       top: 0,
       left: 0,
@@ -851,14 +845,14 @@ export default function DealerLocator(props) {
       transform: `rotate(${rotation}deg)`,
     });
 
-    const loadingTextStyle: React.CSSProperties = {
+    const loadingTextStyle = {
       marginTop: theme.spacing(2),
       color: theme.colors.neutral[700],
       fontSize: "16px",
       fontWeight: 500,
     };
 
-    const errorOverlayStyle: React.CSSProperties = {
+    const errorOverlayStyle = {
       position: "absolute",
       top: 0,
       left: 0,
@@ -873,12 +867,12 @@ export default function DealerLocator(props) {
       zIndex: 1000,
     };
 
-    const errorIconContainerStyle: React.CSSProperties = {
+    const errorIconContainerStyle = {
       marginBottom: theme.spacing(2),
       color: theme.colors.error,
     };
 
-    const errorTextStyle: React.CSSProperties = {
+    const errorTextStyle = {
       color: theme.colors.neutral[800],
       fontSize: "16px",
       fontWeight: 500,
@@ -886,7 +880,7 @@ export default function DealerLocator(props) {
       marginBottom: theme.spacing(3),
     };
 
-    const errorButtonStyle: React.CSSProperties = {
+    const errorButtonStyle = {
       backgroundColor: theme.colors.primary,
       color: theme.colors.white,
       border: "none",
@@ -901,7 +895,7 @@ export default function DealerLocator(props) {
       gap: theme.spacing(1),
     };
 
-    const mapPlaceholderStyle: React.CSSProperties = {
+    const mapPlaceholderStyle = {
       position: "absolute",
       top: 0,
       left: 0,
@@ -915,14 +909,14 @@ export default function DealerLocator(props) {
       padding: theme.spacing(3),
     };
 
-    const mapPlaceholderTextStyle: React.CSSProperties = {
+    const mapPlaceholderTextStyle = {
       color: theme.colors.neutral[700],
       fontSize: "18px",
       fontWeight: 600,
       marginTop: theme.spacing(2),
     };
 
-    const mapPlaceholderSubTextStyle: React.CSSProperties = {
+    const mapPlaceholderSubTextStyle = {
       color: theme.colors.neutral[500],
       fontSize: "14px",
       marginTop: theme.spacing(1),
@@ -930,7 +924,7 @@ export default function DealerLocator(props) {
     };
 
     // --- Button Styles ---
-    const textButtonStyle = (isDisabled = false): React.CSSProperties => ({
+    const textButtonStyle = (isDisabled = false) => ({
       backgroundColor: "transparent",
       color: isDisabled ? theme.colors.neutral[400] : theme.colors.primary,
       border: "none",
@@ -946,7 +940,7 @@ export default function DealerLocator(props) {
     });
 
     // --- Detail Panel Styles ---
-    const detailSectionTitleStyle: React.CSSProperties = {
+    const detailSectionTitleStyle = {
       fontSize: "12px",
       fontWeight: 600,
       textTransform: "uppercase",
@@ -955,50 +949,50 @@ export default function DealerLocator(props) {
       margin: `0 0 ${theme.spacing(1.25)} 0`,
     };
 
-    const detailParagraphStyle: React.CSSProperties = {
+    const detailParagraphStyle = {
       fontSize: "16px",
       lineHeight: 1.6,
       color: theme.colors.neutral[700],
       margin: `0 0 ${theme.spacing(1)} 0`,
     };
 
-    const detailDistanceStyle: React.CSSProperties = {
+    const detailDistanceStyle = {
       fontSize: "14px",
       color: theme.colors.neutral[500],
       margin: `${theme.spacing(1)} 0 0 0`,
     };
 
-    const detailContactItemStyle: React.CSSProperties = {
+    const detailContactItemStyle = {
       display: "flex",
       alignItems: "center",
       gap: theme.spacing(1.25),
     };
 
-    const detailLinkStyle: React.CSSProperties = {
+    const detailLinkStyle = {
       color: theme.colors.primary,
       textDecoration: "none",
       fontSize: "16px",
       wordBreak: "break-word",
     };
 
-    const detailHoursGridStyle: React.CSSProperties = {
+    const detailHoursGridStyle = {
       display: "grid",
       gridTemplateColumns: "100px 1fr",
       gap: theme.spacing(1),
       fontSize: "14px",
     };
 
-    const detailHoursDayStyle: React.CSSProperties = {};
+    const detailHoursDayStyle = {};
 
-    const detailHoursTimeStyle: React.CSSProperties = {};
+    const detailHoursTimeStyle = {};
 
-    const detailServicesListStyle: React.CSSProperties = {
+    const detailServicesListStyle = {
       display: "flex",
       flexDirection: "column",
       gap: theme.spacing(1),
     };
 
-    const detailServiceItemStyle: React.CSSProperties = {
+    const detailServiceItemStyle = {
       fontSize: "16px",
       lineHeight: 1.4,
       display: "flex",
@@ -1006,7 +1000,7 @@ export default function DealerLocator(props) {
       gap: theme.spacing(1),
     };
 
-    const detailActionsFooterStyle: React.CSSProperties = {
+    const detailActionsFooterStyle = {
       display: "flex",
       padding: theme.spacing(2),
       borderTop: `1px solid ${theme.colors.outline}`,
@@ -1015,7 +1009,7 @@ export default function DealerLocator(props) {
       flexShrink: 0,
     };
 
-    const detailActionButtonStyle: React.CSSProperties = {
+    const detailActionButtonStyle = {
       flex: 1,
       padding: `${theme.spacing(1.5)} ${theme.spacing(2)}`,
       backgroundColor: theme.colors.neutral[800],
@@ -1102,7 +1096,7 @@ export default function DealerLocator(props) {
 
   // --- Geocoding Handler ---
   const handleGeocodeSearch = useCallback(
-    async (query: string) => {
+    async (query) => {
       if (!query) {
         setSearchLocation(null);
         return;
@@ -1185,7 +1179,7 @@ export default function DealerLocator(props) {
   );
 
   // --- Event Handlers ---
-  const handleSearchSubmit = (query: string) => {
+  const handleSearchSubmit = (query) => {
     setSearchQuery(query);
     handleGeocodeSearch(query);
   };
@@ -1207,7 +1201,7 @@ export default function DealerLocator(props) {
   };
 
   const handleDealerSelect = useCallback(
-    (dealer: Dealer) => {
+    (dealer) => {
       console.log("Dealer selected:", dealer.name);
       setSelectedDealer(dealer);
       setActiveMapCenter([dealer.coordinates.lng, dealer.coordinates.lat]);
@@ -1251,7 +1245,7 @@ export default function DealerLocator(props) {
     // Map panning will happen in the effect watching userLocation
   }, [getUserLocation]);
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = (page) => {
     if (!useInfiniteScroll) {
       console.log(`Changing page to: ${page}`);
       setCurrentPage(page);
@@ -1266,14 +1260,16 @@ export default function DealerLocator(props) {
     setSelectedDealer(null);
   }, []);
 
-  const handleToggleDrawerExpanded = useCallback((expanded: boolean) => {
+  const handleToggleDrawerExpanded = useCallback((expanded) => {
     console.log(`Toggling mobile drawer expanded state to: ${expanded}`);
     setDrawerExpanded(expanded);
   }, []);
 
   // Function to notify when markers are loaded
   const handleMarkersReady = useCallback(() => {
+    console.log("Markers rendered callback received");
     setMarkersRendered(true);
+    markersProcessedRef.current = true;
   }, []);
 
   // --- Render Conditionals ---

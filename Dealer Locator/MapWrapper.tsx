@@ -3,9 +3,6 @@ import React, { useRef, useEffect, memo, useCallback } from "react";
 import { RenderTarget } from "framer";
 import mapboxgl, { Marker, Popup } from "mapbox-gl"; // Import specific types
 
-// IMPORTANT: Ensure Mapbox CSS is linked in Framer Site Settings -> Custom Code -> Head
-// <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
-
 // Import types and utility functions from Lib.tsx
 import {
   type Dealer,
@@ -152,6 +149,40 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
 
   const isMapbox = mapProvider === "mapbox";
 
+  // Add Mapbox CSS if not already present
+  useEffect(() => {
+    if (!document.getElementById("mapbox-gl-css")) {
+      const link = document.createElement("link");
+      link.id = "mapbox-gl-css";
+      link.rel = "stylesheet";
+      link.href = "https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css";
+      document.head.appendChild(link);
+
+      console.log("Added Mapbox CSS to document head");
+    }
+    return () => {
+      // Don't remove CSS on unmount as other components might need it
+    };
+  }, []);
+
+  // --- Map Interaction Handler ---
+  const handleMapInteraction = useCallback(
+    (e: mapboxgl.MapMouseEvent & mapboxgl.EventData) => {
+      // Check if click occurred on a specific layer if using symbol layers
+      const features = mapboxMapRef.current?.queryRenderedFeatures(e.point, {
+        layers: [],
+      });
+
+      // If click wasn't on a known feature/marker, trigger onMapClick
+      if (!features || features.length === 0) {
+        console.log("Map background clicked");
+        onMapClick();
+        mapboxPopupRef.current?.remove(); // Close popup on map click
+      }
+    },
+    [onMapClick]
+  );
+
   // --- Cleanup function ---
   const cleanupMap = useCallback(() => {
     console.log("Cleaning up Mapbox instance...");
@@ -177,25 +208,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     isRenderedRef.current = false;
     markersReadyFiredRef.current = false;
     console.log("Mapbox cleanup complete.");
-  }, []); // No external dependencies needed if handleMapInteraction is also stable
-
-  // --- Map Interaction Handler ---
-  const handleMapInteraction = useCallback(
-    (e: mapboxgl.MapMouseEvent & mapboxgl.EventData) => {
-      // Check if click occurred on a specific layer if using symbol layers
-      const features = mapboxMapRef.current?.queryRenderedFeatures(e.point, {
-        layers: [],
-      });
-
-      // If click wasn't on a known feature/marker, trigger onMapClick
-      if (!features || features.length === 0) {
-        console.log("Map background clicked");
-        onMapClick();
-        mapboxPopupRef.current?.remove(); // Close popup on map click
-      }
-    },
-    [onMapClick]
-  );
+  }, [handleMapInteraction]); // Include handleMapInteraction in dependencies
 
   // --- Mapbox Initialization Effect ---
   useEffect(() => {
@@ -212,18 +225,31 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       });
       return cleanupMap; // Ensure cleanup if conditions change
     }
+
+    // Cleanup existing map before reinitializing
     if (mapboxMapRef.current) {
-      console.log("Mapbox already initialized.");
-      return;
+      cleanupMap();
     }
 
     console.log("Initializing Mapbox Map...");
     mapboxgl.accessToken = mapboxAccessToken;
+
     try {
+      // Ensure the container has proper dimensions
+      if (
+        mapContainerRef.current.clientWidth === 0 ||
+        mapContainerRef.current.clientHeight === 0
+      ) {
+        console.error("Map container has zero width or height", {
+          width: mapContainerRef.current.clientWidth,
+          height: mapContainerRef.current.clientHeight,
+        });
+      }
+
       const map = new mapboxgl.Map({
-        container: mapContainerRef.current!,
+        container: mapContainerRef.current,
         style: mapboxMapStyleUrl,
-        center: center as [number, number],
+        center: Array.isArray(center) ? center : [center.lng, center.lat],
         zoom: zoom,
         maxZoom: 18,
         minZoom: 4,
@@ -248,17 +274,31 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       }
 
       mapboxMapRef.current = map;
+
       map.on("load", () => {
         console.log("Mapbox map loaded.");
         isRenderedRef.current = true;
         map.on("click", handleMapInteraction); // Attach click listener here
+
+        // Notify on first load that map is ready
+        if (
+          !markersReadyFiredRef.current &&
+          typeof onMarkersReady === "function"
+        ) {
+          setTimeout(() => {
+            onMarkersReady();
+            markersReadyFiredRef.current = true;
+          }, 500); // Short delay to ensure map is fully rendered
+        }
       });
+
       map.on("error", (e) => {
         console.error("Mapbox GL Error:", e.error?.message || e);
       });
     } catch (error) {
       console.error("Failed to initialize Mapbox Map:", error);
     }
+
     return cleanupMap;
   }, [
     isMapbox,
@@ -269,6 +309,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     attributionControl,
     cleanupMap,
     handleMapInteraction,
+    onMarkersReady,
     // center and zoom are handled separately to prevent re-init
   ]);
 
@@ -285,45 +326,57 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
 
     // 1. Add or Update Markers
     dealers.forEach((dealer) => {
+      if (
+        !dealer.coordinates ||
+        !dealer.coordinates.lat ||
+        !dealer.coordinates.lng
+      ) {
+        console.warn(
+          `Invalid coordinates for dealer ${dealer.name || dealer.id}`,
+          dealer.coordinates
+        );
+        return; // Skip this dealer
+      }
+
       const dealerId = dealer.id;
       const isSelected = selectedDealer?.id === dealerId;
-      const existingMarker = mapboxMarkersRef.current[dealerId];
 
-      // Create marker element using the SVG function
-      const markerEl = document.createElement("div");
-      markerEl.className = `dealer-marker dealer-marker-${dealerId}`;
-      markerEl.innerHTML = getMarkerSvg(dealer, isSelected, theme);
-      const clickableElement = markerEl.firstChild as HTMLElement; // The styled div containing the SVG
+      try {
+        // Create marker element using the SVG function
+        const markerEl = document.createElement("div");
+        markerEl.className = `dealer-marker dealer-marker-${dealerId}`;
+        markerEl.innerHTML = getMarkerSvg(dealer, isSelected, theme);
 
-      const clickHandler = (e: MouseEvent) => {
-        e.stopPropagation(); // Prevent map click event
-        console.log(`Marker clicked: ${dealer.name}`);
-        onMarkerClick(dealer);
-      };
+        // Find the existing marker if any
+        const existingMarker = mapboxMarkersRef.current[dealerId];
 
-      if (existingMarker) {
-        // Update existing marker's element content if it changed
-        const oldElement = existingMarker.getElement();
-        if (oldElement.innerHTML !== markerEl.innerHTML) {
-          oldElement.innerHTML = markerEl.innerHTML;
+        if (existingMarker) {
+          // Update existing marker element
+          try {
+            existingMarker.getElement().innerHTML = markerEl.innerHTML;
+
+            // Update position if needed
+            const currentPos = existingMarker.getLngLat();
+            if (
+              currentPos.lng !== dealer.coordinates.lng ||
+              currentPos.lat !== dealer.coordinates.lat
+            ) {
+              existingMarker.setLngLat([
+                dealer.coordinates.lng,
+                dealer.coordinates.lat,
+              ]);
+            }
+
+            newMarkers[dealerId] = existingMarker;
+          } catch (err) {
+            console.error("Error updating marker:", err);
+            existingMarker.remove(); // Remove problematic marker
+            // We'll create a new one below
+          }
         }
 
-        // Re-attach listener to the new/updated clickable element within the marker
-        const currentClickable = oldElement.firstChild as HTMLElement;
-        if (
-          currentClickable &&
-          !(currentClickable as any)._clickHandlerAttached
-        ) {
-          // Simple check to try and prevent duplicates - might need more robust solution
-          currentClickable.addEventListener("click", clickHandler);
-          (currentClickable as any)._clickHandlerAttached = true;
-        }
-
-        newMarkers[dealerId] = existingMarker;
-        delete mapboxMarkersRef.current[dealerId]; // Remove from old list check
-      } else {
-        // Create new marker instance
-        try {
+        // If no existing marker or update failed, create a new one
+        if (!newMarkers[dealerId]) {
           const marker = new mapboxgl.Marker({
             element: markerEl,
             anchor: "bottom", // Anchor at the tip of the pin
@@ -331,23 +384,22 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
             .setLngLat([dealer.coordinates.lng, dealer.coordinates.lat])
             .addTo(currentMap);
 
-          // Add click listener to the clickable part
-          if (clickableElement) {
-            clickableElement.addEventListener("click", clickHandler);
-            (clickableElement as any)._clickHandlerAttached = true; // Mark attached
-          }
+          // Add click handler to the marker
+          marker.getElement().addEventListener("click", () => {
+            console.log(`Marker clicked: ${dealer.name}`);
+            onMarkerClick(dealer);
+          });
 
           newMarkers[dealerId] = marker;
-        } catch (error) {
-          console.error("Failed to create Mapbox Marker:", error, dealer);
         }
+      } catch (error) {
+        console.error("Failed to create/update Mapbox Marker:", error, dealer);
       }
     });
 
     // 2. Remove Old Markers (excluding user marker)
     Object.keys(mapboxMarkersRef.current).forEach((oldDealerId) => {
-      if (oldDealerId !== "user-location") {
-        // Check specifically for user marker ID
+      if (oldDealerId !== "user-location" && !newMarkers[oldDealerId]) {
         console.log(`Removing old marker: ${oldDealerId}`);
         mapboxMarkersRef.current[oldDealerId].remove();
       }
@@ -367,7 +419,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       onMarkersReady();
       markersReadyFiredRef.current = true;
     }
-  }, [isMapbox, dealers, selectedDealer, onMarkerClick, theme, onMarkersReady]); // Added onMarkersReady
+  }, [isMapbox, dealers, selectedDealer, onMarkerClick, theme, onMarkersReady]);
 
   // --- Mapbox Popup Update Effect ---
   useEffect(() => {
@@ -422,7 +474,9 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
   useEffect(() => {
     if (!mapboxMapRef.current || !isRenderedRef.current || !isMapbox) return;
     const currentMap = mapboxMapRef.current;
-    const targetCenter = center as [number, number];
+    const targetCenter = Array.isArray(center)
+      ? center
+      : [center.lng, center.lat];
     const currentCenter = currentMap.getCenter();
     const centerDiff =
       Math.abs(currentCenter.lng - targetCenter[0]) +
