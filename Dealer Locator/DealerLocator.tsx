@@ -1417,15 +1417,15 @@ export default function DealerLocator(props) {
         <ErrorDisplay
           message={componentError} // Shows mapApiLoadError
           onRetry={undefined} // No specific retry for map load error here
-+          theme={theme}
-+          styles={styles}
-+        />
-+      )}
-+      {/* Show ErrorDisplay with retry for dealer fetch errors */}
-+      {dealersError && !isLocatingCombined && (
-+        <ErrorDisplay
-+          message={dealersError}
-+          onRetry={refetchDealers}
+          theme={theme}
+          styles={styles}
+        />
+      )}
+      {/* Show ErrorDisplay with retry for dealer fetch errors */}
+      {dealersError && !isLocatingCombined && (
+        <ErrorDisplay
+          message={dealersError}
+          onRetry={refetchDealers}
           theme={theme}
           styles={styles}
         />
