@@ -414,7 +414,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
           onMarkersReady();
           markersReadyFiredRef.current = true;
         }
-      }, 5000) as unknown as number;
+      }, 5000); // Use NodeJS.Timeout type
     } catch (error) {
       console.error("Failed to initialize Mapbox Map:", error);
 
