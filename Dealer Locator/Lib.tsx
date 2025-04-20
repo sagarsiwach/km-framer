@@ -655,12 +655,14 @@ export const createEnhancedPopupContent = (
   }; color: ${
   theme.colors.onSurface
 }; max-width: 220px; padding: 8px 12px; border-radius: 6px;">
-    <h3 style="margin: 0 0 6px; font-size: 14px; font-weight: 600; line-height: 1.3;">${
+    <h3 style="margin: 0 0 6px; font-size: 14px; font-weight: 600; line-height: 1.3;">${decodeHtmlEntities(
       dealer.name
-    }</h3>
+    )}</h3>
     <p style="margin: 0 0 6px; font-size: 12px; color: ${
       theme.colors.neutral[600]
-    }; line-height: 1.4;">${dealer.address.formatted}</p>
+    }; line-height: 1.4;">${decodeHtmlEntities(
+      dealer.address.formatted
+    )}</p>
     ${
       dealer.distance !== undefined && dealer.distance >= 0
         ? `<div style="display: flex; align-items: center; margin-top: 8px;">

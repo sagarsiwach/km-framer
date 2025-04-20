@@ -144,10 +144,9 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
   const mapboxMapRef = useRef<mapboxgl.Map | null>(null);
   const mapboxMarkersRef = useRef<{ [id: string]: Marker }>({});
   const mapboxPopupRef = useRef<Popup | null>(null);
-  const isRenderedRef = useRef(false);
-  const markersReadyFiredRef = useRef(false);
-  const markersInitializedRef = useRef(false);
-  const mapLoadTimeoutRef = useRef<number | null>(null);
+  const mapInitializedRef = useRef(false); // Track if map instance is created
+  const markersReadyFiredRef = useRef(false); // Track if onMarkersReady was called
+  const mapLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Use NodeJS.Timeout for clarity
 
   const isMapbox = mapProvider === "mapbox";
 
@@ -202,23 +201,8 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     let validDealersCount = 0;
 
     try {
-      // Process each dealer
+      // Process each dealer (assuming coordinates are valid from DealerLocator)
       dealers.forEach((dealer) => {
-        // Enhanced validation for coordinates
-        if (
-          !dealer.coordinates ||
-          typeof dealer.coordinates.lat !== "number" ||
-          typeof dealer.coordinates.lng !== "number" ||
-          isNaN(dealer.coordinates.lat) ||
-          isNaN(dealer.coordinates.lng)
-        ) {
-          console.warn(
-            `Invalid coordinates for dealer ${dealer.name || dealer.id}`,
-            dealer.coordinates
-          );
-          return; // Skip this dealer
-        }
-
         validDealersCount++;
         const dealerId = dealer.id;
         const isSelected = selectedDealer?.id === dealerId;
@@ -317,7 +301,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
 
     isRenderedRef.current = false;
     markersReadyFiredRef.current = false;
-    markersInitializedRef.current = false;
+    mapInitializedRef.current = false; // Reset map initialized flag
     console.log("Mapbox cleanup complete.");
   }, [handleMapInteraction]); // Include handleMapInteraction in dependencies
 
@@ -396,38 +380,27 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       }
 
       mapboxMapRef.current = map;
-
-      // Try to initialize markers immediately rather than waiting for 'load' event
-      let markersInitialized = false;
-
-      if (dealers && dealers.length > 0) {
-        markersInitialized = initializeMarkers();
-      }
-
+      mapInitializedRef.current = true; // Mark map as initialized
+ 
       map.on("load", () => {
         console.log("Mapbox map loaded.");
-        isRenderedRef.current = true;
         map.on("click", handleMapInteraction); // Attach click listener here
-
-        // If markers weren't initialized earlier, try again
+ 
+        // Markers will be handled by the dedicated marker effect.
+        // Ensure onMarkersReady is called if no dealers exist.
         if (
-          !markersInitialized &&
-          !markersInitializedRef.current &&
-          dealers.length > 0
-        ) {
-          console.log("Trying to initialize markers after map load");
-          initializeMarkers();
-        } else if (
+          dealers.length === 0 &&
           !markersReadyFiredRef.current &&
           typeof onMarkersReady === "function"
         ) {
-          // Make sure onMarkersReady is called even if we have no dealers
-          console.log("No markers to initialize, but notifying ready");
+          console.log(
+            "Map loaded, no dealers, ensuring onMarkersReady is called."
+          );
           onMarkersReady();
           markersReadyFiredRef.current = true;
         }
       });
-
+ 
       map.on("error", (e) => {
         console.error("Mapbox GL Error:", e.error?.message || e);
       });
@@ -456,6 +429,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       }
     }
 
+    // This effect should only run once on mount or when essential map config changes
     return cleanupMap;
   }, [
     isMapbox,
@@ -464,63 +438,40 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     hideControls,
     navigationControl,
     attributionControl,
-    cleanupMap,
-    handleMapInteraction,
-    onMarkersReady,
-    dealers,
-    initializeMarkers,
-    // center and zoom are handled separately to prevent re-init
-  ]);
+    // Removed dealers, initializeMarkers, onMarkersReady, cleanupMap, handleMapInteraction
+    // These are handled in other effects or are stable callbacks
+  ]); // Keep center/zoom out as they are handled separately
 
-  // --- Mapbox Marker Update Effect ---
+  // --- Mapbox Marker Creation/Update Effect ---
   useEffect(() => {
-    // If markers not initialized yet, try to initialize them now
-    if (
-      !markersInitializedRef.current &&
-      mapboxMapRef.current &&
-      isMapbox &&
-      dealers.length > 0
-    ) {
-      console.log("Trying to initialize markers in update effect");
-      initializeMarkers();
-      return;
-    }
-
     if (!mapboxMapRef.current || !isMapbox) {
+      // If map isn't ready, we can't manage markers.
+      // Ensure onMarkersReady is called if it hasn't been, especially if there are no dealers.
       if (
         !markersReadyFiredRef.current &&
-        typeof onMarkersReady === "function"
+        typeof onMarkersReady === "function" &&
+        dealers.length === 0
       ) {
-        console.log("Map not ready, but notifying markers ready for stability");
+        console.log(
+          "Map not ready or no dealers, ensuring onMarkersReady is called."
+        );
         onMarkersReady();
         markersReadyFiredRef.current = true;
       }
       return;
     }
 
-    console.log(`Updating ${dealers.length} markers...`);
+    console.log(
+      `Running marker update effect. Dealers: ${dealers.length}, Selected: ${selectedDealer?.id}`
+    );
     const currentMap = mapboxMapRef.current;
-    const newMarkers: { [id: string]: Marker } = {};
+    const newMarkers: { [id: string]: Marker } = {}; // Track markers for this update cycle
     let validDealersCount = 0;
 
     try {
-      // 1. Process each dealer and create/update markers
+      // 1. Create/Update Dealer Markers
       dealers.forEach((dealer) => {
-        // Enhanced validation for coordinates
-        if (
-          !dealer.coordinates ||
-          typeof dealer.coordinates.lat !== "number" ||
-          typeof dealer.coordinates.lng !== "number" ||
-          isNaN(dealer.coordinates.lat) ||
-          isNaN(dealer.coordinates.lng)
-        ) {
-          console.warn(
-            `Invalid coordinates for dealer ${dealer.name || dealer.id}`,
-            dealer.coordinates
-          );
-          return; // Skip this dealer
-        }
-
+        // Coordinates assumed valid here due to upstream filtering
         validDealersCount++;
         const dealerId = dealer.id;
         const isSelected = selectedDealer?.id === dealerId;
@@ -632,18 +583,21 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
         markersReadyFiredRef.current = true;
       }
     }
-  }, [
-    isMapbox,
-    dealers,
-    selectedDealer,
-    onMarkerClick,
-    theme,
-    onMarkersReady,
-    initializeMarkers,
-  ]);
 
-  // --- Mapbox Popup Update Effect ---
+    // Call onMarkersReady *once* after the first successful marker processing
+    if (
+      !markersReadyFiredRef.current &&
+      typeof onMarkersReady === "function"
+    ) {
+      console.log("Marker processing complete, calling onMarkersReady.");
+      onMarkersReady();
+      markersReadyFiredRef.current = true;
+    }
+  }, [isMapbox, dealers, selectedDealer, onMarkerClick, theme, onMarkersReady]); // Rerun when dealers or selection changes
+
+  // --- Mapbox Popup Update Effect (Simplified) ---
   useEffect(() => {
+    // This effect is now primarily for cleanup, as popups aren't used directly
     if (!mapboxMapRef.current || !isMapbox) return;
 
     // Just make sure any existing popup is removed

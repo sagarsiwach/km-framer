@@ -220,15 +220,14 @@ export default function DealerLocator(props) {
     }
   }, [mapProvider, isMapApiLoaded, mapboxAccessToken, googleApiKey]);
 
-  // Update combined error state
+  // Update combined error state (excluding geoError for main display)
   useEffect(() => {
-    const errorMsg =
-      dealersError || geoError || mapApiLoadError?.message || null;
+    const errorMsg = dealersError || mapApiLoadError?.message || null;
     if (errorMsg !== componentError) {
       setComponentError(errorMsg);
       if (errorMsg) console.error("Component Error Set:", errorMsg);
     }
-  }, [dealersError, geoError, mapApiLoadError, componentError]);
+  }, [dealersError, mapApiLoadError, componentError]); // Removed geoError dependency
 
   // Spinner animation
   useEffect(() => {
@@ -351,28 +350,27 @@ export default function DealerLocator(props) {
     console.log("Processing and sorting dealers...");
     const locationForDistance = searchLocation || userLocation || null;
 
-    // Add distance to dealers and filter out invalid coordinates
-    let enhancedDealers = allDealers
-      .filter((dealer) => {
-        // Filter out dealers with missing or invalid coordinates
-        if (
-          !dealer.coordinates ||
-          typeof dealer.coordinates.lat !== "number" ||
-          typeof dealer.coordinates.lng !== "number" ||
-          isNaN(dealer.coordinates.lat) ||
-          isNaN(dealer.coordinates.lng)
-        ) {
-          console.warn(
-            `Filtering out dealer with invalid coordinates: ${
-              dealer.name || dealer.id
-            }`,
-            dealer.coordinates
-          );
-          return false;
-        }
-        return true;
-      })
-      .map((dealer) => ({
+    // Filter out dealers with missing or invalid coordinates FIRST
+    const validDealers = allDealers.filter((dealer) => {
+      const isValid =
+        dealer.coordinates &&
+        typeof dealer.coordinates.lat === "number" &&
+        typeof dealer.coordinates.lng === "number" &&
+        !isNaN(dealer.coordinates.lat) &&
+        !isNaN(dealer.coordinates.lng);
+      if (!isValid) {
+        console.warn(
+          `Filtering out dealer with invalid coordinates: ${
+            dealer.name || dealer.id
+          }`,
+          dealer.coordinates
+        );
+      }
+      return isValid;
+    });
+
+    // Add distance to valid dealers
+    let enhancedDealers = validDealers.map((dealer) => ({
         ...dealer,
         distance: locationForDistance
           ? calculateDistance(
@@ -1297,20 +1295,8 @@ export default function DealerLocator(props) {
   // Update dealer selection handler to validate coordinates first
   const handleDealerSelect = useCallback(
     (dealer) => {
+      // Coordinate validation is now done upstream when processing allDealers
       console.log("Dealer selected:", dealer.name);
-
-      // Validate coordinates before setting
-      if (
-        !dealer.coordinates ||
-        typeof dealer.coordinates.lat !== "number" ||
-        typeof dealer.coordinates.lng !== "number" ||
-        isNaN(dealer.coordinates.lat) ||
-        isNaN(dealer.coordinates.lng)
-      ) {
-        console.error("Selected dealer has invalid coordinates:", dealer);
-        setComponentError("This dealer has missing location data.");
-        return;
-      }
 
       setSelectedDealer(dealer);
 
@@ -1426,10 +1412,20 @@ export default function DealerLocator(props) {
         />
       )}
 
-      {componentError && !isLocatingCombined && (
+      {/* Only show ErrorDisplay for critical errors (API, Map load), not geoError */}
+      {componentError && !isLocatingCombined && !dealersError && (
         <ErrorDisplay
-          message={componentError}
-          onRetry={dealersError ? refetchDealers : undefined}
+          message={componentError} // Shows mapApiLoadError
+          onRetry={undefined} // No specific retry for map load error here
++          theme={theme}
++          styles={styles}
++        />
++      )}
++      {/* Show ErrorDisplay with retry for dealer fetch errors */}
++      {dealersError && !isLocatingCombined && (
++        <ErrorDisplay
++          message={dealersError}
++          onRetry={refetchDealers}
           theme={theme}
           styles={styles}
         />
@@ -1460,7 +1456,7 @@ export default function DealerLocator(props) {
               allowLocationAccess={allowLocationAccess}
               onUseLocation={handleUseLocation}
               isLocating={isGeoLocating}
-              locationError={geoError}
+              locationError={geoError} // Pass geoError to SearchBar
               searchPlaceholder={searchPlaceholder}
               useMyLocationText={"Use Location"}
               theme={theme}

@@ -734,7 +734,7 @@ export const SearchBar = ({
   allowLocationAccess,
   onUseLocation,
   isLocating,
-  locationError, // Consider displaying this error
+  locationError, // Prop to receive the error message
   searchPlaceholder,
   useMyLocationText,
   theme,
@@ -914,6 +914,25 @@ export const SearchBar = ({
             {isLocating ? "Locating..." : useMyLocationText}
           </span>
         </motion.button>
+      )}
+      {/* Display Geolocation Error Inline */}
+      {locationError && !isLocating && (
+        <div
+          style={{
+            fontSize: "12px",
+            color: theme.colors.error || "#DC2626",
+            padding: `0 ${theme.spacing(1.5)}`,
+            marginLeft: theme.spacing(1.5), // Add some space
+            borderLeft: `1px solid ${theme.colors.outline}`, // Separator
+            display: "flex",
+            alignItems: "center",
+            height: "100%",
+            flexShrink: 0, // Prevent shrinking
+          }}
+          role="alert"
+        >
+          {locationError}
+        </div>
       )}
     </motion.div>
   );
