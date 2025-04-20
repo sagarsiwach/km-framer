@@ -117,6 +117,7 @@ interface MapWrapperProps {
   hideControls?: boolean;
   navigationControl?: boolean;
   attributionControl?: boolean;
+  onMarkersReady?: () => void; // New callback for marker rendering readiness
 }
 
 // --- Main Map Component ---
@@ -140,12 +141,14 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
   hideControls = false, // Default to showing controls unless specified
   navigationControl = true, // Default to show navigation
   attributionControl = true, // Default to show attribution
+  onMarkersReady,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapboxMapRef = useRef<mapboxgl.Map | null>(null);
   const mapboxMarkersRef = useRef<{ [id: string]: Marker }>({});
   const mapboxPopupRef = useRef<Popup | null>(null);
   const isRenderedRef = useRef(false);
+  const markersReadyFiredRef = useRef(false);
 
   const isMapbox = mapProvider === "mapbox";
 
@@ -172,6 +175,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       }
     }
     isRenderedRef.current = false;
+    markersReadyFiredRef.current = false;
     console.log("Mapbox cleanup complete.");
   }, []); // No external dependencies needed if handleMapInteraction is also stable
 
@@ -356,7 +360,14 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
         ? { "user-location": mapboxMarkersRef.current["user-location"] }
         : {}),
     };
-  }, [isMapbox, dealers, selectedDealer, onMarkerClick, theme]); // Dependencies
+
+    // 4. Notify parent component that markers are rendered
+    if (!markersReadyFiredRef.current && typeof onMarkersReady === "function") {
+      console.log("Notifying that markers are now ready");
+      onMarkersReady();
+      markersReadyFiredRef.current = true;
+    }
+  }, [isMapbox, dealers, selectedDealer, onMarkerClick, theme, onMarkersReady]); // Added onMarkersReady
 
   // --- Mapbox Popup Update Effect ---
   useEffect(() => {
