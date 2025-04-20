@@ -403,13 +403,8 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
         : {}),
     };
 
-    // 4. Notify parent component that markers are rendered
-    if (!markersReadyFiredRef.current && typeof onMarkersReady === "function") {
-      console.log("Notifying that markers are now ready");
-      onMarkersReady();
-      markersReadyFiredRef.current = true;
-    }
-  }, [isMapbox, dealers, selectedDealer, onMarkerClick, theme, onMarkersReady]);
+    // Removed onMarkersReady notification
+  }, [isMapbox, dealers, selectedDealer, onMarkerClick, theme]); // Removed onMarkersReady dependency
 
   // --- Mapbox Popup Update Effect ---
   useEffect(() => {

@@ -1204,10 +1204,7 @@ export const MapPlaceholder = ({
   </motion.div>
 );
 
-// --- Custom FilterButton Component ---
-export const FilterButton = ({
-  label,
-  isActive,
+// --- FilterButton Removed ---
   onClick,
   icon, // Expecting a ReactNode (e.g., <Icon name="..."/> or an SVG)
   theme,
