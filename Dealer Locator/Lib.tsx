@@ -646,18 +646,18 @@ export const MAP_MARKER_SVG = `
 
 // Helper function to decode HTML entities
 const decodeHtmlEntities = (text: string): string => {
-    if (typeof document === "undefined") {
-        // Basic decoding for non-browser environments (like SSR or tests)
-        return text
-            .replace(/&amp;/g, "&")
-            .replace(/&lt;/g, "<")
-            .replace(/&gt;/g, ">")
-            .replace(/&quot;/g, '"')
-            .replace(/&#39;/g, "'");
-    }
-    const textarea = document.createElement("textarea");
-    textarea.innerHTML = text;
-    return textarea.value;
+  if (typeof document === "undefined") {
+    // Basic decoding for non-browser environments (like SSR or tests)
+    return text
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+  }
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = text;
+  return textarea.value;
 };
 
 // Enhanced createMapboxPopupContent function for better-looking popups
@@ -676,9 +676,7 @@ export const createEnhancedPopupContent = (
     )}</h3>
     <p style="margin: 0 0 6px; font-size: 12px; color: ${
       theme.colors.neutral[600]
-    }; line-height: 1.4;">${decodeHtmlEntities(
-      dealer.address.formatted
-    )}</p>
+    }; line-height: 1.4;">${decodeHtmlEntities(dealer.address.formatted)}</p>
     ${
       dealer.distance !== undefined && dealer.distance >= 0
         ? `<div style="display: flex; align-items: center; margin-top: 8px;">

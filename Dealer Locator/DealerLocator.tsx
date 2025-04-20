@@ -10,24 +10,32 @@ import { addPropertyControls, ControlType, RenderTarget } from "framer";
 
 // --- Imports ---
 import {
+  DEFAULT_CENTER_GOOGLE,
+  DEFAULT_CENTER_MAPBOX,
+  DEFAULT_SEARCH_RADIUS,
+  DEFAULT_ZOOM,
   GOOGLE_MAP_STYLES,
-  SAMPLE_DEALERS,
-  getInitialCenter,
-  calculateDistance,
-  type Dealer,
-  type Location,
-  type MapProvider,
-  type Coordinates,
-  hexToRgba,
+  ICONS,
   Icon,
+  MAP_MARKER_SVG,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  SAMPLE_DEALERS,
+  calculateDistance,
+  createEnhancedPopupContent,
   formatAddress,
-} from "https://framer.com/m/Lib-8AS5.js@vS7d5YP2fjGyqMnH5L1D";
+  formatPhone,
+  formatUrl,
+  getDirectionsUrl,
+  getInitialCenter,
+  hexToRgba,
+} from "https://framer.com/m/Lib-8AS5.js";
 
 import {
   useDealerData,
   useGeolocation,
   useMapApiState,
-} from "https://framer.com/m/Hooks-ZmUS.js@2ecUl320qKIztH19IQLd";
+} from "https://framer.com/m/Hooks-ZmUS.js";
 
 import MapWrapper from "https://framer.com/m/MapWrapper-dYOf.js";
 
@@ -35,14 +43,14 @@ import {
   DealerCard,
   DealerDetailPanel,
   ErrorDisplay,
+  FilterButton,
   LoadingOverlay,
   MapPlaceholder,
   PaginationControls,
   SearchBar,
-} from "https://framer.com/m/Components-bS3j.js@0jRsmeo87YGyazwSo9oO";
+} from "https://framer.com/m/Components-bS3j.js@Hhv8cBbbdvyMzhZCgnZ1";
 
-// Explicitly import the default export to potentially resolve Framer module issues
-import { default as LoadingIndicator } from "https://framer.com/m/LoadingOverlay-8m7G.js";
+import LoadingIndicator from "https://framer.com/m/LoadingOverlay-8m7G.js";
 
 // --- Inline useDebounce Hook ---
 function useDebounce(value, delay = 400) {
@@ -372,15 +380,15 @@ export default function DealerLocator(props) {
 
     // Add distance to valid dealers
     let enhancedDealers = validDealers.map((dealer) => ({
-        ...dealer,
-        distance: locationForDistance
-          ? calculateDistance(
-              locationForDistance,
-              dealer.coordinates,
-              distanceUnit
-            )
-          : undefined,
-      }));
+      ...dealer,
+      distance: locationForDistance
+        ? calculateDistance(
+            locationForDistance,
+            dealer.coordinates,
+            distanceUnit
+          )
+        : undefined,
+    }));
 
     // Sort dealers: featured first, then by distance or alphabetically
     enhancedDealers.sort((a, b) => {

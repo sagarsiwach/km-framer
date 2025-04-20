@@ -17,13 +17,13 @@ import {
 
 // Helper to inject CSS rules into the document head if they don't exist
 const injectGlobalStyle = (id: string, css: string) => {
-    if (typeof document !== 'undefined' && !document.getElementById(id)) {
-        const style = document.createElement('style');
-        style.id = id;
-        style.textContent = css;
-        document.head.appendChild(style);
-        console.log(`Injected global style: #${id}`);
-    }
+  if (typeof document !== "undefined" && !document.getElementById(id)) {
+    const style = document.createElement("style");
+    style.id = id;
+    style.textContent = css;
+    document.head.appendChild(style);
+    console.log(`Injected global style: #${id}`);
+  }
 };
 
 // Determines marker color based on service type and selection state
@@ -157,8 +157,8 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
   const mapboxPopupRef = useRef<Popup | null>(null);
   const mapInitializedRef = useRef(false); // Track if map instance is created
   const markersReadyFiredRef = useRef(false); // Track if onMarkersReady was called
+  const markersInitializedRef = useRef(false); // Track if markers were initialized
   const mapLoadTimeoutRef = useRef<number | null>(null); // Use standard 'number' for setTimeout ID
-  // Removed isRenderedRef and markersInitializedRef
 
   const isMapbox = mapProvider === "mapbox";
 
@@ -180,13 +180,13 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
 
   // Inject keyframes for user marker ripple effect
   useEffect(() => {
-      const rippleKeyframes = `
-          @keyframes ripple {
-              0% { transform: scale(0.8); opacity: 0.8; }
-              100% { transform: scale(2.5); opacity: 0; }
-          }
-      `;
-      injectGlobalStyle('ripple-keyframes', rippleKeyframes);
+    const rippleKeyframes = `
+        @keyframes ripple {
+            0% { transform: scale(0.8); opacity: 0.8; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+    `;
+    injectGlobalStyle("ripple-keyframes", rippleKeyframes);
   }, []); // Run only once on mount
 
   // --- Map Interaction Handler ---
@@ -226,6 +226,22 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     try {
       // Process each dealer (assuming coordinates are valid from DealerLocator)
       dealers.forEach((dealer) => {
+        // Skip dealers with invalid coordinates
+        if (
+          !dealer.coordinates ||
+          typeof dealer.coordinates.lat !== "number" ||
+          typeof dealer.coordinates.lng !== "number" ||
+          isNaN(dealer.coordinates.lat) ||
+          isNaN(dealer.coordinates.lng)
+        ) {
+          console.warn(
+            `Skipping dealer with invalid coordinates: ${
+              dealer.name || dealer.id
+            }`
+          );
+          return;
+        }
+
         validDealersCount++;
         const dealerId = dealer.id;
         const isSelected = selectedDealer?.id === dealerId;
@@ -289,7 +305,8 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       }
       return false;
     }
- 
+  }, [isMapbox, dealers, selectedDealer, onMarkerClick, theme, onMarkersReady]);
+
   // --- Cleanup function ---
   const cleanupMap = useCallback(() => {
     console.log("Cleaning up Mapbox instance...");
@@ -320,9 +337,9 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
         mapboxMapRef.current = null;
       }
     }
- 
-    // Removed isRenderedRef reset
+
     markersReadyFiredRef.current = false;
+    markersInitializedRef.current = false;
     mapInitializedRef.current = false; // Reset map initialized flag
     console.log("Mapbox cleanup complete.");
   }, [handleMapInteraction]); // Include handleMapInteraction in dependencies
@@ -351,15 +368,13 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
         markersReadyFiredRef.current = true;
       }
 
-      // If skipping map init, ensure cleanup function is still returned
-      // in case dependencies change later and require cleanup.
-      return cleanupMap;
+      return cleanupMap; // Ensure cleanup if conditions change
     }
- 
+
     // Prevent re-initialization if map already exists and essential props haven't changed
     if (mapInitializedRef.current && mapboxMapRef.current) {
-        console.log("Map already initialized, skipping re-init.");
-        return cleanupMap; // Still return cleanup in case props change later
+      console.log("Map already initialized, skipping re-init.");
+      return cleanupMap; // Still return cleanup in case props change later
     }
 
     console.log("Initializing Mapbox Map...");
@@ -406,17 +421,22 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
 
       mapboxMapRef.current = map;
       mapInitializedRef.current = true; // Mark map as initialized
- 
+
       map.on("load", () => {
         console.log("Mapbox map loaded.");
         map.on("click", handleMapInteraction); // Attach click listener here
- 
+
         // Ensure map resizes if container size changes after load
         map.resize();
- 
-        // Markers will be handled by the dedicated marker effect.
-        // Ensure onMarkersReady is called if no dealers exist.
-        if (
+
+        // Initialize markers after map load
+        if (!markersInitializedRef.current && dealers.length > 0) {
+          setTimeout(() => {
+            initializeMarkers();
+          }, 100);
+        }
+        // Ensure onMarkersReady is called if no dealers exist
+        else if (
           dealers.length === 0 &&
           !markersReadyFiredRef.current &&
           typeof onMarkersReady === "function"
@@ -428,7 +448,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
           markersReadyFiredRef.current = true;
         }
       });
- 
+
       map.on("error", (e) => {
         console.error("Mapbox GL Error:", e.error?.message || e);
       });
@@ -443,7 +463,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
           onMarkersReady();
           markersReadyFiredRef.current = true;
         }
-      }, 5000); // setTimeout returns a number
+      }, 5000);
     } catch (error) {
       console.error("Failed to initialize Mapbox Map:", error);
 
@@ -457,7 +477,6 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       }
     }
 
-    // This effect should only run once on mount or when essential map config changes
     return cleanupMap;
   }, [
     isMapbox,
@@ -466,9 +485,12 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     hideControls,
     navigationControl,
     attributionControl,
-    // Removed dealers, onMarkersReady, cleanupMap, handleMapInteraction
-    // These are handled in other effects or are stable callbacks/refs
-  ]); // Keep center/zoom out as they are handled separately
+    cleanupMap,
+    handleMapInteraction,
+    dealers.length,
+    initializeMarkers,
+    onMarkersReady,
+  ]);
 
   // --- Mapbox Marker Creation/Update Effect ---
   useEffect(() => {
@@ -489,8 +511,14 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       return;
     }
 
+    // If markers not initialized yet and this is the first run, initialize them now
+    if (!markersInitializedRef.current) {
+      initializeMarkers();
+      return;
+    }
+
     console.log(
-      `Running marker update effect. Dealers: ${dealers.length}, Selected: ${selectedDealer?.id}`
+      `Updating ${dealers.length} markers. Selected: ${selectedDealer?.id}`
     );
     const currentMap = mapboxMapRef.current;
     const newMarkers: { [id: string]: Marker } = {}; // Track markers for this update cycle
@@ -499,7 +527,22 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     try {
       // 1. Create/Update Dealer Markers
       dealers.forEach((dealer) => {
-        // Coordinates assumed valid here due to upstream filtering
+        // Skip dealers with invalid coordinates
+        if (
+          !dealer.coordinates ||
+          typeof dealer.coordinates.lat !== "number" ||
+          typeof dealer.coordinates.lng !== "number" ||
+          isNaN(dealer.coordinates.lat) ||
+          isNaN(dealer.coordinates.lng)
+        ) {
+          console.warn(
+            `Skipping dealer with invalid coordinates: ${
+              dealer.name || dealer.id
+            }`
+          );
+          return;
+        }
+
         validDealersCount++;
         const dealerId = dealer.id;
         const isSelected = selectedDealer?.id === dealerId;
@@ -611,17 +654,15 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
         markersReadyFiredRef.current = true;
       }
     }
-
-    // Call onMarkersReady *once* after the first successful marker processing
-    if (
-      !markersReadyFiredRef.current &&
-      typeof onMarkersReady === "function"
-    ) {
-      console.log("Marker processing complete, calling onMarkersReady.");
-      onMarkersReady();
-      markersReadyFiredRef.current = true;
-    }
-  }, [isMapbox, dealers, selectedDealer, onMarkerClick, theme, onMarkersReady]); // Rerun when dealers or selection changes
+  }, [
+    isMapbox,
+    dealers,
+    selectedDealer,
+    onMarkerClick,
+    theme,
+    onMarkersReady,
+    initializeMarkers,
+  ]);
 
   // --- Mapbox Popup Update Effect (Simplified) ---
   useEffect(() => {
