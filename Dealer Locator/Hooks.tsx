@@ -9,7 +9,8 @@ import {
   type Location,
   type MapProvider,
   type Coordinates,
-} from "https://framer.com/m/Lib-8AS5.js@OT7MrLyxrSeMBPdmFx17";
+  isValidCoordinates, // Import validator
+} from "https://framer.com/m/Lib-8AS5.js"; // Use the updated Lib import path
 
 // --- Hook to manage dealer data fetching and state ---
 export const useDealerData = (
@@ -32,10 +33,10 @@ export const useDealerData = (
           ? "No API endpoint provided, using static data."
           : "Canvas detected, using static data."
       );
-      // Ensure static data is properly formatted if needed
+      // Ensure static data coordinates are valid, set to null if not
       const formattedStaticData = staticData.map((d) => ({
         ...d,
-        // Add any default values if missing from static data
+        coordinates: isValidCoordinates(d.coordinates) ? d.coordinates : null,
         services: d.services || [],
         hours: d.hours || [],
       }));
@@ -59,19 +60,37 @@ export const useDealerData = (
       // Updated API format checking
       if (data.status === "success" && Array.isArray(data.dealers)) {
         console.log(`Received ${data.dealers.length} dealers from API`);
-        setDealers(data.dealers);
+        // Validate coordinates for each dealer from API
+        const validatedDealers = data.dealers.map((d: any) => ({
+          ...d,
+          id: String(d.id || `dealer-${Math.random()}`), // Ensure ID is string
+          coordinates: isValidCoordinates(d.coordinates) ? d.coordinates : null, // Set invalid coords to null
+          services: d.services || [],
+          hours: d.hours || [],
+          address: d.address || { formatted: "Address unknown" }, // Ensure address exists
+          name: d.name || "Unnamed Dealer", // Ensure name exists
+        }));
+        setDealers(validatedDealers);
       } else {
         // Handle unexpected data format
         console.error("Invalid API response format:", data);
         throw new Error("Invalid data format received from API");
       }
     } catch (err) {
-      console.error("Error fetching or processing dealer data:", err);
-      setError(`Failed to fetch dealers: ${err.message}`);
+      const errorMsg =
+        err instanceof Error ? err.message : "An unknown error occurred";
+      console.error("Error fetching or processing dealer data:", errorMsg, err);
+      setError(`Failed to fetch dealers: ${errorMsg}`);
       // Fallback to static data on error if available
       if (staticData && staticData.length > 0) {
         console.log("Falling back to static data due to API error.");
-        setDealers(staticData);
+        const formattedStaticData = staticData.map((d) => ({
+          ...d,
+          coordinates: isValidCoordinates(d.coordinates) ? d.coordinates : null,
+          services: d.services || [],
+          hours: d.hours || [],
+        }));
+        setDealers(formattedStaticData);
       } else {
         setDealers([]);
       }
@@ -91,6 +110,7 @@ export const useDealerData = (
 };
 
 // --- Hook to manage geolocation ---
+// Keep this hook as it is, seems robust.
 export const useGeolocation = () => {
   const [userLocation, setUserLocation] = useState<Location>(null);
   const [isLocating, setIsLocating] = useState(false);
@@ -139,9 +159,10 @@ export const useGeolocation = () => {
         console.error("Geolocation error:", error.message, error.code);
         setLocationError(message);
         setIsLocating(false);
+        setUserLocation(null); // Clear location on error
       },
       {
-        enableHighAccuracy: true, // Better accuracy for mobile devices
+        enableHighAccuracy: true,
         timeout: 10000, // 10 seconds timeout
         maximumAge: 60000, // Allow cached position up to 1 minute old
       }
@@ -151,8 +172,8 @@ export const useGeolocation = () => {
   return { userLocation, isLocating, locationError, getUserLocation };
 };
 
-// --- Hook to manage API loading state (Specifically Google Maps Script) ---
-// This is less critical for Mapbox-only, but keep it for potential Google Maps usage
+// --- Hook to manage API loading state (Google Maps Script) ---
+// Keep this hook as is for potential Google Maps usage.
 export const useMapApiState = (provider: MapProvider, apiKey?: string) => {
   const [isLoaded, setIsLoaded] = useState(provider === "mapbox"); // Mapbox assumed loaded via CDN/import
   const [loadError, setLoadError] = useState<Error | null>(null);
@@ -174,7 +195,7 @@ export const useMapApiState = (provider: MapProvider, apiKey?: string) => {
       return;
     }
 
-    if (!apiKey) {
+    if (provider === "google" && !apiKey) {
       console.error("Google Maps API key is required but not provided.");
       setLoadError(new Error("Google Maps API key is required."));
       setIsLoaded(false);
@@ -201,20 +222,27 @@ export const useMapApiState = (provider: MapProvider, apiKey?: string) => {
     // If script tag exists, but API not ready, wait (handle potential race conditions)
     if (script && !window.google?.maps?.marker) {
       console.log("Google Maps script tag exists, waiting for load...");
-      const checkInterval = setInterval(() => {
+      let checkIntervalId: number | null = null;
+      let waitTimeoutId: number | null = null;
+
+      const clearTimers = () => {
+        if (checkIntervalId !== null) clearInterval(checkIntervalId);
+        if (waitTimeoutId !== null) clearTimeout(waitTimeoutId);
+      };
+
+      checkIntervalId = window.setInterval(() => {
         if (window.google && window.google.maps && window.google.maps.marker) {
           console.log("Google Maps API loaded after waiting.");
           setIsLoaded(true);
           setLoadError(null);
-          clearInterval(checkInterval);
+          clearTimers();
           cleanup();
         }
-        // Add a timeout for this waiting period if needed
       }, 100);
 
       // Timeout check
-      const waitTimeout = setTimeout(() => {
-        clearInterval(checkInterval);
+      waitTimeoutId = window.setTimeout(() => {
+        clearTimers();
         if (!isLoaded) {
           console.error(
             "Timeout waiting for existing Google Maps script to load."
@@ -226,27 +254,24 @@ export const useMapApiState = (provider: MapProvider, apiKey?: string) => {
       }, 10000); // 10 second timeout
 
       return () => {
-        clearInterval(checkInterval);
-        clearTimeout(waitTimeout);
-        // Don't remove script if it might be shared, just cleanup callback
+        clearTimers();
         cleanup();
       };
-    } else if (!script) {
+    } else if (!script && provider === "google" && apiKey) {
       // Create and load the script
       console.log("Creating Google Maps script tag...");
       script = document.createElement("script");
       script.id = scriptId;
       // Ensure 'marker' library is loaded for AdvancedMarkerElement
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker&callback=${callbackName}`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker&callback=${callbackName}&loading=async`; // Use async loading attribute
       script.async = true;
-      script.defer = true;
+      script.defer = true; // Keep defer as well
       script.onerror = (error) => {
         console.error("Google Maps script loading error:", error);
         setLoadError(new Error("Failed to load Google Maps script."));
         setIsLoaded(false);
         cleanup();
-        // Optionally remove the failed script tag
-        script?.remove();
+        script?.remove(); // Remove failed script tag
       };
 
       window[callbackName] = () => {
@@ -260,13 +285,12 @@ export const useMapApiState = (provider: MapProvider, apiKey?: string) => {
 
       return () => {
         cleanup();
-        // Consider removing the script on unmount ONLY if you are sure it's safe
-        // and won't interfere with other components potentially using it.
-        // script?.remove(); // Usually safer not to remove it.
+        // Don't remove the script on unmount if it loaded successfully,
+        // as it might be used by other components.
       };
     }
     // If script exists and API is loaded, this point shouldn't be reached due to early return.
-  }, [provider, apiKey, isLoaded]); // Rerun if provider or key changes
+  }, [provider, apiKey]); // Removed isLoaded from dependencies to avoid potential loops
 
   return { isLoaded, loadError };
 };

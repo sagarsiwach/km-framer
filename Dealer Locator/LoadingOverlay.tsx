@@ -3,7 +3,19 @@ import React from "react";
 import { motion } from "framer-motion";
 import { addPropertyControls, ControlType } from "framer";
 
+// Inject keyframes if needed, although Framer might handle simple spin
+const injectSpinnerKeyframes = () => {
+  const id = "spinner-keyframes";
+  if (typeof document !== "undefined" && !document.getElementById(id)) {
+    const style = document.createElement("style");
+    style.id = id;
+    style.textContent = `@keyframes loading-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
+    document.head.appendChild(style);
+  }
+};
+
 /**
+ * A loading indicator component.
  * @framerSupportedLayoutWidth any
  * @framerSupportedLayoutHeight any
  */
@@ -11,36 +23,39 @@ export default function LoadingIndicator(props) {
   const {
     text = "Loading...",
     showText = true,
-    color = "#0284C7", // Default blue color
+    color = "#0284C7", // Default blue color from original example
     size = "medium", // small, medium, large
-    fullScreen = true,
-    backgroundColor = "rgba(255, 255, 255, 0.9)",
-    style,
-    ...rest
+    fullScreen = true, // Controls position: fixed vs relative
+    backgroundColor = "rgba(255, 255, 255, 0.9)", // Background for fullscreen
+    style, // Allow style overrides
+    ...rest // Pass other props like data-* attributes
   } = props;
 
-  // Get spinner size based on size prop
+  injectSpinnerKeyframes(); // Ensure keyframes are present
+
+  // Determine spinner dimensions based on size prop
   const getSpinnerSize = () => {
     switch (size) {
       case "small":
-        return 24;
-      case "medium":
-        return 40;
+        return { dim: 24, border: 2 };
       case "large":
-        return 64;
+        return { dim: 64, border: 4 };
+      case "medium":
       default:
-        return 40;
+        return { dim: 40, border: 3 };
     }
   };
+  const { dim: spinnerDim, border: spinnerBorder } = getSpinnerSize();
 
-  const spinnerSize = getSpinnerSize();
-
-  const containerStyle = {
+  // Base styles for the container
+  const containerStyle: React.CSSProperties = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    padding: "16px",
+    padding: "20px",
+    fontFamily:
+      "Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     ...(fullScreen
       ? {
           position: "fixed",
@@ -49,34 +64,46 @@ export default function LoadingIndicator(props) {
           right: 0,
           bottom: 0,
           backgroundColor,
-          zIndex: 9999,
+          zIndex: 9999, // Ensure it's on top
+          pointerEvents: "auto", // Block interaction below
         }
-      : {}),
-    ...style,
+      : {
+          position: "relative", // Can be placed inline
+          width: "100%",
+          height: "100%",
+        }),
+    ...style, // Apply overrides
   };
 
-  const textStyle = {
-    marginTop: "12px",
-    color: "#4B5563", // Gray 600
-    fontSize: "16px",
+  const spinnerStyle: React.CSSProperties = {
+    width: spinnerDim,
+    height: spinnerDim,
+    borderRadius: "50%",
+    border: `${spinnerBorder}px solid rgba(0, 0, 0, 0.1)`, // Lighter border color
+    borderTopColor: color, // Use the accent color for the spinning part
+    animation: "loading-spin 1s linear infinite",
+  };
+
+  const textStyle: React.CSSProperties = {
+    marginTop: "16px", // Increased spacing
+    color: "#4B5563", // Neutral-600
+    fontSize: size === "small" ? "14px" : "16px",
     fontWeight: 500,
-    fontFamily: "Geist, system-ui, sans-serif",
+    textAlign: "center",
   };
 
   return (
-    <div style={containerStyle} {...rest}>
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        style={{
-          width: spinnerSize,
-          height: spinnerSize,
-          borderRadius: "50%",
-          border: `3px solid #E5E7EB`,
-          borderTopColor: color,
-        }}
+    <div
+      style={containerStyle}
+      {...rest}
+      aria-live="assertive"
+      aria-busy="true"
+    >
+      <motion.div // Keep motion.div for consistency / potential future animations
+        style={spinnerStyle}
+        // Removed Framer animation props, rely on CSS animation
       />
-      {showText && <div style={textStyle}>{text}</div>}
+      {showText && text && <div style={textStyle}>{text}</div>}
     </div>
   );
 }
@@ -95,22 +122,26 @@ addPropertyControls(LoadingIndicator, {
   color: {
     type: ControlType.Color,
     title: "Spinner Color",
-    defaultValue: "#0284C7",
+    defaultValue: "#0284C7", // Default blue
   },
   size: {
     type: ControlType.Enum,
     title: "Size",
     options: ["small", "medium", "large"],
+    optionTitles: ["Small", "Medium", "Large"],
     defaultValue: "medium",
+    displaySegmentedControl: true,
   },
   fullScreen: {
     type: ControlType.Boolean,
     title: "Full Screen",
     defaultValue: true,
+    description: "Covers entire viewport vs. filling its container.",
   },
   backgroundColor: {
     type: ControlType.Color,
     title: "Background",
     defaultValue: "rgba(255, 255, 255, 0.9)",
+    hidden: (props) => !props.fullScreen,
   },
 });
