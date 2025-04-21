@@ -9,14 +9,14 @@ import {
   type Location,
   type Coordinates,
   type MapProvider,
-  createEnhancedPopupContent, // Using the enhanced popup function
-  hexToRgba, // Keep if needed elsewhere, though not used directly here now
-} from "https://framer.com/m/Lib-8AS5.js@vS7d5YP2fjGyqMnH5L1D"; // Adjust path if necessary
+  createEnhancedPopupContent,
+  hexToRgba,
+} from "https://framer.com/m/Lib-8AS5.js@vS7d5YP2fjGyqMnH5L1D";
 
 // --- Helper Functions ---
 
 // Helper to inject CSS rules into the document head if they don't exist
-const injectGlobalStyle = (id: string, css: string) => {
+const injectGlobalStyle = (id, css) => {
   if (typeof document !== "undefined" && !document.getElementById(id)) {
     const style = document.createElement("style");
     style.id = id;
@@ -27,11 +27,7 @@ const injectGlobalStyle = (id: string, css: string) => {
 };
 
 // Determines marker color based on service type and selection state
-function getMarkerColor(
-  dealer: Dealer,
-  isSelected: boolean,
-  theme: any
-): string {
+function getMarkerColor(dealer, isSelected, theme) {
   const services = dealer.services?.map((s) => s.toLowerCase()) || [];
   const hasStore = services.includes("sales") || services.includes("store");
   const hasService =
@@ -56,11 +52,7 @@ function getMarkerColor(
 }
 
 // Generates the HTML string for the custom SVG marker
-const getMarkerSvg = (
-  dealer: Dealer,
-  isSelected: boolean,
-  theme: any
-): string => {
+const getMarkerSvg = (dealer, isSelected, theme) => {
   const markerColor = getMarkerColor(dealer, isSelected, theme);
   const innerCircleColor = "#FFFFFF"; // White inner circle
 
@@ -103,33 +95,8 @@ const getMarkerSvg = (
    `;
 };
 
-// --- Prop Interface ---
-interface MapWrapperProps {
-  mapProvider: MapProvider | "none";
-  googleApiKey?: string;
-  mapboxAccessToken?: string;
-  center: Coordinates | [number, number]; // [lng, lat] for mapbox
-  zoom: number;
-  dealers: Dealer[];
-  selectedDealer: Dealer | null;
-  userLocation: Location;
-  searchLocation: Location;
-  onMarkerClick: (dealer: Dealer) => void;
-  onMapClick: () => void;
-  theme: any;
-  distanceUnit: "km" | "miles";
-  googleMapStyleId?: string | null;
-  mapboxMapStyleUrl?: string;
-  style?: React.CSSProperties;
-  // Add props for controls if needed, currently handled internally
-  hideControls?: boolean;
-  navigationControl?: boolean;
-  attributionControl?: boolean;
-  onMarkersReady?: () => void; // New callback for marker rendering readiness
-}
-
 // --- Main Map Component ---
-const MapWrapper: React.FC<MapWrapperProps> = ({
+const MapWrapper = ({
   mapProvider,
   googleApiKey,
   mapboxAccessToken,
@@ -146,33 +113,54 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
   googleMapStyleId,
   mapboxMapStyleUrl = "mapbox://styles/mapbox/light-v11",
   style,
-  hideControls = false, // Default to showing controls unless specified
-  navigationControl = true, // Default to show navigation
-  attributionControl = true, // Default to show attribution
+  hideControls = true, // Default to hiding controls
+  navigationControl = false, // Default to hide navigation
+  attributionControl = false, // Default to hide attribution
   onMarkersReady,
 }) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapboxMapRef = useRef<mapboxgl.Map | null>(null);
-  const mapboxMarkersRef = useRef<{ [id: string]: Marker }>({});
-  const mapboxPopupRef = useRef<Popup | null>(null);
-  const mapInitializedRef = useRef(false); // Track if map instance is created
-  const markersReadyFiredRef = useRef(false); // Track if onMarkersReady was called
-  const markersInitializedRef = useRef(false); // Track if markers were initialized
-  const mapLoadTimeoutRef = useRef<number | null>(null); // Use standard 'number' for setTimeout ID
+  const mapContainerRef = useRef(null);
+  const mapboxMapRef = useRef(null);
+  const mapboxMarkersRef = useRef({});
+  const mapboxPopupRef = useRef(null);
+  const mapInitializedRef = useRef(false);
+  const markersReadyFiredRef = useRef(false);
+  const markersInitializedRef = useRef(false);
+  const mapLoadTimeoutRef = useRef(null);
 
   const isMapbox = mapProvider === "mapbox";
 
   // Add Mapbox CSS if not already present
   useEffect(() => {
+    // Add Mapbox CSS
     if (!document.getElementById("mapbox-gl-css")) {
       const link = document.createElement("link");
       link.id = "mapbox-gl-css";
       link.rel = "stylesheet";
       link.href = "https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css";
       document.head.appendChild(link);
-
       console.log("Added Mapbox CSS to document head");
     }
+
+    // Hide Mapbox attribution and controls via CSS
+    injectGlobalStyle(
+      "mapbox-controls-override",
+      `
+        /* Hide attribution and logo */
+        .mapboxgl-ctrl-attrib, 
+        .mapboxgl-ctrl-logo, 
+        .mapboxgl-ctrl-bottom-right, 
+        .mapboxgl-ctrl-bottom-left {
+          display: none !important;
+        }
+        
+        /* Lower z-index of controls to prevent overlapping with UI */
+        .mapboxgl-ctrl-top-right,
+        .mapboxgl-ctrl-top-left {
+          z-index: 5 !important;
+        }
+      `
+    );
+
     return () => {
       // Don't remove CSS on unmount as other components might need it
     };
@@ -191,7 +179,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
 
   // --- Map Interaction Handler ---
   const handleMapInteraction = useCallback(
-    (e: mapboxgl.MapMouseEvent & mapboxgl.EventData) => {
+    (e) => {
       // Check if click occurred on a specific layer if using symbol layers
       const features = mapboxMapRef.current?.queryRenderedFeatures(e.point, {
         layers: [],
@@ -220,11 +208,11 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     markersInitializedRef.current = true;
 
     const currentMap = mapboxMapRef.current;
-    const newMarkers: { [id: string]: Marker } = {};
+    const newMarkers = {};
     let validDealersCount = 0;
 
     try {
-      // Process each dealer (assuming coordinates are valid from DealerLocator)
+      // Process each dealer
       dealers.forEach((dealer) => {
         // Skip dealers with invalid coordinates
         if (
@@ -342,7 +330,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     markersInitializedRef.current = false;
     mapInitializedRef.current = false; // Reset map initialized flag
     console.log("Mapbox cleanup complete.");
-  }, [handleMapInteraction]); // Include handleMapInteraction in dependencies
+  }, [handleMapInteraction]);
 
   // --- Mapbox Initialization Effect ---
   useEffect(() => {
@@ -398,12 +386,13 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
         center: Array.isArray(center) ? center : [center.lng, center.lat],
         zoom: zoom,
         maxZoom: 18,
-        minZoom: 4,
+        minZoom: 1, // Allow zooming out to see full globe
         renderWorldCopies: false,
-        attributionControl: false, // Manually add later if needed
+        attributionControl: false, // Disable built-in attribution
+        logoPosition: "bottom-left", // Just in case it still shows, position it away from UI
       });
 
-      // Add controls based on props
+      // Add controls based on props (all disabled by default now)
       if (!hideControls) {
         if (navigationControl) {
           map.addControl(
@@ -411,12 +400,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
             "top-right"
           );
         }
-        if (attributionControl) {
-          map.addControl(
-            new mapboxgl.AttributionControl({ compact: true }),
-            "bottom-right"
-          );
-        }
+        // Attribution completely disabled
       }
 
       mapboxMapRef.current = map;
@@ -482,6 +466,8 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     isMapbox,
     mapboxAccessToken,
     mapboxMapStyleUrl,
+    center,
+    zoom,
     hideControls,
     navigationControl,
     attributionControl,
@@ -495,8 +481,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
   // --- Mapbox Marker Creation/Update Effect ---
   useEffect(() => {
     if (!mapboxMapRef.current || !isMapbox) {
-      // If map isn't ready, we can't manage markers.
-      // Ensure onMarkersReady is called if it hasn't been, especially if there are no dealers.
+      // If map isn't ready, we can't manage markers
       if (
         !markersReadyFiredRef.current &&
         typeof onMarkersReady === "function" &&
@@ -521,7 +506,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       `Updating ${dealers.length} markers. Selected: ${selectedDealer?.id}`
     );
     const currentMap = mapboxMapRef.current;
-    const newMarkers: { [id: string]: Marker } = {}; // Track markers for this update cycle
+    const newMarkers = {}; // Track markers for this update cycle
     let validDealersCount = 0;
 
     try {
@@ -699,28 +684,29 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     }
   }, [isMapbox, searchLocation]); // Only depend on searchLocation
 
-  // Handle direct centering of map on user location
+  // --- Safari Fix: Multiple attempts to center on location ---
   useEffect(() => {
     if (!mapboxMapRef.current || !isMapbox || !userLocation) return;
 
-    // Only center if there's no search location active
-    if (searchLocation) return;
+    // Multiple centering attempts for Safari with increasing delays
+    const centerAttempts = [100, 300, 800]; // Delays in ms
 
-    // Check if this is the initial userLocation appearance
-    if (userLocation && !mapboxMarkersRef.current["user-location"]) {
-      console.log("Centering map on initial user location");
-      try {
-        mapboxMapRef.current.flyTo({
-          center: [userLocation.lng, userLocation.lat],
-          zoom: 13,
-          duration: 1000,
-          essential: true,
-        });
-      } catch (error) {
-        console.error("Error centering on user location:", error);
-      }
-    }
-  }, [isMapbox, userLocation, searchLocation]);
+    centerAttempts.forEach((delay, index) => {
+      setTimeout(() => {
+        try {
+          if (mapboxMapRef.current) {
+            console.log(`Safari fix: Location centering attempt ${index + 1}`);
+            mapboxMapRef.current.jumpTo({
+              center: [userLocation.lng, userLocation.lat],
+              zoom: mapboxMapRef.current.getZoom(),
+            });
+          }
+        } catch (error) {
+          console.error(`Error in centering attempt ${index + 1}:`, error);
+        }
+      }, delay);
+    });
+  }, [isMapbox, userLocation]);
 
   // Handle center/zoom changes directly
   useEffect(() => {
@@ -779,7 +765,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
                 theme.colors.primary || "#007AFF"
               }; opacity: 0.5; animation: ripple 1.5s infinite ease-out;"></div>
             </div>
-          `; // Removed inline <style> tag
+          `;
 
       const userMarker = new mapboxgl.Marker({
         element: userMarkerEl,
@@ -810,4 +796,4 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
   );
 };
 
-export default memo(MapWrapper); // Memoize for performance
+export default memo(MapWrapper);

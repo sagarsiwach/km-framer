@@ -4,7 +4,7 @@ import React from "react";
 // ========== CONSTANTS ==========
 // Default center remains useful, even if provider is Mapbox
 export const DEFAULT_CENTER_GOOGLE = { lat: 15.2993, lng: 74.124 }; // Goa, India
-export const DEFAULT_CENTER_MAPBOX = [78.962, 21.3271]; // Lng, Lat for Mapbox
+export const DEFAULT_CENTER_MAPBOX = [74.124, 15.2993]; // Lng, Lat for Mapbox
 export const DEFAULT_ZOOM = 11; // Adjusted default zoom
 export const MAX_ZOOM = 18;
 export const MIN_ZOOM = 4;
